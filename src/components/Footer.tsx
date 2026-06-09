@@ -1,46 +1,37 @@
-import { Crown } from 'lucide-react';
-
 export default function Footer() {
+  const handlePlayClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    e.preventDefault();
+    const demoSection = document.getElementById('interactive-demo');
+    if (demoSection) {
+      demoSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  };
+
   return (
-    <footer className="bg-brand-bg border-t border-brand-border py-12 md:py-16 text-left">
+    <footer className="bg-brand-bg border-t border-brand-border py-12 md:py-16">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex flex-col md:flex-row items-center justify-between gap-6">
-          
+
           {/* Brand Signature */}
           <div className="flex items-center gap-2">
-            <div className="w-7 h-7 bg-brand-accent rounded flex items-center justify-center">
-              <Crown className="w-4 h-4 text-white" />
-            </div>
             <span className="font-sans font-bold text-base tracking-tight text-white">
-              Chess<span className="text-brand-accent">Craft</span>
+              XL<span className="text-brand-accent">Chess</span>
             </span>
           </div>
 
-          {/* Copy statement */}
-          <p className="font-sans text-xs text-brand-secondary text-center md:text-left">
-            &copy; {new Date().getFullYear()} ChessCraft. All rights reserved. 
-            Designed for independent chess educators and academies.
+          {/* Copyright — centered */}
+          <p className="font-sans text-xs text-brand-secondary text-center">
+            &copy; 2026 XLChess. Demo concept
           </p>
 
-          {/* Links */}
-          <div className="flex items-center gap-6">
-            <a
-              href="#why-ownership"
-              className="font-sans text-xs text-brand-secondary hover:text-white transition-colors"
-            >
-              Why Ownership
-            </a>
+          {/* Single "Play" link */}
+          <div className="flex items-center">
             <a
               href="#interactive-demo"
+              onClick={handlePlayClick}
               className="font-sans text-xs text-brand-secondary hover:text-white transition-colors"
             >
-              Interactive Demo
-            </a>
-            <a
-              href="#partner-cta"
-              className="font-sans text-xs text-brand-secondary hover:text-white transition-colors"
-            >
-              Contact Pilot
+              Play
             </a>
           </div>
 

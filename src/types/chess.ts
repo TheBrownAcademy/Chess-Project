@@ -3,9 +3,10 @@ export type DifficultyLevel = 1 | 2 | 3 | 4 | 5;
 export interface DifficultyConfig {
   level: DifficultyLevel;
   name: string;
-  skillLevel: number; // Stockfish "Skill Level" option (0 - 20)
-  depth: number;      // Engine depth limit
-  timeLimit: number;  // Engine time limit in ms
+  rating: number;        // ELO rating label
+  skillLevel: number;    // Stockfish "Skill Level" option (0 - 20)
+  depth: number;         // Engine depth limit
+  timeLimit: number;     // Engine time limit in ms
   description: string;
 }
 
@@ -13,6 +14,7 @@ export const DIFFICULTY_CONFIGS: Record<DifficultyLevel, DifficultyConfig> = {
   1: {
     level: 1,
     name: "Beginner",
+    rating: 600,
     skillLevel: 0,
     depth: 1,
     timeLimit: 150,
@@ -21,6 +23,7 @@ export const DIFFICULTY_CONFIGS: Record<DifficultyLevel, DifficultyConfig> = {
   2: {
     level: 2,
     name: "Casual",
+    rating: 800,
     skillLevel: 5,
     depth: 3,
     timeLimit: 300,
@@ -29,6 +32,7 @@ export const DIFFICULTY_CONFIGS: Record<DifficultyLevel, DifficultyConfig> = {
   3: {
     level: 3,
     name: "Intermediate",
+    rating: 1000,
     skillLevel: 10,
     depth: 6,
     timeLimit: 600,
@@ -37,6 +41,7 @@ export const DIFFICULTY_CONFIGS: Record<DifficultyLevel, DifficultyConfig> = {
   4: {
     level: 4,
     name: "Advanced",
+    rating: 1400,
     skillLevel: 15,
     depth: 10,
     timeLimit: 1200,
@@ -44,11 +49,12 @@ export const DIFFICULTY_CONFIGS: Record<DifficultyLevel, DifficultyConfig> = {
   },
   5: {
     level: 5,
-    name: "Master",
+    name: "Expert",
+    rating: 1800,
     skillLevel: 20,
     depth: 15,
     timeLimit: 2500,
-    description: "Stockfish at full strength. Grandmaster level tactics."
+    description: "Strong tactical and positional play. Serious challenge."
   }
 };
 
