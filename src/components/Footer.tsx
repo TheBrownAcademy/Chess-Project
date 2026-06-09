@@ -12,11 +12,13 @@ export default function Footer() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex flex-col md:flex-row items-center justify-between gap-6">
 
-          {/* Brand Signature */}
-          <div className="flex items-center gap-2">
-            <span className="font-sans font-bold text-base tracking-tight text-white">
-              XL<span className="text-brand-accent">Chess</span>
-            </span>
+          {/* Brand Signature — logo.png from public/ */}
+          <div className="flex items-center">
+            <img
+              src="/logo.png"
+              alt="XLChess logo"
+              className="h-8 w-auto object-contain"
+            />
           </div>
 
           {/* Copyright — centered */}

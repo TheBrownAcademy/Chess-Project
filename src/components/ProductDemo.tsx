@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { Chessboard } from 'react-chessboard';
 import { Chess } from 'chess.js';
 import { useStockfish } from '../hooks/useStockfish';
@@ -7,11 +7,21 @@ import { DIFFICULTY_CONFIGS, type DifficultyLevel } from '../types/chess';
 import { RotateCcw, Sparkles, AlertCircle, ArrowRightLeft, Info } from 'lucide-react';
 
 export default function ProductDemo() {
-  const [game, setGame] = useState(() => new Chess());
-  const [gameFen, setGameFen] = useState(game.fen());
+  // ─── ROOT CAUSE OF SCROLL BUG ─────────────────────────────────────────────
+  // Previously: game was in useState → setGame() during reset caused React to
+  // unmount+remount the Chessboard. react-chessboard internally calls focus()
+  // on mount, which triggers browser scroll-into-view behavior.
+  //
+  // FIX: keep game in a useRef so the Chess instance is mutated in place.
+  // setGameFen() only triggers a re-render of FEN-dependent UI, not a remount
+  // of the Chessboard component itself (same DOM node, no focus side-effects).
+  // ─────────────────────────────────────────────────────────────────────────
+  const gameRef = useRef(new Chess());
+  const [gameFen, setGameFen] = useState(() => gameRef.current.fen());
   const [playerColor, setPlayerColor] = useState<'w' | 'b'>('w');
   const [difficulty, setDifficulty] = useState<DifficultyLevel>(3);
-  const [showAnalysisHint, setShowAnalysisHint] = useState<boolean>(false);
+  const [showAnalysisHint, setShowAnalysisHint] = useState(false);
+  const [gameOverReason, setGameOverReason] = useState<string | null>(null);
 
   const {
     evaluation,
@@ -23,97 +33,91 @@ export default function ProductDemo() {
     stopSearch,
   } = useStockfish();
 
-  // Ref for scrolling move history WITHIN the history container only
-  const moveHistoryEndRef = useRef<HTMLDivElement>(null);
+  // Move history container — scroll inside the box, never the page
   const moveHistoryContainerRef = useRef<HTMLDivElement>(null);
 
-  const history = game.history({ verbose: true });
+  // Sync game-over state after every FEN change
+  useEffect(() => {
+    setGameOverReason(getGameOverReason(gameRef.current));
+  }, [gameFen]);
 
-  const movePairs = [];
-  for (let i = 0; i < history.length; i += 2) {
-    movePairs.push({
-      moveNumber: Math.floor(i / 2) + 1,
-      white: history[i],
-      black: history[i + 1],
-    });
-  }
-
-  // Scroll ONLY the move history container — never the page
+  // Scroll only inside the move history container
   useEffect(() => {
     const container = moveHistoryContainerRef.current;
     if (container) {
       container.scrollTop = container.scrollHeight;
     }
-  }, [history.length]);
+  }, [gameFen]);
 
-  // AI Move effect
+  // AI move trigger — fires when it's the engine's turn
   useEffect(() => {
+    const game = gameRef.current;
     if (game.isGameOver()) return;
+    if (game.turn() === playerColor) return; // it's the human's turn
 
-    const currentTurn = game.turn();
-    if (currentTurn !== playerColor) {
-      const timer = setTimeout(() => {
-        getEngineMove(game.fen(), difficulty, (bestMoveStr) => {
-          const { from, to, promotion } = parseUciMove(bestMoveStr);
-          try {
-            game.move({ from, to, promotion: promotion || 'q' });
-            setGameFen(game.fen());
-          } catch (e) {
-            console.error('AI tried to make invalid move:', bestMoveStr, e);
-          }
-        });
-      }, 350);
+    const timer = setTimeout(() => {
+      getEngineMove(game.fen(), difficulty, (bestMoveStr) => {
+        const { from, to, promotion } = parseUciMove(bestMoveStr);
+        try {
+          gameRef.current.move({ from, to, promotion: promotion || 'q' });
+          setGameFen(gameRef.current.fen());
+        } catch (e) {
+          console.error('AI tried to make invalid move:', bestMoveStr, e);
+        }
+      });
+    }, 350);
 
-      return () => clearTimeout(timer);
-    }
+    return () => clearTimeout(timer);
   }, [gameFen, playerColor, difficulty, getEngineMove]);
 
-  const gameOverReason = getGameOverReason(game);
+  // Piece drop handler — called by react-chessboard
+  const onDrop = useCallback(
+    (sourceSquare: string, targetSquare: string | null): boolean => {
+      const game = gameRef.current;
+      if (game.isGameOver()) return false;
+      if (game.turn() !== playerColor) return false;
+      if (!targetSquare) return false;
 
-  function onDrop(sourceSquare: string, targetSquare: string | null) {
-    if (game.isGameOver()) return false;
-    if (game.turn() !== playerColor) return false;
-    if (!targetSquare) return false;
-
-    try {
-      const move = game.move({
-        from: sourceSquare,
-        to: targetSquare,
-        promotion: 'q',
-      });
-
-      if (move) {
-        setGameFen(game.fen());
-        setShowAnalysisHint(false);
-        return true;
+      try {
+        const move = game.move({
+          from: sourceSquare,
+          to: targetSquare,
+          promotion: 'q',
+        });
+        if (move) {
+          setGameFen(game.fen());
+          setShowAnalysisHint(false);
+          return true;
+        }
+      } catch {
+        // illegal move — no-op
       }
-    } catch (e) {
       return false;
-    }
-    return false;
-  }
+    },
+    [playerColor]
+  );
 
-  const handleReset = () => {
+  // Reset — load a fresh game into the ref without replacing the ref itself
+  const handleReset = useCallback(() => {
     stopSearch();
-    const newGame = new Chess();
-    setGame(newGame);
-    setGameFen(newGame.fen());
+    gameRef.current.reset();           // mutate in-place → Chessboard stays mounted
+    setGameFen(gameRef.current.fen()); // trigger re-render with starting position
     setShowAnalysisHint(false);
-  };
+    setGameOverReason(null);
+  }, [stopSearch]);
 
-  const handleFlip = () => {
+  const handleFlip = useCallback(() => {
     setPlayerColor((prev) => (prev === 'w' ? 'b' : 'w'));
-  };
+  }, []);
 
-  const handleAnalyze = () => {
+  const handleAnalyze = useCallback(() => {
     setShowAnalysisHint(true);
-    analyzePosition(game.fen());
-  };
+    analyzePosition(gameRef.current.fen());
+  }, [analyzePosition]);
 
-  // Eval bar calculation
+  // Eval bar
   let evalPercent = 50;
   let evalLabel = '0.0';
-
   if (evaluation) {
     if (evaluation.type === 'cp') {
       const val = evaluation.value;
@@ -127,34 +131,44 @@ export default function ProductDemo() {
     }
   }
 
-  // Custom square highlights
-  const customSquareStyles: Record<string, React.CSSProperties> = {};
-
-  if (history.length > 0) {
-    const lastMove = history[history.length - 1];
-    customSquareStyles[lastMove.from] = {
-      backgroundColor: 'rgba(255, 255, 255, 0.04)',
-      boxShadow: 'inset 0 0 0 2px rgba(255, 255, 255, 0.15)',
-    };
-    customSquareStyles[lastMove.to] = {
-      backgroundColor: 'rgba(255, 255, 255, 0.04)',
-      boxShadow: 'inset 0 0 0 2px rgba(255, 255, 255, 0.15)',
-    };
+  // Move history — derived from the current game instance
+  const history = gameRef.current.history({ verbose: true });
+  const movePairs: { moveNumber: number; white: (typeof history)[0]; black: (typeof history)[0] | undefined }[] = [];
+  for (let i = 0; i < history.length; i += 2) {
+    movePairs.push({
+      moveNumber: Math.floor(i / 2) + 1,
+      white: history[i],
+      black: history[i + 1],
+    });
   }
 
+  // Square highlights
+  const customSquareStyles: Record<string, React.CSSProperties> = {};
+  if (history.length > 0) {
+    const last = history[history.length - 1];
+    customSquareStyles[last.from] = {
+      backgroundColor: 'rgba(255,255,255,0.04)',
+      boxShadow: 'inset 0 0 0 2px rgba(255,255,255,0.15)',
+    };
+    customSquareStyles[last.to] = {
+      backgroundColor: 'rgba(255,255,255,0.04)',
+      boxShadow: 'inset 0 0 0 2px rgba(255,255,255,0.15)',
+    };
+  }
   if (showAnalysisHint && bestMove) {
     const { from, to } = parseUciMove(bestMove);
     customSquareStyles[from] = {
-      backgroundColor: 'rgba(99, 102, 241, 0.15)',
-      boxShadow: 'inset 0 0 0 3px rgba(99, 102, 241, 0.7)',
+      backgroundColor: 'rgba(99,102,241,0.15)',
+      boxShadow: 'inset 0 0 0 3px rgba(99,102,241,0.7)',
     };
     customSquareStyles[to] = {
-      backgroundColor: 'rgba(99, 102, 241, 0.15)',
-      boxShadow: 'inset 0 0 0 3px rgba(99, 102, 241, 0.7)',
+      backgroundColor: 'rgba(99,102,241,0.15)',
+      boxShadow: 'inset 0 0 0 3px rgba(99,102,241,0.7)',
     };
   }
 
   const currentConfig = DIFFICULTY_CONFIGS[difficulty];
+  const currentTurn = gameRef.current.turn();
 
   return (
     <section id="interactive-demo" className="py-20 md:py-28 bg-brand-bg relative overflow-hidden">
@@ -179,12 +193,11 @@ export default function ProductDemo() {
           </p>
         </div>
 
-        {/* Dashboard Grid Container */}
+        {/* Dashboard */}
         <div className="bg-brand-surface border border-brand-border rounded-xl shadow-2xl p-4 sm:p-6 lg:p-8 max-w-5xl mx-auto">
-
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch">
 
-            {/* COLUMN 1: Evaluation Bar */}
+            {/* ── Col 1: Eval Bar ─────────────────────────────── */}
             <div className="lg:col-span-1 flex lg:flex-col items-center justify-between gap-3 h-10 lg:h-auto min-h-[40px] lg:min-h-[460px]">
               <div className="relative w-full lg:w-7 flex-1 h-3 lg:h-full bg-neutral-800 rounded-full overflow-hidden border border-brand-border flex items-end">
                 <div
@@ -201,16 +214,16 @@ export default function ProductDemo() {
                   </span>
                 </div>
               </div>
-              {/* "EVAL" text removed per spec */}
+              {/* EVAL label removed */}
             </div>
 
-            {/* COLUMN 2: Chessboard */}
+            {/* ── Col 2: Chessboard ───────────────────────────── */}
             <div className="lg:col-span-7 flex flex-col justify-center">
               <div className="aspect-square w-full rounded-lg overflow-hidden shadow-xl border border-brand-border relative bg-[#1B2235]">
 
                 {/* Game Over Overlay */}
                 {gameOverReason && (
-                  <div className="absolute inset-0 z-20 bg-brand-bg/90 backdrop-blur-sm flex flex-col items-center justify-center p-6 space-y-4 animate-in fade-in duration-300">
+                  <div className="absolute inset-0 z-20 bg-brand-bg/90 backdrop-blur-sm flex flex-col items-center justify-center p-6 space-y-4">
                     <div className="w-12 h-12 rounded-full bg-brand-accent/20 border border-brand-accent/30 flex items-center justify-center text-brand-accent">
                       <AlertCircle className="w-6 h-6" />
                     </div>
@@ -228,12 +241,12 @@ export default function ProductDemo() {
                   </div>
                 )}
 
+                {/* react-chessboard — stays mounted, never remounts */}
                 <Chessboard
                   options={{
                     position: gameFen,
-                    onPieceDrop: ({ sourceSquare, targetSquare }) => {
-                      return onDrop(sourceSquare, targetSquare);
-                    },
+                    onPieceDrop: ({ sourceSquare, targetSquare }) =>
+                      onDrop(sourceSquare, targetSquare),
                     boardOrientation: playerColor === 'w' ? 'white' : 'black',
                     squareStyles: customSquareStyles,
                     darkSquareStyle: { backgroundColor: '#1E293B' },
@@ -243,15 +256,15 @@ export default function ProductDemo() {
                 />
               </div>
 
-              {/* Turn indicator — "Engine Status" text removed per spec */}
+              {/* Turn indicator — Engine Status removed */}
               <div className="mt-4 flex items-center gap-2 text-xs text-brand-secondary px-1">
                 <span
                   className={`w-2.5 h-2.5 rounded-full border border-brand-border ${
-                    game.turn() === 'w' ? 'bg-white' : 'bg-neutral-800'
+                    currentTurn === 'w' ? 'bg-white' : 'bg-neutral-800'
                   }`}
                 />
                 <span>
-                  {game.turn() === 'w' ? "White's turn" : "Black's turn"}
+                  {currentTurn === 'w' ? "White's turn" : "Black's turn"}
                   {isThinking && (
                     <span className="text-brand-accent animate-pulse ml-1.5 font-medium">
                       (AI Thinking...)
@@ -264,10 +277,10 @@ export default function ProductDemo() {
               </div>
             </div>
 
-            {/* COLUMN 3: Control Panel */}
+            {/* ── Col 3: Control Panel ────────────────────────── */}
             <div className="lg:col-span-4 flex flex-col justify-between space-y-6">
 
-              {/* Controls — "SETUP & SETTINGS" heading removed, icons kept */}
+              {/* Controls — SETUP & SETTINGS heading removed, icons kept */}
               <div className="space-y-4">
                 <div className="flex items-center justify-end border-b border-brand-border/60 pb-3">
                   <div className="flex items-center gap-1">
@@ -288,34 +301,27 @@ export default function ProductDemo() {
                   </div>
                 </div>
 
-                {/* Play As — simplified labels */}
+                {/* Play As */}
                 <div className="space-y-2 text-left">
                   <label className="text-xs font-sans text-brand-secondary">Play As</label>
                   <div className="grid grid-cols-2 gap-2 bg-brand-bg p-1 rounded-lg border border-brand-border">
-                    <button
-                      onClick={() => setPlayerColor('w')}
-                      className={`py-1.5 rounded text-xs font-semibold font-sans transition-all duration-200 ${
-                        playerColor === 'w'
-                          ? 'bg-brand-surface text-white shadow-sm border border-brand-border'
-                          : 'text-brand-secondary hover:text-white'
-                      }`}
-                    >
-                      White
-                    </button>
-                    <button
-                      onClick={() => setPlayerColor('b')}
-                      className={`py-1.5 rounded text-xs font-semibold font-sans transition-all duration-200 ${
-                        playerColor === 'b'
-                          ? 'bg-brand-surface text-white shadow-sm border border-brand-border'
-                          : 'text-brand-secondary hover:text-white'
-                      }`}
-                    >
-                      Black
-                    </button>
+                    {(['w', 'b'] as const).map((color) => (
+                      <button
+                        key={color}
+                        onClick={() => setPlayerColor(color)}
+                        className={`py-1.5 rounded text-xs font-semibold font-sans transition-all duration-200 ${
+                          playerColor === color
+                            ? 'bg-brand-surface text-white shadow-sm border border-brand-border'
+                            : 'text-brand-secondary hover:text-white'
+                        }`}
+                      >
+                        {color === 'w' ? 'White' : 'Black'}
+                      </button>
+                    ))}
                   </div>
                 </div>
 
-                {/* Difficulty — "Stockfish" word removed, rating labels added */}
+                {/* Difficulty — "Stockfish" removed, rating shown */}
                 <div className="space-y-2 text-left">
                   <div className="flex items-center justify-between">
                     <label className="text-xs font-sans text-brand-secondary">Difficulty</label>
@@ -323,7 +329,6 @@ export default function ProductDemo() {
                       {currentConfig.name} ({currentConfig.rating})
                     </span>
                   </div>
-
                   <div className="grid grid-cols-5 gap-1 bg-brand-bg p-1 rounded-lg border border-brand-border">
                     {([1, 2, 3, 4, 5] as DifficultyLevel[]).map((level) => (
                       <button
@@ -349,7 +354,7 @@ export default function ProductDemo() {
                 </div>
               </div>
 
-              {/* Move History — uses container scroll, not page scroll */}
+              {/* Move History — scrolls inside container only, never page */}
               <div className="flex-1 flex flex-col justify-start min-h-[140px] text-left">
                 <label className="text-xs font-sans text-brand-secondary mb-2 block">Move History</label>
                 <div
@@ -374,16 +379,14 @@ export default function ProductDemo() {
                       </div>
                     ))
                   )}
-                  {/* Invisible anchor — no scrollIntoView called on this */}
-                  <div ref={moveHistoryEndRef} />
                 </div>
               </div>
 
-              {/* Analyze Button */}
+              {/* Analyze */}
               <div className="space-y-3 pt-2">
                 <button
                   onClick={handleAnalyze}
-                  disabled={game.isGameOver() || isThinking}
+                  disabled={!!gameOverReason || isThinking}
                   className="w-full flex items-center justify-center gap-2 font-sans font-semibold text-sm bg-brand-surface hover:bg-brand-surface/80 border border-brand-border hover:border-brand-accent/50 text-white py-3 rounded-lg transition-all duration-200 disabled:opacity-50 disabled:pointer-events-none"
                 >
                   <Sparkles className="w-4 h-4 text-brand-accent" />
@@ -391,7 +394,7 @@ export default function ProductDemo() {
                 </button>
 
                 {showAnalysisHint && (
-                  <div className="p-3 bg-brand-bg rounded-lg border border-brand-accent/25 text-left text-xs text-brand-secondary animate-in fade-in slide-in-from-bottom-2 duration-300">
+                  <div className="p-3 bg-brand-bg rounded-lg border border-brand-accent/25 text-left text-xs text-brand-secondary">
                     <div className="flex items-center gap-1.5 mb-1.5 text-white font-semibold">
                       <Info className="w-3.5 h-3.5 text-brand-accent" />
                       <span>Engine Analysis</span>
@@ -418,11 +421,8 @@ export default function ProductDemo() {
               </div>
 
             </div>
-
           </div>
-
         </div>
-
       </div>
     </section>
   );
