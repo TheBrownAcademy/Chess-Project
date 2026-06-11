@@ -21,7 +21,7 @@ export default function Navbar() {
             <img
               src="/logo.png"
               alt="XLChess logo"
-              className="h-9 w-auto object-contain"
+              className="h-10 sm:h-12 w-auto object-contain"
             />
           </div>
 

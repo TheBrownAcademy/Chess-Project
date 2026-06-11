@@ -17,7 +17,7 @@ export default function Footer() {
             <img
               src="/logo.png"
               alt="XLChess logo"
-              className="h-8 w-auto object-contain"
+              className="h-10 w-auto object-contain"
             />
           </div>
 
