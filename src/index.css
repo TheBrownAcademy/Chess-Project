@@ -5,15 +5,27 @@
 @tailwind utilities;
 
 /* ─── Base Reset ─────────────────────────────────────────────────────────── */
-html, body {
+html {
   background-color: #0B1020;
   color: #F8FAFC;
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
   margin: 0;
   padding: 0;
   overflow-x: hidden;
+  overflow-y: auto;
   scroll-behavior: smooth;
   min-height: 100vh;
+}
+
+body {
+  background-color: transparent;
+  color: #F8FAFC;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  margin: 0;
+  padding: 0;
+  min-height: 100vh;
+  overflow-x: hidden;
+  overflow-y: visible;
 }
 
 /* ─── ScrollSmoother Wrapper ─────────────────────────────────────────────── */
@@ -23,31 +35,36 @@ html, body {
 #smooth-wrapper {
   width: 100%;
   min-height: 100vh;
+  overflow: visible;
 }
 
 #smooth-content {
   width: 100%;
+  overflow: visible;
 }
 
 /* ─── Custom Scrollbar ───────────────────────────────────────────── */
 /* Firefox */
-* {
+html, .overflow-y-auto {
   scrollbar-width: thin;
   scrollbar-color: #6366F1 #0f1629;
 }
 
 /* Webkit (Chrome, Edge, Safari) */
-::-webkit-scrollbar {
+html::-webkit-scrollbar,
+.overflow-y-auto::-webkit-scrollbar {
   width: 8px;
   height: 8px;
 }
 
-::-webkit-scrollbar-track {
+html::-webkit-scrollbar-track,
+.overflow-y-auto::-webkit-scrollbar-track {
   background: #0f1629;
   border-radius: 10px;
 }
 
-::-webkit-scrollbar-thumb {
+html::-webkit-scrollbar-thumb,
+.overflow-y-auto::-webkit-scrollbar-thumb {
   background: linear-gradient(180deg, #6366F1 0%, #818CF8 50%, #6366F1 100%);
   border-radius: 10px;
   border: 2px solid #0f1629; /* creates a gap between thumb and track */
@@ -55,13 +72,55 @@ html, body {
   transition: box-shadow 0.2s ease;
 }
 
-::-webkit-scrollbar-thumb:hover {
+html::-webkit-scrollbar-thumb:hover,
+.overflow-y-auto::-webkit-scrollbar-thumb:hover {
   background: linear-gradient(180deg, #818CF8 0%, #a5b4fc 50%, #818CF8 100%);
   box-shadow: 0 0 12px rgba(129, 140, 248, 0.65), 0 0 4px rgba(99, 102, 241, 0.90);
 }
 
-::-webkit-scrollbar-corner {
+html::-webkit-scrollbar-corner,
+.overflow-y-auto::-webkit-scrollbar-corner {
   background: #0f1629;
+}
+
+/* ─── Premium Button Glows ───────────────────────────────────────── */
+.btn-glow-container {
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-glow-accent::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    circle 80px at var(--glow-x, 50%) var(--glow-y, 50%),
+    rgba(255, 255, 255, 0.22) 0%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  opacity: var(--glow-opacity, 0);
+  pointer-events: none;
+  z-index: 10;
+  mix-blend-mode: overlay;
+}
+
+.btn-glow-surface::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    circle 100px at var(--glow-x, 50%) var(--glow-y, 50%),
+    rgba(99, 102, 241, 0.25) 0%,
+    rgba(99, 102, 241, 0) 100%
+  );
+  opacity: var(--glow-opacity, 0);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.btn-glow-surface > * {
+  position: relative;
+  z-index: 1;
 }
 
 /* ─── Keyframe Animations ────────────────────────────────────────────────── */

@@ -6,6 +6,9 @@
 import { useState, useRef } from 'react';
 import { CheckCircle2, ArrowRight, AlertCircle } from 'lucide-react';
 import { useScrollReveal } from '../hooks/useScrollReveal';
+import { useButtonGlow } from '../hooks/useButtonGlow';
+import { useGSAP } from '../hooks/useGSAP';
+import { gsap } from '../utils/gsapConfig';
 
 // Read recipient from environment — never hardcoded
 const RECIPIENT_EMAIL = import.meta.env.VITE_CONTACT_EMAIL as string | undefined;
@@ -19,6 +22,9 @@ export default function ContactSection() {
   const [messageError, setMessageError] = useState('');
   const [status, setStatus] = useState<FormStatus>('idle');
 
+  const ctaSectionRef = useRef<HTMLElement>(null);
+  const submitGlowRef = useButtonGlow<HTMLButtonElement>();
+
   // ScrollTrigger reveal for the section card
   const cardRef = useRef<HTMLDivElement>(null);
   useScrollReveal(cardRef as React.RefObject<Element | null>, {
@@ -26,6 +32,21 @@ export default function ContactSection() {
     duration: 0.9,
     start: 'top 88%',
   });
+
+  useGSAP(() => {
+    const orb = ctaSectionRef.current?.querySelector('.cta-orb');
+    if (orb) {
+      gsap.to(orb, {
+        x: '+=40',
+        y: '-=50',
+        scale: 1.1,
+        duration: 14,
+        ease: 'sine.inOut',
+        repeat: -1,
+        yoyo: true,
+      });
+    }
+  }, ctaSectionRef, []);
 
   const validateEmail = (val: string) => {
     if (!val) return 'Email is required.';
@@ -78,9 +99,9 @@ export default function ContactSection() {
   };
 
   return (
-    <section id="partner-cta" className="py-20 md:py-28 bg-brand-surface relative overflow-hidden">
+    <section ref={ctaSectionRef} id="partner-cta" className="py-20 md:py-28 bg-brand-surface relative overflow-hidden">
       {/* Background glow */}
-      <div className="absolute bottom-0 right-1/4 w-[500px] h-[500px] bg-brand-accent/5 rounded-full blur-[130px] pointer-events-none" />
+      <div className="cta-orb absolute bottom-0 right-1/4 w-[500px] h-[500px] bg-brand-accent/5 rounded-full blur-[130px] pointer-events-none" />
 
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         {/* ref attached here — ScrollTrigger fades this card up on enter */}
@@ -191,9 +212,10 @@ export default function ContactSection() {
 
               {/* Submit button */}
               <button
+                ref={submitGlowRef}
                 type="submit"
                 disabled={status === 'submitting'}
-                className="w-full flex items-center justify-center gap-2 font-sans font-semibold text-sm bg-brand-accent hover:bg-brand-accent/95 text-white py-3.5 rounded-lg transition-all duration-200 shadow-lg shadow-brand-accent/20 disabled:opacity-75 disabled:pointer-events-none"
+                className="w-full flex items-center justify-center gap-2 font-sans font-semibold text-sm bg-brand-accent hover:bg-brand-accent/95 text-white py-3.5 rounded-lg transition-all duration-200 shadow-lg shadow-brand-accent/20 disabled:opacity-75 disabled:pointer-events-none btn-glow-container btn-glow-accent"
               >
                 {status === 'submitting' ? (
                   <>

@@ -17,6 +17,7 @@ import { Chess } from 'chess.js';
 import { ArrowRight } from 'lucide-react';
 import { useGSAP } from '../hooks/useGSAP';
 import { usePerspectiveTilt } from '../hooks/usePerspectiveTilt';
+import { useButtonGlow } from '../hooks/useButtonGlow';
 import { gsap, dur, ease } from '../utils/gsapConfig';
 
 export default function Hero() {
@@ -70,6 +71,9 @@ export default function Hero() {
     floatDuration:   3,
   });
 
+  const primaryGlowRef = useButtonGlow<HTMLAnchorElement>();
+  const secondaryGlowRef = useButtonGlow<HTMLAnchorElement>();
+
   // ── GSAP entrance animations ───────────────────────────────────────────────
   useGSAP(
     () => {
@@ -107,8 +111,31 @@ export default function Hero() {
         0.2  // starts 0.2s after timeline start (parallel with headline)
       );
 
-      // NOTE: Float animation (④) is now handled by usePerspectiveTilt hook.
-      // Desktop → tilt effect (no float). Mobile → gentle translateY yoyo.
+      // ── Background orbs drift ──────────────────────────────────────────
+      const orbA = heroRef.current.querySelector('.hero-orb-a');
+      const orbB = heroRef.current.querySelector('.hero-orb-b');
+      if (orbA) {
+        gsap.to(orbA, {
+          x: '+=60',
+          y: '-=40',
+          scale: 1.15,
+          duration: 16,
+          ease: 'sine.inOut',
+          repeat: -1,
+          yoyo: true,
+        });
+      }
+      if (orbB) {
+        gsap.to(orbB, {
+          x: '-=40',
+          y: '+=60',
+          scale: 0.9,
+          duration: 20,
+          ease: 'sine.inOut',
+          repeat: -1,
+          yoyo: true,
+        });
+      }
     },
     heroRef,
     []
@@ -162,12 +189,12 @@ export default function Hero() {
               className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4"
               style={{ opacity: 0 }}
             >
-              {/* Primary CTA — glow pulse via btn-glow CSS class */}
+              {/* Primary CTA — interactive glow via useButtonGlow */}
               <a
+                ref={primaryGlowRef}
                 href="#interactive-demo"
                 id="hero-cta-primary"
                 className="
-                  btn-glow
                   inline-flex items-center justify-center gap-2
                   font-sans font-semibold text-sm
                   bg-brand-accent hover:bg-brand-accent/95 text-white
@@ -175,6 +202,7 @@ export default function Hero() {
                   transition-all duration-200
                   shadow-xl shadow-brand-accent/20
                   hover:scale-[1.05] active:scale-[0.97]
+                  btn-glow-container btn-glow-accent
                 "
               >
                 Play Demo
@@ -183,6 +211,7 @@ export default function Hero() {
 
               {/* Secondary CTA */}
               <a
+                ref={secondaryGlowRef}
                 href="#partner-cta"
                 id="hero-cta-secondary"
                 className="
@@ -194,6 +223,7 @@ export default function Hero() {
                   transition-all duration-200
                   hover:scale-[1.05] active:scale-[0.97]
                   hover:border-brand-accent/30
+                  btn-glow-container btn-glow-surface
                 "
               >
                 Become a Partner

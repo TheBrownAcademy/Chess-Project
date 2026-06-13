@@ -6,6 +6,7 @@ import { parseUciMove, getGameOverReason } from '../utils/chessHelpers';
 import { DIFFICULTY_CONFIGS, type DifficultyLevel } from '../types/chess';
 import { RotateCcw, Sparkles, AlertCircle, ArrowRightLeft, Info } from 'lucide-react';
 import { useScrollReveal } from '../hooks/useScrollReveal';
+import { useButtonGlow } from '../hooks/useButtonGlow';
 
 export default function ProductDemo() {
   // ─── ROOT CAUSE OF SCROLL BUG ─────────────────────────────────────────────
@@ -23,6 +24,9 @@ export default function ProductDemo() {
   const [difficulty, setDifficulty] = useState<DifficultyLevel>(3);
   const [showAnalysisHint, setShowAnalysisHint] = useState(false);
   const [gameOverReason, setGameOverReason] = useState<string | null>(null);
+
+  const playAgainGlowRef = useButtonGlow<HTMLButtonElement>();
+  const analyzeGlowRef = useButtonGlow<HTMLButtonElement>();
 
   const {
     evaluation,
@@ -247,8 +251,9 @@ export default function ProductDemo() {
                       <p className="text-sm text-brand-secondary mt-1">{gameOverReason}</p>
                     </div>
                     <button
+                      ref={playAgainGlowRef}
                       onClick={handleReset}
-                      className="flex items-center gap-2 px-5 py-2.5 bg-brand-accent hover:bg-brand-accent/90 text-white rounded-lg text-sm font-semibold transition-colors duration-200"
+                      className="flex items-center gap-2 px-5 py-2.5 bg-brand-accent hover:bg-brand-accent/90 text-white rounded-lg text-sm font-semibold transition-colors duration-200 btn-glow-container btn-glow-accent"
                     >
                       <RotateCcw className="w-4 h-4" />
                       Play Again
@@ -400,9 +405,10 @@ export default function ProductDemo() {
               {/* Analyze */}
               <div className="space-y-3 pt-2">
                 <button
+                  ref={analyzeGlowRef}
                   onClick={handleAnalyze}
                   disabled={!!gameOverReason || isThinking}
-                  className="w-full flex items-center justify-center gap-2 font-sans font-semibold text-sm bg-brand-surface hover:bg-brand-surface/80 border border-brand-border hover:border-brand-accent/50 text-white py-3 rounded-lg transition-all duration-200 disabled:opacity-50 disabled:pointer-events-none"
+                  className="w-full flex items-center justify-center gap-2 font-sans font-semibold text-sm bg-brand-surface hover:bg-brand-surface/80 border border-brand-border hover:border-brand-accent/50 text-white py-3 rounded-lg transition-all duration-200 disabled:opacity-50 disabled:pointer-events-none btn-glow-container btn-glow-surface"
                 >
                   <Sparkles className="w-4 h-4 text-brand-accent" />
                   Analyze Position

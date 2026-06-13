@@ -13,6 +13,7 @@ import { useState, useRef } from 'react';
 import { Menu, X } from 'lucide-react';
 import { useNavbarAnimation } from '../hooks/useNavbarAnimation';
 import { useLogoAnimation } from '../hooks/useLogoAnimation';
+import { useButtonGlow } from '../hooks/useButtonGlow';
 
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
@@ -23,6 +24,9 @@ export default function Navbar() {
 
   // Full premium logo animation (interpolate + quickTo + float + dance)
   const { containerRef, logoRef } = useLogoAnimation();
+
+  // Button interactive hover glow
+  const ctaGlowRef = useButtonGlow<HTMLAnchorElement>();
 
   const navLinks = [
     { name: 'Why ChessCraft', href: '#why-ownership' },
@@ -95,6 +99,7 @@ export default function Navbar() {
             </a>
             {/* Primary CTA — scale + glow on hover via Tailwind */}
             <a
+              ref={ctaGlowRef}
               href="#partner-cta"
               id="navbar-cta-btn"
               className="
@@ -105,6 +110,7 @@ export default function Navbar() {
                 shadow-lg shadow-brand-accent/20
                 hover:scale-[1.03] hover:shadow-brand-accent/40
                 active:scale-[0.97]
+                btn-glow-container btn-glow-accent
               "
             >
               Become a Partner
