@@ -27,25 +27,41 @@ html, body {
 
 #smooth-content {
   width: 100%;
-  /* Custom scrollbar for when ScrollSmoother takes over */
-  scrollbar-width: thin;
-  scrollbar-color: #1F2937 #0B1020;
 }
 
-/* ─── Custom Scrollbar (Webkit) ──────────────────────────────────────────── */
-#smooth-content::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+/* ─── Custom Scrollbar ───────────────────────────────────────────── */
+/* Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #6366F1 #0f1629;
 }
-#smooth-content::-webkit-scrollbar-track {
-  background: #0B1020;
+
+/* Webkit (Chrome, Edge, Safari) */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
 }
-#smooth-content::-webkit-scrollbar-thumb {
-  background: #1F2937;
-  border-radius: 3px;
+
+::-webkit-scrollbar-track {
+  background: #0f1629;
+  border-radius: 10px;
 }
-#smooth-content::-webkit-scrollbar-thumb:hover {
-  background: #374151;
+
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #6366F1 0%, #818CF8 50%, #6366F1 100%);
+  border-radius: 10px;
+  border: 2px solid #0f1629; /* creates a gap between thumb and track */
+  box-shadow: 0 0 6px rgba(99, 102, 241, 0.40);
+  transition: box-shadow 0.2s ease;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, #818CF8 0%, #a5b4fc 50%, #818CF8 100%);
+  box-shadow: 0 0 12px rgba(129, 140, 248, 0.65), 0 0 4px rgba(99, 102, 241, 0.90);
+}
+
+::-webkit-scrollbar-corner {
+  background: #0f1629;
 }
 
 /* ─── Keyframe Animations ────────────────────────────────────────────────── */

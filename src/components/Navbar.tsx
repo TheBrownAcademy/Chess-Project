@@ -10,13 +10,40 @@
 import { useState, useRef } from 'react';
 import { Menu, X } from 'lucide-react';
 import { useNavbarAnimation } from '../hooks/useNavbarAnimation';
+import { gsap } from '../utils/gsapConfig';
 
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
-  const navRef = useRef<HTMLElement>(null);
+  const navRef   = useRef<HTMLElement>(null);
+  const logoRef  = useRef<HTMLImageElement>(null);
 
   // Attach entrance + hide/show scroll animation
   useNavbarAnimation(navRef as React.RefObject<HTMLElement | null>);
+
+  // ── Logo hover handlers ──────────────────────────────────────────────────
+  function onLogoEnter() {
+    if (!logoRef.current) return;
+    gsap.to(logoRef.current, {
+      scale: 1.08,
+      y: -2,
+      filter: 'drop-shadow(0 0 10px rgba(99,102,241,0.55)) drop-shadow(0 4px 12px rgba(99,102,241,0.30))',
+      duration: 0.35,
+      ease: 'back.out(2)',
+      overwrite: 'auto',
+    });
+  }
+
+  function onLogoLeave() {
+    if (!logoRef.current) return;
+    gsap.to(logoRef.current, {
+      scale: 1,
+      y: 0,
+      filter: 'drop-shadow(0 0 0px rgba(99,102,241,0))',
+      duration: 0.4,
+      ease: 'power2.out',
+      overwrite: 'auto',
+    });
+  }
 
   const navLinks = [
     { name: 'Why ChessCraft', href: '#why-ownership' },
@@ -36,12 +63,18 @@ export default function Navbar() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16 sm:h-20">
 
-          {/* Logo */}
+          {/* Logo — GSAP hover: scale + glow spring */}
           <div className="flex items-center gap-2">
             <img
+              ref={logoRef}
               src="/logo.png"
               alt="XLChess logo"
-              className="h-10 sm:h-12 w-auto object-contain"
+              id="navbar-logo"
+              className="h-10 sm:h-12 w-auto object-contain cursor-pointer select-none"
+              style={{ willChange: 'transform, filter', transformOrigin: 'center center' }}
+              onMouseEnter={onLogoEnter}
+              onMouseLeave={onLogoLeave}
+              onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
             />
           </div>
 
