@@ -1,6 +1,6 @@
 /**
  * Hero.tsx
- * Landing hero section with premium GSAP animations:
+ * Landing hero section with premium GSAP animations and chess puzzle.
  *
  * Animations:
  *   ① Logo — fade-down entrance
@@ -10,52 +10,19 @@
  *   ⑤ Chessboard float — mobile only: infinite y:-8px yoyo (handled by usePerspectiveTilt)
  *   ⑥ Background orbs — CSS keyframe float (no GSAP, pure composited GPU layer)
  *   ⑦ Perspective tilt — desktop: cursor-driven 3D tilt via usePerspectiveTilt hook
+ *   ⑧ Ambient board glow + floating particles (new)
+ *   ⑨ Mouse parallax on particles (new)
  */
 
-import { useState, useRef } from 'react';
-import { Chessboard } from 'react-chessboard';
-import { Chess } from 'chess.js';
+import { useRef } from 'react';
 import { ArrowRight } from 'lucide-react';
 import { useGSAP } from '../hooks/useGSAP';
 import { usePerspectiveTilt } from '../hooks/usePerspectiveTilt';
 import { useButtonGlow } from '../hooks/useButtonGlow';
 import { gsap, dur, ease } from '../utils/gsapConfig';
-
-// ── Board colours (same as ProductDemo) ────────────────────────────────────
-const BOARD_DARK  = '#769656';   // Tournament green
-const BOARD_LIGHT = '#EEEED2';   // Off-white / cream
+import HeroPuzzle from './HeroPuzzle';
 
 export default function Hero() {
-  // ── Chess logic (unchanged) ──────────────────────────────────────────────
-  const gameRef = useRef(new Chess());
-  const [gameFen, setGameFen] = useState(() => gameRef.current.fen());
-
-  function makeAMove(move: Parameters<Chess['move']>[0]) {
-    try {
-      const result = gameRef.current.move(move);
-      setGameFen(gameRef.current.fen());
-      return result;
-    } catch {
-      return null;
-    }
-  }
-
-  function onDrop(sourceSquare: string, targetSquare: string | null) {
-    if (!targetSquare) return false;
-    const move = makeAMove({ from: sourceSquare, to: targetSquare, promotion: 'q' });
-    if (move === null) return false;
-
-    setTimeout(() => {
-      const game = gameRef.current;
-      const possibleMoves = game.moves();
-      if (!game.isGameOver() && possibleMoves.length > 0) {
-        makeAMove(possibleMoves[Math.floor(Math.random() * possibleMoves.length)]);
-      }
-    }, 450);
-
-    return true;
-  }
-
   // ── Animation refs ────────────────────────────────────────────────────────
   const heroRef     = useRef<HTMLElement>(null);
   const logoRef     = useRef<HTMLImageElement>(null);
@@ -67,7 +34,7 @@ export default function Hero() {
 
   // ── Perspective tilt hook (manages its own ref) ────────────────────────────
   const tiltRef = usePerspectiveTilt<HTMLDivElement>({
-    maxRotate:       8,
+    maxRotate:       6,
     scalePeak:       1.02,
     quickToDuration: 0.4,
     quickToEase:     'power3.out',
@@ -147,6 +114,20 @@ export default function Hero() {
           yoyo: true,
         });
       }
+
+      // ── Third ambient orb (new — soft gold behind board) ──────────────
+      const orbC = heroRef.current.querySelector('.hero-orb-c');
+      if (orbC) {
+        gsap.to(orbC, {
+          x: '+=30',
+          y: '-=20',
+          scale: 1.1,
+          duration: 12,
+          ease: 'sine.inOut',
+          repeat: -1,
+          yoyo: true,
+        });
+      }
     },
     heroRef,
     []
@@ -164,6 +145,11 @@ export default function Hero() {
       />
       <div
         className="hero-orb-b absolute top-10 right-10 w-[300px] h-[300px] bg-indigo-500/5 rounded-full blur-[90px] pointer-events-none"
+        aria-hidden="true"
+      />
+      {/* ── New: soft amber/gold ambient glow behind board area ────────────── */}
+      <div
+        className="hero-orb-c absolute bottom-0 right-1/4 w-[400px] h-[400px] bg-violet-500/4 rounded-full blur-[100px] pointer-events-none"
         aria-hidden="true"
       />
 
@@ -229,12 +215,13 @@ export default function Hero() {
                 "
               >
                 Play Demo
-                <ArrowRight className="w-4 h-4" />
+                {/* Arrow with slide micro-animation on hover */}
+                <ArrowRight className="w-4 h-4 transition-transform duration-200 group-hover:translate-x-1" />
               </a>
             </div>
           </div>
 
-          {/* ── Chessboard Column ──────────────────────────────────────────── */}
+          {/* ── Chessboard / Puzzle Column ──────────────────────────────────── */}
           {/*
             perspective is set on the PARENT so 3D child transforms render correctly.
             transformStyle: preserve-3d propagates depth through nested elements.
@@ -261,28 +248,22 @@ export default function Hero() {
                 willChange: 'transform, filter',
               }}
             >
+              {/*
+                Board card — wraps HeroPuzzle, which owns:
+                - puzzle board + state machine
+                - move counter
+                - notation panel
+                - Solve + Reset buttons
+                - confetti trigger
+                - board glow animation
+              */}
               <div
-                className="bg-brand-surface border border-brand-border rounded-xl shadow-2xl overflow-hidden"
+                className="bg-brand-surface border border-brand-border rounded-xl shadow-2xl overflow-hidden hero-board-card"
                 style={{ transformStyle: 'preserve-3d' }}
               >
                 {/* Board Area */}
                 <div className="p-4 bg-brand-surface">
-                  <div className="aspect-square rounded-lg overflow-hidden">
-                    <Chessboard
-                      options={{
-                        position: gameFen,
-                        onPieceDrop: ({ sourceSquare, targetSquare }) =>
-                          onDrop(sourceSquare, targetSquare),
-                        darkSquareStyle:  { backgroundColor: BOARD_DARK },
-                        lightSquareStyle: { backgroundColor: BOARD_LIGHT },
-                        boardStyle: {
-                          borderRadius: '4px',
-                          boxShadow: '0 8px 24px rgba(0, 0, 0, 0.6)',
-                        },
-                        showNotation: false,
-                      }}
-                    />
-                  </div>
+                  <HeroPuzzle />
                 </div>
               </div>
             </div>

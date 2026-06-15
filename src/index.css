@@ -250,7 +250,339 @@ html::-webkit-scrollbar-corner,
   .hero-orb-a,
   .hero-orb-b,
   .btn-glow,
-  .board-float-anim {
+  .board-float-anim,
+  .hero-particle {
     animation: none !important;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════ */
+/* ── PUZZLE & PREMIUM BOARD ANIMATIONS (new — non-breaking additions) ────── */
+/* ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ── Piece hover lift effect ─────────────────────────────────────────────── */
+/* Targets the draggable piece wrappers inside react-chessboard               */
+[data-testid^="piece-"] {
+  transition: transform 100ms ease-out, filter 100ms ease-out;
+  cursor: grab;
+}
+[data-testid^="piece-"]:hover {
+  transform: translateY(-3px) scale(1.08);
+  filter: drop-shadow(0 6px 12px rgba(99, 102, 241, 0.45));
+  z-index: 100;
+}
+[data-testid^="piece-"]:active {
+  cursor: grabbing;
+  transform: translateY(-6px) scale(1.12);
+  filter: drop-shadow(0 10px 20px rgba(99, 102, 241, 0.6));
+}
+
+/* ── Smooth piece slide animation (Chessboard animationDuration prop)       */
+/* The react-chessboard library injects inline transition on move — this     */
+/* ensures it uses our preferred easing curve.                               */
+.chess-piece-transition {
+  transition: transform 280ms cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+/* ── Board card ambient glow ring ────────────────────────────────────────── */
+.hero-board-card {
+  position: relative;
+}
+.hero-board-card::before {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: 13px;
+  background: linear-gradient(
+    135deg,
+    rgba(99, 102, 241, 0.2) 0%,
+    rgba(139, 92, 246, 0.1) 50%,
+    rgba(99, 102, 241, 0.05) 100%
+  );
+  pointer-events: none;
+  z-index: 0;
+  animation: board-ring-pulse 4s ease-in-out infinite;
+}
+
+@keyframes board-ring-pulse {
+  0%, 100% { opacity: 0.6; }
+  50%       { opacity: 1;   }
+}
+
+/* ── Floating micro-particles behind the board ───────────────────────────── */
+.hero-particles {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+  z-index: 0;
+}
+
+.hero-particle {
+  position: absolute;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(99, 102, 241, 0.7), transparent 70%);
+  animation: particle-float linear infinite;
+  opacity: 0;
+}
+
+/* Individual particle sizes and positions */
+.hero-particle-1 { width: 4px;  height: 4px;  left: 10%;  top: 80%; animation-duration: 8s;  animation-delay: 0s;    }
+.hero-particle-2 { width: 3px;  height: 3px;  left: 25%;  top: 90%; animation-duration: 10s; animation-delay: 1.2s;  }
+.hero-particle-3 { width: 5px;  height: 5px;  left: 40%;  top: 85%; animation-duration: 7s;  animation-delay: 0.5s;  }
+.hero-particle-4 { width: 3px;  height: 3px;  left: 60%;  top: 92%; animation-duration: 12s; animation-delay: 2s;    }
+.hero-particle-5 { width: 4px;  height: 4px;  left: 75%;  top: 88%; animation-duration: 9s;  animation-delay: 0.8s;  }
+.hero-particle-6 { width: 2px;  height: 2px;  left: 88%;  top: 78%; animation-duration: 11s; animation-delay: 3s;    }
+.hero-particle-7 { width: 3px;  height: 3px;  left: 50%;  top: 95%; animation-duration: 8.5s;animation-delay: 1.7s;  }
+.hero-particle-8 { width: 4px;  height: 4px;  left: 15%;  top: 70%; animation-duration: 13s; animation-delay: 0.3s;  }
+
+@keyframes particle-float {
+  0%   { transform: translateY(0)   translateX(0);   opacity: 0;    }
+  10%  { opacity: 0.8; }
+  90%  { opacity: 0.5; }
+  100% { transform: translateY(-120px) translateX(20px); opacity: 0; }
+}
+
+/* ── Puzzle solved badge entrance animation ──────────────────────────────── */
+@keyframes puzzle-solved-pop {
+  0%   { opacity: 0; transform: scale(0.7) translateY(10px); }
+  60%  { transform: scale(1.08) translateY(-2px); }
+  100% { opacity: 1; transform: scale(1) translateY(0); }
+}
+.animate-puzzle-solved {
+  animation: puzzle-solved-pop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+/* ── Move trail highlight (subtle yellow glow on last-move squares) ──────── */
+@keyframes square-highlight-fade {
+  0%   { opacity: 0.9; }
+  100% { opacity: 0.45; }
+}
+
+/* ── Checkmate flash effect ──────────────────────────────────────────────── */
+@keyframes checkmate-flash {
+  0%, 100% { box-shadow: 0 0 0px 0px rgba(99, 102, 241, 0); }
+  25%       { box-shadow: 0 0 40px 12px rgba(99, 102, 241, 0.6); }
+  75%       { box-shadow: 0 0 60px 20px rgba(139, 92, 246, 0.5); }
+}
+.board-checkmate-flash {
+  animation: checkmate-flash 0.8s ease-in-out;
+}
+
+/* ── Soft board fade-in on page load ─────────────────────────────────────── */
+@keyframes board-fade-in {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Move counter badge pulse when it updates ────────────────────────────── */
+@keyframes counter-update-pulse {
+  0%   { transform: scale(1); }
+  40%  { transform: scale(1.18); }
+  100% { transform: scale(1); }
+}
+.counter-pulse {
+  animation: counter-update-pulse 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* ── Notation entry slide-in ─────────────────────────────────────────────── */
+@keyframes notation-slide-in {
+  from { opacity: 0; transform: translateX(-6px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+.notation-entry {
+  animation: notation-slide-in 0.2s ease-out forwards;
+}
+
+/* ── Legal move dot indicators ───────────────────────────────────────────── */
+.legal-move-dot {
+  width: 30%;
+  height: 30%;
+  border-radius: 50%;
+  background: rgba(99, 102, 241, 0.55);
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  animation: legal-dot-pulse 1.5s ease-in-out infinite;
+}
+@keyframes legal-dot-pulse {
+  0%, 100% { opacity: 0.6; transform: translate(-50%, -50%) scale(1);    }
+  50%       { opacity: 1;   transform: translate(-50%, -50%) scale(1.12); }
+}
+
+/* ── Premium solve button (reuses existing btn-glow-surface, extra flair) ── */
+.solve-btn-active {
+  background: linear-gradient(135deg, rgba(99,102,241,0.15), rgba(139,92,246,0.10));
+  border-color: rgba(99, 102, 241, 0.45) !important;
+  color: #a5b4fc !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════ */
+/* ── PREMIUM BOARD UPGRADES — Phase 2                                    ──  */
+/* ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ── 2. Dynamic cursor-following glow ──────────────────────────────────────
+   CSS vars --glow-x, --glow-y, --glow-opacity are set by useBoardCursorGlow.
+   The radial gradient follows the cursor in real-time at 60fps.             */
+.board-cursor-glow {
+  position: relative;
+  isolation: isolate;
+}
+.board-cursor-glow::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: radial-gradient(
+    circle 160px at var(--glow-x, 50%) var(--glow-y, 50%),
+    rgba(99, 102, 241, 0.18) 0%,
+    rgba(139, 92, 246, 0.08) 45%,
+    rgba(99, 102, 241, 0)    100%
+  );
+  opacity: var(--glow-opacity, 0);
+  /* CRITICAL: must never intercept pointer events */
+  pointer-events: none;
+  /* Keep below the SVG trail overlay (z-index 20) and overlays (z-index 30+) */
+  z-index: 10;
+  /* Mix-blend ensures the glow sits above the board without obscuring pieces */
+  mix-blend-mode: screen;
+  transition: opacity 0.3s ease;
+  /* GPU compositing — no layout impact */
+  will-change: opacity;
+}
+
+/* Mobile ambient pulse fallback — used when --glow-opacity cycles via GSAP */
+@media (hover: none) {
+  .board-cursor-glow::after {
+    /* Slightly larger radius for mobile ambient effect */
+    background: radial-gradient(
+      circle 200px at 50% 50%,
+      rgba(99, 102, 241, 0.12) 0%,
+      rgba(99, 102, 241, 0)    100%
+    );
+  }
+}
+
+/* ── 6. CHECKMATE impact overlay badge ─────────────────────────────────────  */
+.checkmate-overlay-badge {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 16px 32px;
+  border-radius: 16px;
+  background: linear-gradient(
+    135deg,
+    rgba(15, 15, 30, 0.96) 0%,
+    rgba(30, 20, 60, 0.96) 100%
+  );
+  border: 1px solid rgba(99, 102, 241, 0.6);
+  box-shadow:
+    0 0 0 1px rgba(139, 92, 246, 0.3),
+    0 8px 40px rgba(99, 102, 241, 0.5),
+    0 0 80px rgba(99, 102, 241, 0.2);
+  backdrop-filter: blur(12px);
+}
+
+.checkmate-text {
+  font-family: 'Inter', system-ui, sans-serif;
+  font-weight: 900;
+  font-size: clamp(1.4rem, 4vw, 2rem);
+  letter-spacing: 0.18em;
+  color: transparent;
+  background: linear-gradient(135deg, #a5b4fc 0%, #818CF8 40%, #FFD700 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  text-shadow: none;
+  line-height: 1;
+}
+
+/* ── 6b. King square pulse animation (CSS for customSquareStyle injection) ─ */
+@keyframes king-pulse {
+  0%, 100% {
+    background-color: rgba(239, 68, 68, 0.3);
+    box-shadow: inset 0 0 10px rgba(239, 68, 68, 0.5);
+  }
+  50% {
+    background-color: rgba(239, 68, 68, 0.65);
+    box-shadow: inset 0 0 28px rgba(239, 68, 68, 0.9), 0 0 20px rgba(239, 68, 68, 0.4);
+  }
+}
+
+/* ── 1. Smooth board entrance animation ────────────────────────────────────
+   Driven by GSAP in useLayoutEffect — this class is added on initial mount.
+   Defined here for fallback if GSAP doesn't fire (e.g., SSR).              */
+@keyframes board-entrance {
+  from {
+    opacity: 0;
+    transform: translateY(18px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+.board-entrance-anim {
+  animation: board-entrance 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.6s both;
+}
+
+/* ── 4. Premium piece travel: make the Chessboard library's built-in        */
+/*    piece transition use our easing (animationDuration=280 sets duration). */
+/*    This targets the ghost/travel element the library uses.                */
+[class*="piece-"] {
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+/* ── 3. Move trail SVG — ensure it renders above board squares, below UI ── */
+/* (z-index set inline on the SVG element — this is for safety)              */
+.board-trail-svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 20;
+}
+
+/* ── Piece lift refinement (upgrade from previous rule) ────────────────────
+   Use :where() to lower specificity so the library can still override.      */
+:where([data-testid^="piece-"]) {
+  transition: transform 120ms ease-out, filter 120ms ease-out;
+  cursor: grab;
+  will-change: transform;
+}
+:where([data-testid^="piece-"]):hover {
+  transform: translateY(-4px) scale(1.1) !important;
+  filter: drop-shadow(0 8px 16px rgba(99, 102, 241, 0.5));
+  z-index: 100;
+}
+:where([data-testid^="piece-"]):active {
+  cursor: grabbing;
+  transform: translateY(-8px) scale(1.15) !important;
+  filter: drop-shadow(0 12px 24px rgba(99, 102, 241, 0.65));
+}
+
+/* ── 7. 60fps guarantee — force GPU compositing on all moving elements ───── */
+.board-cursor-glow,
+.board-cursor-glow > *,
+.hero-board-card {
+  will-change: transform;
+}
+
+/* ── Reduced motion: disable all new additions ─────────────────────────────  */
+@media (prefers-reduced-motion: reduce) {
+  .board-cursor-glow::after,
+  .checkmate-overlay-badge,
+  .board-entrance-anim,
+  [class*="piece-"] {
+    animation: none !important;
+    transition: none !important;
+  }
+  :where([data-testid^="piece-"]):hover,
+  :where([data-testid^="piece-"]):active {
+    transform: none !important;
+    filter: none !important;
   }
 }
