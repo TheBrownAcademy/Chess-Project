@@ -1,23 +1,19 @@
-/**
- * useConfetti.ts
- *
- * Confetti state management hook.
- * Integrates with @tsparticles/react and @tsparticles/preset-confetti-cannon.
- */
-
-import { useState, useCallback } from 'react';
+import { useCallback } from 'react';
+import confetti from 'canvas-confetti';
 import { prefersReducedMotion } from '../utils/gsapConfig';
 
 export function useConfetti() {
-  const [showConfetti, setShowConfetti] = useState(false);
-
-  const triggerConfetti = useCallback(() => {
+  const fireConfetti = useCallback(() => {
     if (prefersReducedMotion()) return;
-    setShowConfetti(true);
-    setTimeout(() => {
-      setShowConfetti(false);
-    }, 2500); // 2.5 seconds is enough for the 2-second confetti burst and fade-out
+    confetti({
+      particleCount: 150,
+      spread: 90,
+      startVelocity: 45,
+      origin: { y: 0.6 },
+      colors: ['#6366F1', '#818CF8', '#FFD700', '#FFFFFF'],
+      zIndex: 9999,
+    });
   }, []);
 
-  return { showConfetti, triggerConfetti };
+  return { fireConfetti };
 }

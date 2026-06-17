@@ -38,7 +38,6 @@ import { Chess } from 'chess.js';
 import { RotateCcw, Play, Trophy, AlertTriangle, ChevronRight, Zap } from 'lucide-react';
 import { useConfetti } from '../hooks/useConfetti';
 import { useBoardCursorGlow } from '../hooks/useBoardCursorGlow';
-import Particles from '@tsparticles/react';
 import { useMoveTrail } from '../hooks/useMoveTrail';
 import { gsap } from '../utils/gsapConfig';
 import { prefersReducedMotion } from '../utils/gsapConfig';
@@ -79,8 +78,7 @@ type PuzzlePhase =
 type CheckmateImpact = 'none' | 'flashing' | 'overlay' | 'done';
 
 export default function HeroPuzzle() {
-  const { showConfetti, triggerConfetti } = useConfetti();
-  const [confettiOrigin, setConfettiOrigin] = useState({ x: 50, y: 35 });
+  const { fireConfetti } = useConfetti();
   const glowRef                       = useBoardCursorGlow<HTMLDivElement>();
   const { svgRef, showTrail, clearTrail } = useMoveTrail();
   const { activeAnnotation, triggerAnnotation, clearAnnotation } = useMoveAnnotation();
@@ -235,17 +233,11 @@ export default function HeroPuzzle() {
 
     // Brief hold on the CHECKMATE text, then transition to puzzle-solved state
     await new Promise(r => setTimeout(r, 900));
-    if (boardInnerRef.current) {
-      const rect = boardInnerRef.current.getBoundingClientRect();
-      const originX = (rect.left + rect.width / 2) / window.innerWidth;
-      const originY = (rect.top + rect.height / 2) / window.innerHeight;
-      setConfettiOrigin({ x: originX * 100, y: originY * 100 });
-    }
-    triggerConfetti();
+    fireConfetti();
     setCheckmateImpact('done');
     setPhase('solved');
     setMovesLeft(0);
-  }, [runCheckmateImpact, triggerConfetti]);
+  }, [runCheckmateImpact, fireConfetti]);
 
   // ══════════════════════════════════════════════════════════════════════════
   // onDrop — user drags a piece
@@ -727,91 +719,7 @@ export default function HeroPuzzle() {
         </button>
       </div>
 
-      {showConfetti && (
-        <Particles
-          id="tsparticles-confetti"
-          options={{
-            preset: 'confetti-cannon',
-            fullScreen: { enable: true, zIndex: 9999 },
-            detectRetina: true,
-            interactivity: {
-              events: {
-                onClick: { enable: false },
-                onHover: { enable: false },
-              },
-            },
-            emitters: {
-              life: {
-                count: 1,
-                duration: 0.1,
-                delay: 0,
-              },
-              rate: {
-                quantity: 150,
-                delay: 0,
-              },
-              position: confettiOrigin,
-            },
-            particles: {
-              color: {
-                value: [
-                  '#6366F1',
-                  '#818CF8',
-                  '#FFD700',
-                  '#FFFFFF',
-                ],
-              },
-              move: {
-                decay: 0.05,
-                direction: 'top' as const,
-                enable: true,
-                gravity: {
-                  enable: true,
-                  acceleration: 10,
-                },
-                outModes: { default: 'destroy' as const },
-                speed: { min: 10, max: 50 },
-              },
-              number: { value: 0 },
-              opacity: {
-                value: 1,
-                animation: {
-                  enable: true,
-                  minimumValue: 0,
-                  speed: 0.5,
-                  startValue: 'max' as const,
-                  destroy: 'min' as const,
-                  sync: true,
-                },
-              },
-              rotate: {
-                value: { min: 0, max: 360 },
-                direction: 'random' as const,
-                animation: { enable: true, speed: 60 },
-              },
-              tilt: {
-                direction: 'random' as const,
-                enable: true,
-                value: { min: 0, max: 360 },
-                animation: { enable: true, speed: 60 },
-              },
-              size: { value: { min: 4, max: 8 } },
-              wobble: {
-                distance: 30,
-                enable: true,
-                speed: { min: -10, max: 10 },
-              },
-              life: {
-                count: 1,
-                duration: { sync: true, value: 2 },
-              },
-              shape: {
-                type: ['circle', 'square'],
-              },
-            },
-          }}
-        />
-      )}
+
     </div>
   );
 }
