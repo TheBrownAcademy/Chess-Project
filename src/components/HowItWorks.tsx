@@ -50,7 +50,7 @@ export default function HowItWorks() {
   ];
 
   return (
-    <section id="how-it-works" className="py-20 md:py-28 bg-brand-surface border-b border-brand-border">
+    <section id="how-it-works" className="py-20 md:py-28 bg-brand-surface">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 
         {/* Section Header */}

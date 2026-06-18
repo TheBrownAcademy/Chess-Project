@@ -51,7 +51,7 @@ export default function Features() {
     <section
       ref={sectionRef}
       id="why-ownership"
-      className="py-20 bg-brand-surface border-y border-brand-border"
+      className="py-20 bg-brand-surface"
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 

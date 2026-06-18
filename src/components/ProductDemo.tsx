@@ -356,7 +356,7 @@ export default function ProductDemo() {
             </div>
 
             {/* ── Col 3: Control Panel ─────────────────────────────────────── */}
-            <div className="lg:col-span-4 flex flex-col gap-5">
+            <div className="lg:col-span-4 flex flex-col justify-between gap-6 h-full">
 
               {/* ── Toolbar ───────────────────────────────────── */}
               <div className="grid grid-cols-5 gap-2">
@@ -445,10 +445,10 @@ export default function ProductDemo() {
               </div>
 
               {/* ── Move History ──────────────────────────────────────────── */}
-              <div className="flex-1 flex flex-col justify-start min-h-[140px] text-left">
+              <div className="flex-1 flex flex-col justify-start text-left lg:mb-8 min-h-[220px]">
                 <div
                   ref={moveHistoryContainerRef}
-                  className="flex-1 overflow-y-auto max-h-44 border border-brand-border/60 rounded-lg p-3 bg-brand-bg/40 font-mono text-sm space-y-1 move-history-scroll"
+                  className="flex-1 overflow-y-auto border border-brand-border/60 rounded-lg p-3 bg-brand-bg/40 font-mono text-sm space-y-1 move-history-scroll"
                 >
                   {movePairs.length === 0 ? (
                     <div className="text-brand-secondary/60 text-xs text-center py-10">

@@ -19,14 +19,14 @@ import { ArrowRight } from 'lucide-react';
 import { useGSAP } from '../hooks/useGSAP';
 import { usePerspectiveTilt } from '../hooks/usePerspectiveTilt';
 import { useButtonGlow } from '../hooks/useButtonGlow';
-import { useLogoAnimation } from '../hooks/useLogoAnimation';
 import { gsap, dur, ease } from '../utils/gsapConfig';
 import HeroPuzzle from './HeroPuzzle';
 
 export default function Hero() {
   // ── Animation refs ────────────────────────────────────────────────────────
   const heroRef     = useRef<HTMLElement>(null);
-  const { containerRef: heroLogoContainerRef, logoRef: heroLogoRef } = useLogoAnimation();
+  const heroLogoContainerRef = useRef<HTMLDivElement>(null);
+  const heroLogoRef = useRef<HTMLImageElement>(null);
   const line1Ref    = useRef<HTMLSpanElement>(null);
   const line2Ref    = useRef<HTMLSpanElement>(null);
   const subtitleRef = useRef<HTMLParagraphElement>(null);
@@ -163,17 +163,16 @@ export default function Hero() {
             {/* Logo above heading */}
             <div
               ref={heroLogoContainerRef}
-              className="flex items-center cursor-pointer select-none"
-              style={{ opacity: 0, perspective: '600px' }}
+              className="flex items-center select-none"
+              style={{ opacity: 0 }}
             >
               <img
                 ref={heroLogoRef}
                 src="/logo.png"
                 alt="XLChess logo"
-                className="h-[72px] sm:h-[83px] w-auto object-contain"
+                className="w-[75px] sm:w-[85px] h-auto object-contain"
                 style={{
-                  willChange: 'transform, filter',
-                  transformStyle: 'preserve-3d',
+                  willChange: 'transform',
                   transformOrigin: 'center center',
                 }}
                 draggable={false}
@@ -223,7 +222,7 @@ export default function Hero() {
                   btn-glow-container btn-glow-accent cta-shine
                 "
               >
-                Play Demo
+                Play
                 {/* Arrow with slide micro-animation on hover */}
                 <ArrowRight className="w-4 h-4 transition-transform duration-200 group-hover:translate-x-1" />
               </a>

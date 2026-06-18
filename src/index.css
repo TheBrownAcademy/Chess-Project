@@ -15,7 +15,7 @@
     and produces two scrollbars at the right edge of the viewport.
 */
 html {
-  background-color: #050B1D;
+  background-color: #081532;
   color: #F8FAFC;
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
   margin: 0;
@@ -66,7 +66,7 @@ html::-webkit-scrollbar,
 
 html::-webkit-scrollbar-track,
 .overflow-y-auto::-webkit-scrollbar-track {
-  background: #050B1D;
+  background: #081532;
   border-radius: 10px;
 }
 
@@ -87,7 +87,7 @@ html::-webkit-scrollbar-thumb:hover,
 
 html::-webkit-scrollbar-corner,
 .overflow-y-auto::-webkit-scrollbar-corner {
-  background: #050B1D;
+  background: #081532;
 }
 
 /* ─── Move History Scrollbar — High-Contrast ─────────────────── */
@@ -103,7 +103,7 @@ html::-webkit-scrollbar-corner,
 }
 
 .move-history-scroll::-webkit-scrollbar-track {
-  background: #050B1D;
+  background: #081532;
   border-radius: 4px;
 }
 
@@ -121,7 +121,7 @@ html::-webkit-scrollbar-corner,
 }
 
 .move-history-scroll::-webkit-scrollbar-corner {
-  background: #050B1D;
+  background: #081532;
 }
 
 /* ─── Popover Fade-In ─────────────────────────────────────────── */
@@ -478,13 +478,13 @@ html::-webkit-scrollbar-corner,
   justify-content: center;
   padding: 16px 32px;
   border-radius: 16px;
-  background: rgba(24, 24, 45, 0.55);
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(55, 55, 55, 0.45);
+  border: 1px solid rgba(255, 255, 255, 0.15);
   box-shadow:
     0 0 0 1px rgba(139, 92, 246, 0.3),
     0 8px 40px rgba(99, 102, 241, 0.5),
     0 0 80px rgba(99, 102, 241, 0.2);
-  backdrop-filter: blur(12px);
+  backdrop-filter: blur(8px);
 }
 
 .checkmate-text {

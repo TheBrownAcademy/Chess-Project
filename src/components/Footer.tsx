@@ -16,18 +16,18 @@ export default function Footer() {
   return (
     <footer
       ref={footerRef}
-      className="bg-brand-bg border-t border-brand-border py-12 md:py-16"
+      className="bg-brand-bg py-12 md:py-16"
       style={{ opacity: 0 }}
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex flex-col md:flex-row items-center justify-between gap-6">
 
-          {/* Brand Signature — static logo, no animation */}
+          {/* Brand Signature — static logo, no animation, no hover */}
           <div className="flex items-center">
             <img
               src="/logo.png"
               alt="XLChess logo"
-              style={{ width: '220px', maxWidth: '240px', height: 'auto' }}
+              style={{ width: '220px', maxWidth: '240px', height: 'auto', display: 'block' }}
               draggable={false}
             />
           </div>
