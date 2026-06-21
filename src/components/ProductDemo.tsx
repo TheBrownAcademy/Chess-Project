@@ -3,12 +3,17 @@ import { Chessboard } from 'react-chessboard';
 import { Chess } from 'chess.js';
 import { useStockfish } from '../hooks/useStockfish';
 import { parseUciMove, getGameOverReason } from '../utils/chessHelpers';
+import { generateChess960FEN } from '../utils/chess960';
+import { EditPositionModal } from './EditPositionModal';
+import { validateEditorPosition, type EditorPositionState } from '../utils/positionEditor';
 import { DIFFICULTY_CONFIGS, type DifficultyLevel } from '../types/chess';
 import {
   RotateCcw,
   Lightbulb,
   AlertCircle,
   CornerUpLeft,
+  Shuffle,
+  Pencil,
 } from 'lucide-react';
 import { useScrollReveal } from '../hooks/useScrollReveal';
 import { useButtonGlow } from '../hooks/useButtonGlow';
@@ -42,6 +47,7 @@ export default function ProductDemo() {
   const [difficulty, setDifficulty] = useState<DifficultyLevel>(3);
   const [showHint, setShowHint] = useState(false);
   const [gameOverReason, setGameOverReason] = useState<string | null>(null);
+  const [isEditMode, setIsEditMode] = useState(false);
   const hintTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const playAgainGlowRef = useButtonGlow<HTMLButtonElement>();
@@ -123,6 +129,7 @@ export default function ProductDemo() {
   useEffect(() => {
     const game = gameRef.current;
     if (game.isGameOver()) return;
+    if (isEditMode) return;
     if (game.turn() === playerColor) return; // it's the human's turn
 
     const timer = setTimeout(() => {
@@ -138,7 +145,7 @@ export default function ProductDemo() {
     }, 350);
 
     return () => clearTimeout(timer);
-  }, [gameFen, playerColor, difficulty, getEngineMove]);
+  }, [gameFen, playerColor, difficulty, getEngineMove, isEditMode]);
 
   // Auto-dismiss hint after 4 seconds once bestMove arrives
   useEffect(() => {
@@ -157,6 +164,7 @@ export default function ProductDemo() {
   const onDrop = useCallback(
     (sourceSquare: string, targetSquare: string | null): boolean => {
       const game = gameRef.current;
+      if (isEditMode) return false;
       if (game.isGameOver()) return false;
       if (game.turn() !== playerColor) return false;
       if (!targetSquare) return false;
@@ -178,7 +186,7 @@ export default function ProductDemo() {
       }
       return false;
     },
-    [playerColor]
+    [isEditMode, playerColor]
   );
 
   // Undo — take back the last TWO half-moves (human + engine)
@@ -203,7 +211,51 @@ export default function ProductDemo() {
   }, [analyzePosition]);
 
   // Reset — load a fresh game into the ref without replacing the ref itself
+  const loadFreshGame = useCallback((fen?: string) => {
+    stopSearch();
+    const freshGame = new Chess();
+
+    if (fen) {
+      freshGame.load(fen);
+    }
+
+    gameRef.current = freshGame;
+    setGameFen(freshGame.fen());
+    setShowHint(false);
+    setGameOverReason(null);
+    resetEvaluation();
+    if (hintTimerRef.current) clearTimeout(hintTimerRef.current);
+  }, [stopSearch, resetEvaluation]);
+
   const handleReset = useCallback(() => {
+    loadFreshGame();
+  }, [loadFreshGame]);
+
+  const handleChess960 = useCallback(() => {
+    loadFreshGame(generateChess960FEN());
+  }, [loadFreshGame]);
+
+  const handleOpenEditor = useCallback(() => {
+    stopSearch();
+    setShowHint(false);
+    if (hintTimerRef.current) clearTimeout(hintTimerRef.current);
+    setIsEditMode(true);
+  }, [stopSearch]);
+
+  const handleCancelEditor = useCallback(() => {
+    setIsEditMode(false);
+  }, []);
+
+  const handleApplyEditorPosition = useCallback((fen: string) => {
+    loadFreshGame(fen);
+    setIsEditMode(false);
+  }, [loadFreshGame]);
+
+  const handleValidateEditorPosition = useCallback((state: EditorPositionState) => {
+    return validateEditorPosition(state);
+  }, []);
+
+  /*
     stopSearch();
     gameRef.current.reset();           // mutate in-place → Chessboard stays mounted
     setGameFen(gameRef.current.fen()); // trigger re-render with starting position
@@ -211,7 +263,7 @@ export default function ProductDemo() {
     setGameOverReason(null);
     resetEvaluation();                 // ← fix: clear eval bar + bestMove
     if (hintTimerRef.current) clearTimeout(hintTimerRef.current);
-  }, [stopSearch, resetEvaluation]);
+  */
 
   // Switch Side — ONLY flips board orientation, never triggers engine move
   // @ts-ignore
@@ -374,6 +426,11 @@ export default function ProductDemo() {
                 />
                 <span>
                   {currentTurn === 'w' ? "White's turn" : "Black's turn"}
+                  {isEditMode && (
+                    <span className="text-brand-accent ml-1.5 font-medium">
+                      (Edit Position Mode)
+                    </span>
+                  )}
                   {isThinking && (
                     <span className="text-brand-accent animate-pulse ml-1.5 font-medium">
                       (AI Thinking...)
@@ -397,12 +454,12 @@ export default function ProductDemo() {
 
               <div ref={controlsRef} className="flex flex-col gap-5">
                 {/* ── Toolbar ───────────────────────────────────── */}
-                <div className="grid grid-cols-3 gap-2">
+                <div className="grid grid-cols-5 gap-2">
 
                   {/* Undo */}
                   <button
                     onClick={handleUndo}
-                    disabled={!canUndo || isThinking}
+                    disabled={!canUndo || isThinking || isEditMode}
                     title="Undo last move"
                     className="flex flex-col items-center justify-center gap-1.5 py-3 px-1 rounded-lg border border-brand-border bg-brand-bg hover:bg-white/5 hover:border-brand-accent/40 text-brand-secondary hover:text-white transition-all duration-200 disabled:opacity-40 disabled:pointer-events-none group"
                   >
@@ -413,7 +470,7 @@ export default function ProductDemo() {
                   {/* Hint */}
                   <button
                     onClick={handleHint}
-                    disabled={!!gameOverReason || isThinking || game_is_human_turn(currentTurn, playerColor) === false}
+                    disabled={!!gameOverReason || isThinking || isEditMode || game_is_human_turn(currentTurn, playerColor) === false}
                     title="Get a hint"
                     className="flex flex-col items-center justify-center gap-1.5 py-3 px-1 rounded-lg border border-brand-border bg-brand-bg hover:bg-white/5 hover:border-brand-accent/40 text-brand-secondary hover:text-yellow-400 transition-all duration-200 disabled:opacity-40 disabled:pointer-events-none group"
                   >
@@ -424,11 +481,34 @@ export default function ProductDemo() {
                   {/* Reset */}
                   <button
                     onClick={handleReset}
+                    disabled={isEditMode}
                     title="Reset game"
-                    className="flex flex-col items-center justify-center gap-1.5 py-3 px-1 rounded-lg border border-brand-border bg-brand-bg hover:bg-white/5 hover:border-red-500/40 text-brand-secondary hover:text-red-400 transition-all duration-200 group"
+                    className="flex flex-col items-center justify-center gap-1.5 py-3 px-1 rounded-lg border border-brand-border bg-brand-bg hover:bg-white/5 hover:border-red-500/40 text-brand-secondary hover:text-red-400 transition-all duration-200 disabled:opacity-40 disabled:pointer-events-none group"
                   >
                     <RotateCcw className="w-5 h-5 group-hover:rotate-[-45deg] transition-transform duration-300" />
                     <span className="text-[10px] font-medium font-sans tracking-wide">Reset</span>
+                  </button>
+
+                  {/* Chess960 */}
+                  <button
+                    onClick={handleChess960}
+                    disabled={isEditMode}
+                    title="Start Chess960 game"
+                    className="flex flex-col items-center justify-center gap-1.5 py-3 px-1 rounded-lg border border-brand-border bg-brand-bg hover:bg-white/5 hover:border-brand-accent/40 text-brand-secondary hover:text-white transition-all duration-200 disabled:opacity-40 disabled:pointer-events-none group"
+                  >
+                    <Shuffle className="w-5 h-5 group-hover:scale-110 transition-transform" />
+                    <span className="text-[10px] font-medium font-sans tracking-wide">Chess960</span>
+                  </button>
+
+                  {/* Edit Position */}
+                  <button
+                    onClick={handleOpenEditor}
+                    disabled={isThinking}
+                    title="Edit board position"
+                    className="flex flex-col items-center justify-center gap-1.5 py-3 px-1 rounded-lg border border-brand-border bg-brand-bg hover:bg-white/5 hover:border-brand-accent/40 text-brand-secondary hover:text-white transition-all duration-200 disabled:opacity-40 disabled:pointer-events-none group"
+                  >
+                    <Pencil className="w-5 h-5 group-hover:scale-110 transition-transform" />
+                    <span className="text-[10px] font-medium font-sans tracking-wide">Edit Position</span>
                   </button>
 
                 </div>
@@ -501,6 +581,15 @@ export default function ProductDemo() {
           </div>
         </div>
       </div>
+
+      <EditPositionModal
+        initialFen={gameFen}
+        isOpen={isEditMode}
+        boardOrientation={boardOrientation}
+        onApply={handleApplyEditorPosition}
+        onCancel={handleCancelEditor}
+        onValidate={handleValidateEditorPosition}
+      />
     </section>
   );
 }
