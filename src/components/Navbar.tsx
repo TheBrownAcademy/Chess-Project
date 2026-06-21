@@ -29,10 +29,7 @@ export default function Navbar() {
   const ctaGlowRef = useButtonGlow<HTMLAnchorElement>();
 
   const navLinks = [
-    { name: 'Why ChessCraft', href: '#why-ownership' },
     { name: 'Live Demo',      href: '#interactive-demo' },
-    { name: 'How It Works',  href: '#how-it-works' },
-    { name: 'Audiences',     href: '#built-for' },
   ];
 
   return (

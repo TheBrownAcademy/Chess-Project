@@ -27,7 +27,8 @@ export default function Footer() {
             <img
               src="/logo.png"
               alt="XLChess logo"
-              style={{ width: '220px', maxWidth: '240px', height: 'auto', display: 'block' }}
+              className="h-[52px] sm:h-[62px] w-auto object-contain"
+              style={{ display: 'block' }}
               draggable={false}
             />
           </div>

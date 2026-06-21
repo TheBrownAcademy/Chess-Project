@@ -15,7 +15,7 @@
  */
 
 import { useRef } from 'react';
-import { ArrowRight } from 'lucide-react';
+
 import { useGSAP } from '../hooks/useGSAP';
 import { usePerspectiveTilt } from '../hooks/usePerspectiveTilt';
 import { useButtonGlow } from '../hooks/useButtonGlow';
@@ -129,6 +129,39 @@ export default function Hero() {
           yoyo: true,
         });
       }
+
+      // ── Hero logo floating animation ────────────────────────────────────
+      if (heroLogoRef.current) {
+        gsap.to(heroLogoRef.current, {
+          y: -6,
+          duration: 2,
+          repeat: -1,
+          yoyo: true,
+          ease: 'power1.inOut',
+        });
+        gsap.to(heroLogoRef.current, {
+          scale: 1.03,
+          duration: 2.5,
+          repeat: -1,
+          yoyo: true,
+          ease: 'sine.inOut',
+        });
+        gsap.to(heroLogoRef.current, {
+          rotation: 2,
+          duration: 3,
+          repeat: -1,
+          yoyo: true,
+          ease: 'sine.inOut',
+        });
+        // Subtle glow pulse
+        gsap.to(heroLogoRef.current, {
+          filter: 'drop-shadow(0 0 12px rgba(99, 102, 241, 0.5))',
+          duration: 2,
+          repeat: -1,
+          yoyo: true,
+          ease: 'sine.inOut',
+        });
+      }
     },
     heroRef,
     []
@@ -173,10 +206,10 @@ export default function Hero() {
                 alt="XLChess logo"
                 className="object-contain"
                 style={{
-                  height: '80px',
+                  height: '160px',
                   width: 'auto',
                   maxWidth: 'none',
-                  willChange: 'transform',
+                  willChange: 'transform, filter',
                   transformOrigin: 'center center',
                 }}
                 draggable={false}
@@ -226,9 +259,13 @@ export default function Hero() {
                   btn-glow-container btn-glow-accent cta-shine
                 "
               >
+                <img
+                  src="/play icon.png"
+                  alt="Play"
+                  style={{ width: '18px', height: '18px', objectFit: 'contain' }}
+                  draggable={false}
+                />
                 Play
-                {/* Arrow with slide micro-animation on hover */}
-                <ArrowRight className="w-4 h-4 transition-transform duration-200 group-hover:translate-x-1" />
               </a>
             </div>
           </div>
