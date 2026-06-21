@@ -19,7 +19,7 @@ ChessCraft is **not** another chess clone. It is a business-in-a-box platform fo
 - **Core Framework:** React 19, Vite, TypeScript
 - **Styling Pipeline:** Tailwind CSS v3, PostCSS, Autoprefixer
 - **Chess Engine:** Stockfish JS (compiled via WASM/Emscripten running asynchronously in a Web Worker)
-- **State & Rules Validation:** `chess.js` & `react-chessboard`
+- **State & Rules Validation:** `chess.js` and `react-chessboard`
 
 ---
 
