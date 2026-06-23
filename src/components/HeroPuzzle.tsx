@@ -293,6 +293,32 @@ export default function HeroPuzzle() {
   }, []);
 
   // ══════════════════════════════════════════════════════════════════════════
+  // SHARED: Pick a random Black move that preserves White's mate-in-one.
+  // Used by BOTH manual play and autosolve — single code path.
+  // ══════════════════════════════════════════════════════════════════════════
+  const pickSafeBlackMove = useCallback((): string | null => {
+    const game = gameRef.current;
+    const legalMoves = game.moves();
+    if (legalMoves.length === 0) return null;
+
+    // Filter: only keep moves where White can still mate in one afterwards
+    const safeMoves = legalMoves.filter((move) => {
+      const probe = new Chess(game.fen());
+      probe.move(move);
+      // After Black's move, check if ANY White reply is checkmate
+      const whiteReplies = probe.moves();
+      return whiteReplies.some((wr) => {
+        const probe2 = new Chess(probe.fen());
+        probe2.move(wr);
+        return probe2.isCheckmate();
+      });
+    });
+
+    const pool = safeMoves.length > 0 ? safeMoves : legalMoves;
+    return pool[Math.floor(Math.random() * pool.length)];
+  }, []);
+
+  // ══════════════════════════════════════════════════════════════════════════
   // 6. CHECKMATE IMPACT SEQUENCE
   // a) Board white flash  b) King pulse  c) CHECKMATE overlay  d) Glow ring
   // ══════════════════════════════════════════════════════════════════════════
@@ -407,12 +433,11 @@ export default function HeroPuzzle() {
         // Show White first move annotation !!
         triggerAnnotation(targetSquare, '!!');
 
-        // Black auto-responds after 600ms with a random legal move
+        // Black auto-responds after 600ms with a safe random legal move
         setTimeout(() => {
-          const legalMoves = gameRef.current.moves();
-          if (legalMoves.length > 0) {
-            const randomMove = legalMoves[Math.floor(Math.random() * legalMoves.length)];
-            gameRef.current.move(randomMove);
+          const blackMove = pickSafeBlackMove();
+          if (blackMove) {
+            gameRef.current.move(blackMove);
             setGameFen(gameRef.current.fen());
             
             const hist = gameRef.current.history({ verbose: true });
@@ -433,10 +458,9 @@ export default function HeroPuzzle() {
           // Not checkmate — black responds with random move
           setPhase('black_responding');
           setTimeout(() => {
-            const legalMoves = gameRef.current.moves();
-            if (legalMoves.length > 0) {
-              const randomMove = legalMoves[Math.floor(Math.random() * legalMoves.length)];
-              gameRef.current.move(randomMove);
+            const blackMove = pickSafeBlackMove();
+            if (blackMove) {
+              gameRef.current.move(blackMove);
               setGameFen(gameRef.current.fen());
               
               const hist = gameRef.current.history({ verbose: true });
@@ -450,7 +474,7 @@ export default function HeroPuzzle() {
 
       return true;
     },
-    [phase, applyMove, addNotation, celebrate, triggerAnnotation]
+    [phase, applyMove, addNotation, celebrate, triggerAnnotation, pickSafeBlackMove]
   );
 
   // ══════════════════════════════════════════════════════════════════════════
@@ -499,48 +523,89 @@ export default function HeroPuzzle() {
 
     console.log('[Solve] Starting. FEN:', gameRef.current.fen());
 
-    for (let i = 0; i < PUZZLE.solution.length; i++) {
-      if (solveAbortRef.current) { console.log('[Solve] Aborted'); return; }
+    // ── Step 0: White's first move (from PUZZLE.solution[0]) ──────────────
+    const whiteStep = PUZZLE.solution[0];
 
-      const step = PUZZLE.solution[i];
+    await new Promise(r => {
+      solveTimerRef.current = setTimeout(r, 500);
+    });
+    if (solveAbortRef.current) return;
 
-      // Inter-move delay — let the viewer breathe
-      await new Promise(r => {
-        solveTimerRef.current = setTimeout(r, i === 0 ? 500 : 900);
-      });
-      if (solveAbortRef.current) return;
+    setSolveStep(0);
+    setSolveAnnotation(whiteStep.annotation);
+    addNotation(`1. ${whiteStep.san}`);
 
-      // ── Update UI for this step ──────────────────────────────────────────
-      setSolveStep(i);
-      setSolveAnnotation(step.annotation);
+    if (whiteStep.animate) {
+      await animatePieceMove(whiteStep.from, whiteStep.to, boardInnerRef.current);
+    }
+    if (solveAbortRef.current) return;
 
-      if (step.san.startsWith('...')) {
-        addNotation(`   ${step.san}`);
-      } else {
-        addNotation(`${Math.floor(i / 2) + 1}. ${step.san}`);
-      }
+    applyMove(whiteStep.from, whiteStep.to);
+    setMovesLeft(1);
+    triggerAnnotation(whiteStep.to, '!!');
 
-      // ── Animate the piece (GSAP: grow → curved move → trail → settle) ───
-      if (step.animate) {
-        await animatePieceMove(step.from, step.to, boardInnerRef.current);
-      }
-      if (solveAbortRef.current) return;
+    if (whiteStep.animate) {
+      await new Promise(r => { solveTimerRef.current = setTimeout(r, 350); });
+    }
+    if (solveAbortRef.current) return;
 
-      // ── Commit board state AFTER animation completes ────────────────────
-      const ok = applyMove(step.from, step.to);
-      console.log(`[Solve] ${step.san} | ${ok ? 'OK' : 'FAILED'} | FEN: ${gameRef.current.fen()}`);
+    // ── Step 1: Black's response — use shared pickSafeBlackMove ───────────
+    await new Promise(r => {
+      solveTimerRef.current = setTimeout(r, 900);
+    });
+    if (solveAbortRef.current) return;
 
-      // ── Update moves counter (white moves only: step 0, step 2) ─────────
-      if (i === 0) setMovesLeft(1);
+    const blackMoveSan = pickSafeBlackMove();
+    if (blackMoveSan) {
+      // Get verbose info for the chosen move so we can animate it
+      const probe = new Chess(gameRef.current.fen());
+      const moveResult = probe.move(blackMoveSan);
 
-      // ── Annotation badge: only show !! on white's first move (Qd6) ──────
-      if (i === 0) triggerAnnotation(step.to, '!!');
-      // No annotation for black response (i===1) or final checkmate (i===2)
+      if (moveResult) {
+        const blackFrom = moveResult.from;
+        const blackTo = moveResult.to;
+        const blackDisplay = moveResult.san.replace('x', '');
 
-      // ── Post-move pause so the viewer sees the result ───────────────────
-      if (step.animate) {
+        setSolveStep(1);
+        setSolveAnnotation(PUZZLE.solution[1].annotation);
+        addNotation(`   ...${blackDisplay}`);
+
+        await animatePieceMove(blackFrom, blackTo, boardInnerRef.current);
+        if (solveAbortRef.current) return;
+
+        applyMove(blackFrom, blackTo);
+
         await new Promise(r => { solveTimerRef.current = setTimeout(r, 350); });
+        if (solveAbortRef.current) return;
       }
+    }
+
+    // ── Step 2: White's mating move — find the checkmate reply ────────────
+    await new Promise(r => {
+      solveTimerRef.current = setTimeout(r, 900);
+    });
+    if (solveAbortRef.current) return;
+
+    // Find the actual mating move from the current position
+    const mateGame = new Chess(gameRef.current.fen());
+    const whiteMoves = mateGame.moves({ verbose: true });
+    const matingMove = whiteMoves.find((m) => {
+      const test = new Chess(mateGame.fen());
+      test.move(m.san);
+      return test.isCheckmate();
+    });
+
+    if (matingMove) {
+      const mateDisplay = matingMove.san.replace('x', '');
+
+      setSolveStep(2);
+      setSolveAnnotation(PUZZLE.solution[2].annotation);
+      addNotation(`2. ${mateDisplay}`);
+
+      await animatePieceMove(matingMove.from, matingMove.to, boardInnerRef.current);
+      if (solveAbortRef.current) return;
+
+      applyMove(matingMove.from, matingMove.to);
     }
 
     if (solveAbortRef.current) return;
@@ -553,7 +618,7 @@ export default function HeroPuzzle() {
     if (!solveAbortRef.current) {
       celebrate();
     }
-  }, [fullReset, addNotation, animatePieceMove, applyMove, triggerAnnotation, celebrate]);
+  }, [fullReset, addNotation, animatePieceMove, applyMove, triggerAnnotation, celebrate, pickSafeBlackMove]);
 
   const resetPuzzle = useCallback(() => {
     fullReset();
@@ -781,81 +846,55 @@ export default function HeroPuzzle() {
             {/* ── Move Quality Annotation Badge ── */}
             <MoveAnnotation activeAnnotation={activeAnnotation} />
 
-            {/* ── Engraved board coordinates (files: a–h bottom, ranks: 8–1 left) ── */}
-            {/* File labels a–h along the bottom inside the board */}
-            <div
-              aria-hidden="true"
-              style={{
-                position: 'absolute',
-                bottom: 0,
-                left: 0,
-                right: 0,
-                display: 'flex',
-                pointerEvents: 'none',
-                zIndex: 25,
-              }}
-            >
-              {['a','b','c','d','e','f','g','h'].map((file) => (
-                <span
-                  key={file}
-                  style={{
-                    flex: 1,
-                    display: 'flex',
-                    justifyContent: 'center',
-                    alignItems: 'flex-end',
-                    fontFamily: 'Inter, system-ui, sans-serif',
-                    fontSize: '14.5px',
-                    fontWeight: 500,
-                    color: '#9b9578',
-                    opacity: 0.45,
-                    textShadow: '1px 1px 1px rgba(255,255,255,0.18), -1px -1px 1px rgba(0,0,0,0.35)',
-                    userSelect: 'none',
-                    lineHeight: 1,
-                    paddingBottom: '10px',
-                  }}
-                >
-                  {file}
-                </span>
-              ))}
-            </div>
+            {/* ── Engraved board coordinates ── */}
+            {/* File labels a–h: bottom-right corner of each bottom-rank square */}
+            {['a','b','c','d','e','f','g','h'].map((file, i) => (
+              <span
+                key={`file-${file}`}
+                aria-hidden="true"
+                style={{
+                  position: 'absolute',
+                  bottom: '6px',
+                  left: `${(i + 1) * 12.5 - 1.5}%`,
+                  transform: 'translateX(-100%)',
+                  fontFamily: 'Inter, system-ui, sans-serif',
+                  fontSize: '14px',
+                  fontWeight: 600,
+                  color: 'rgba(80,70,40,0.75)',
+                  textShadow: '0 1px 1px rgba(255,255,255,0.18), 0 -1px 1px rgba(0,0,0,0.28)',
+                  pointerEvents: 'none',
+                  userSelect: 'none',
+                  zIndex: 25,
+                  lineHeight: 1,
+                }}
+              >
+                {file}
+              </span>
+            ))}
 
-            {/* Rank labels 8–1 along the left inside the board */}
-            <div
-              aria-hidden="true"
-              style={{
-                position: 'absolute',
-                top: 0,
-                bottom: 0,
-                left: 0,
-                display: 'flex',
-                flexDirection: 'column',
-                pointerEvents: 'none',
-                zIndex: 25,
-              }}
-            >
-              {['8','7','6','5','4','3','2','1'].map((rank) => (
-                <span
-                  key={rank}
-                  style={{
-                    flex: 1,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'flex-start',
-                    fontFamily: 'Inter, system-ui, sans-serif',
-                    fontSize: '14.5px',
-                    fontWeight: 500,
-                    color: '#9b9578',
-                    opacity: 0.45,
-                    textShadow: '1px 1px 1px rgba(255,255,255,0.18), -1px -1px 1px rgba(0,0,0,0.35)',
-                    userSelect: 'none',
-                    lineHeight: 1,
-                    paddingLeft: '10px',
-                  }}
-                >
-                  {rank}
-                </span>
-              ))}
-            </div>
+            {/* Rank labels 8–1: top-left corner of each left-file square */}
+            {['8','7','6','5','4','3','2','1'].map((rank, i) => (
+              <span
+                key={`rank-${rank}`}
+                aria-hidden="true"
+                style={{
+                  position: 'absolute',
+                  top: `${i * 12.5 + 0.5}%`,
+                  left: '6px',
+                  fontFamily: 'Inter, system-ui, sans-serif',
+                  fontSize: '14px',
+                  fontWeight: 600,
+                  color: 'rgba(80,70,40,0.75)',
+                  textShadow: '0 1px 1px rgba(255,255,255,0.18), 0 -1px 1px rgba(0,0,0,0.28)',
+                  pointerEvents: 'none',
+                  userSelect: 'none',
+                  zIndex: 25,
+                  lineHeight: 1,
+                }}
+              >
+                {rank}
+              </span>
+            ))}
           </div>
         </div>
       </div>{/* end board-cursor-glow */}
