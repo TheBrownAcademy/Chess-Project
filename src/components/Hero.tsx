@@ -263,20 +263,25 @@ export default function Hero() {
                 href="#interactive-demo"
                 id="hero-cta-primary"
                 className="
-                  inline-flex items-center justify-center gap-2
-                  font-sans font-semibold text-sm
+                  inline-flex items-center justify-center gap-3
+                  font-sans font-semibold text-[17px]
                   bg-brand-accent hover:bg-brand-accent/95 text-white
-                  px-6 py-3.5 rounded-lg
+                  rounded-lg
                   transition-colors duration-200
                   shadow-xl shadow-brand-accent/20
                   btn-glow-container btn-glow-accent cta-shine
                 "
-                style={{ transformStyle: 'preserve-3d', willChange: 'transform' }}
+                style={{ 
+                  transformStyle: 'preserve-3d', 
+                  willChange: 'transform',
+                  width: '170px',
+                  height: '68px'
+                }}
               >
                 <img
                   src="/play icon.png"
                   alt="Play"
-                  style={{ width: '26px', height: '26px', objectFit: 'contain' }}
+                  style={{ width: '32px', height: '32px', objectFit: 'contain' }}
                   draggable={false}
                 />
                 Play

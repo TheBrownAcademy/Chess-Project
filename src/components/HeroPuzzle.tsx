@@ -108,7 +108,6 @@ export default function HeroPuzzle() {
   const solveAbortRef                     = useRef(false);
 
   // ── Notation panel ─────────────────────────────────────────────────────────
-  const [notationEntries, setNotationEntries] = useState<string[]>([]);
   const notationRef                       = useRef<HTMLDivElement>(null);
 
   // ── Celebration guard ──────────────────────────────────────────────────────
@@ -787,14 +786,12 @@ export default function HeroPuzzle() {
               aria-hidden="true"
               style={{
                 position: 'absolute',
-                bottom: '2px',
+                bottom: 0,
                 left: 0,
                 right: 0,
                 display: 'flex',
                 pointerEvents: 'none',
                 zIndex: 25,
-                paddingLeft: '3%',
-                paddingRight: '1%',
               }}
             >
               {['a','b','c','d','e','f','g','h'].map((file) => (
@@ -802,15 +799,18 @@ export default function HeroPuzzle() {
                   key={file}
                   style={{
                     flex: 1,
-                    textAlign: 'right',
+                    display: 'flex',
+                    justifyContent: 'center',
+                    alignItems: 'flex-end',
                     fontFamily: 'Inter, system-ui, sans-serif',
-                    fontSize: 'clamp(6px, 1vw, 9px)',
-                    fontWeight: 700,
-                    color: 'rgba(238,238,210,0.55)',
-                    textShadow: '0 1px 2px rgba(0,0,0,0.7), 0 -1px 1px rgba(0,0,0,0.5)',
+                    fontSize: '14.5px',
+                    fontWeight: 500,
+                    color: '#9b9578',
+                    opacity: 0.45,
+                    textShadow: '1px 1px 1px rgba(255,255,255,0.18), -1px -1px 1px rgba(0,0,0,0.35)',
                     userSelect: 'none',
                     lineHeight: 1,
-                    paddingRight: '3px',
+                    paddingBottom: '10px',
                   }}
                 >
                   {file}
@@ -825,13 +825,11 @@ export default function HeroPuzzle() {
                 position: 'absolute',
                 top: 0,
                 bottom: 0,
-                left: '2px',
+                left: 0,
                 display: 'flex',
                 flexDirection: 'column',
                 pointerEvents: 'none',
                 zIndex: 25,
-                paddingTop: '1%',
-                paddingBottom: '3%',
               }}
             >
               {['8','7','6','5','4','3','2','1'].map((rank) => (
@@ -840,16 +838,17 @@ export default function HeroPuzzle() {
                   style={{
                     flex: 1,
                     display: 'flex',
-                    alignItems: 'flex-start',
+                    alignItems: 'center',
+                    justifyContent: 'flex-start',
                     fontFamily: 'Inter, system-ui, sans-serif',
-                    fontSize: 'clamp(6px, 1vw, 9px)',
-                    fontWeight: 700,
-                    color: 'rgba(118,150,86,0.75)',
-                    textShadow: '0 1px 2px rgba(0,0,0,0.7), 0 -1px 1px rgba(0,0,0,0.5)',
+                    fontSize: '14.5px',
+                    fontWeight: 500,
+                    color: '#9b9578',
+                    opacity: 0.45,
+                    textShadow: '1px 1px 1px rgba(255,255,255,0.18), -1px -1px 1px rgba(0,0,0,0.35)',
                     userSelect: 'none',
                     lineHeight: 1,
-                    paddingLeft: '2px',
-                    paddingTop: '2px',
+                    paddingLeft: '10px',
                   }}
                 >
                   {rank}
