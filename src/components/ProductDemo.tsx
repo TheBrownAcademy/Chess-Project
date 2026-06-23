@@ -60,7 +60,6 @@ export default function ProductDemo() {
     evaluation,
     bestMove,
     isThinking,
-    engineDepth,
     getEngineMove,
     analyzePosition,
     stopSearch,
@@ -401,7 +400,7 @@ export default function ProductDemo() {
               <div
                 className="relative overflow-hidden flex lg:flex-col-reverse items-start lg:items-end w-full h-full"
                 style={{
-                  width: isDesktop ? '16px' : '100%',
+                  width: isDesktop ? '24px' : '100%',
                   borderRadius: '8px',
                   height: isDesktop && boardHeight ? `${boardHeight}px` : '16px',
                   background: 'rgba(255,255,255,0.04)',
@@ -417,17 +416,17 @@ export default function ProductDemo() {
                     height: isDesktop ? `${evalPercent}%` : '100%',
                   }}
                 />
-                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                  <span
-                    className="font-mono font-bold text-[8px] px-0.5 py-0.5 shadow-sm leading-none"
-                    style={{
-                      backgroundColor: evalIsNegative ? '#111827' : '#ffffff',
-                      color: evalIsNegative ? '#ffffff' : '#111827',
-                    }}
-                  >
-                    {evalLabel}
-                  </span>
-                </div>
+              </div>
+              <div className="flex justify-center pointer-events-none">
+                <span
+                  className="font-mono font-semibold text-sm sm:text-base lg:text-lg px-2 py-1 shadow-sm leading-none rounded-md"
+                  style={{
+                    backgroundColor: evalIsNegative ? '#111827' : '#ffffff',
+                    color: evalIsNegative ? '#ffffff' : '#111827',
+                  }}
+                >
+                  {evalLabel}
+                </span>
               </div>
             </div>
 
@@ -491,9 +490,6 @@ export default function ProductDemo() {
                       (AI Thinking...)
                     </span>
                   )}
-                  {engineDepth > 0 && (
-                    <span className="ml-1.5 text-brand-secondary/60">(d:{engineDepth})</span>
-                  )}
                 </span>
                 {showHint && bestMove && (
                   <span className="ml-auto text-emerald-400 font-medium flex items-center gap-1">
@@ -505,9 +501,9 @@ export default function ProductDemo() {
             </div>
 
             {/* ── Col 3: Control Panel ─────────────────────────────────────── */}
-            <div className="lg:col-span-4 flex flex-col gap-5 lg:self-stretch">
+            <div className="lg:col-span-4 flex flex-col gap-10 lg:self-stretch">
 
-              <div ref={controlsRef} className="flex flex-col gap-5">
+              <div ref={controlsRef} className="flex flex-col gap-8">
                 {/* ── Toolbar ───────────────────────────────────── */}
                 <div className="grid grid-cols-4 gap-2">
 
