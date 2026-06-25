@@ -45,12 +45,20 @@ export default function Hero() {
 
   const primaryGlowRef = useButtonGlow<HTMLAnchorElement>();
 
-  // ── Tilt animation for Play button (same effect as hero logo) ────────────
+  // ── Tilt animation for Play button — subtle 3° cursor-driven tilt ───────────
+  // Identical mechanism to the logo tilt but dialled back for a CTA button:
+  //   · maxRotate  3° — barely-there, premium feel (logo uses 6°)
+  //   · scalePeak  1.0 — no zoom, keeps button size locked
+  //   · quickToDuration 0.2s — snappier than the logo (0.35s) per spec
+  //   · shadowStrength 1.6 — glow is slightly more vivid than resting state
+  //   · disableMobileFloat — button never bounces / pulses on touch devices
   const playBtnTiltRef = usePerspectiveTilt<HTMLAnchorElement>({
-    maxRotate:       8,
-    scalePeak:       1.05,
-    quickToDuration: 0.3,
-    quickToEase:     'power2.out',
+    maxRotate:         3,
+    scalePeak:         1.0,
+    quickToDuration:   0.2,
+    quickToEase:       'power2.out',
+    shadowStrength:    1.6,
+    disableMobileFloat: true,
   });
 
   // Merge tilt ref + glow ref onto the same anchor element

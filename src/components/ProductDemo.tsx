@@ -74,7 +74,8 @@ export default function ProductDemo() {
   const [controlsHeight, setControlsHeight] = useState<number>(0);
   const [isDesktop, setIsDesktop] = useState<boolean>(false);
   // Progressive eval stabilization — separate displayed eval from raw eval
-  const [displayEval, setDisplayEval] = useState<{ type: 'cp' | 'mate'; value: number } | null>(null);
+  // Start at 0.0 (never -0.0) for initial position
+  const [displayEval, setDisplayEval] = useState<{ type: 'cp' | 'mate'; value: number } | null>({ type: 'cp', value: 0 });
   const evalTimeoutsRef = useRef<ReturnType<typeof setTimeout>[]>([]);
 
   const boardContainerRef = useRef<HTMLDivElement>(null);
@@ -129,18 +130,16 @@ export default function ProductDemo() {
 
     if (!evaluation) return;
 
-    // Immediately set after each evaluation update (raw)
-    // Then also schedule delayed snapshots to let Stockfish stabilize
+    // Schedule delayed snapshots — each one captures evaluation at that moment
+    // Do NOT set immediately; let Stockfish stabilize before showing values.
     const delays = [1000, 2000, 3000, 4000, 5000];
     delays.forEach(delay => {
+      const capturedEval = { type: evaluation.type, value: evaluation.value };
       const t = setTimeout(() => {
-        setDisplayEval({ type: evaluation.type, value: evaluation.value });
+        setDisplayEval({ type: capturedEval.type, value: capturedEval.value });
       }, delay);
       evalTimeoutsRef.current.push(t);
     });
-
-    // Also set immediately so the bar reacts to moves right away
-    setDisplayEval({ type: evaluation.type, value: evaluation.value });
 
     return () => {
       evalTimeoutsRef.current.forEach(t => clearTimeout(t));
@@ -271,6 +270,10 @@ export default function ProductDemo() {
     setShowHint(false);
     setGameOverReason(null);
     resetEvaluation();
+    // Reset display eval to 0.0 so bar shows correct value on new game
+    setDisplayEval({ type: 'cp', value: 0 });
+    evalTimeoutsRef.current.forEach(t => clearTimeout(t));
+    evalTimeoutsRef.current = [];
     if (hintTimerRef.current) clearTimeout(hintTimerRef.current);
   }, [stopSearch, resetEvaluation]);
 

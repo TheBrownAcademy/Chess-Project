@@ -847,7 +847,7 @@ export default function HeroPuzzle() {
             <MoveAnnotation activeAnnotation={activeAnnotation} />
 
             {/* ── Engraved board coordinates ── */}
-            {/* File labels a–h: bottom-right corner of each bottom-rank square */}
+            {/* File labels a–h: 6px from bottom edge, right-aligned inside each square */}
             {['a','b','c','d','e','f','g','h'].map((file, i) => (
               <span
                 key={`file-${file}`}
@@ -855,13 +855,13 @@ export default function HeroPuzzle() {
                 style={{
                   position: 'absolute',
                   bottom: '6px',
-                  left: `${(i + 1) * 12.5 - 1.5}%`,
-                  transform: 'translateX(-100%)',
+                  left: `${i * 12.5 + 6.25}%`,
+                  transform: 'translateX(-50%)',
                   fontFamily: 'Inter, system-ui, sans-serif',
                   fontSize: '14px',
                   fontWeight: 600,
-                  color: 'rgba(80,70,40,0.75)',
-                  textShadow: '0 1px 1px rgba(255,255,255,0.18), 0 -1px 1px rgba(0,0,0,0.28)',
+                  color: 'rgba(90,80,50,0.72)',
+                  textShadow: '0 1px 1px rgba(255,255,255,0.18), 0 -1px 1px rgba(0,0,0,0.32)',
                   pointerEvents: 'none',
                   userSelect: 'none',
                   zIndex: 25,
@@ -872,20 +872,20 @@ export default function HeroPuzzle() {
               </span>
             ))}
 
-            {/* Rank labels 8–1: top-left corner of each left-file square */}
+            {/* Rank labels 8–1: 6px from left edge, 6px from top/bottom of each square */}
             {['8','7','6','5','4','3','2','1'].map((rank, i) => (
               <span
                 key={`rank-${rank}`}
                 aria-hidden="true"
                 style={{
                   position: 'absolute',
-                  top: `${i * 12.5 + 0.5}%`,
+                  top: `${i * 12.5 + 0.8}%`,
                   left: '6px',
                   fontFamily: 'Inter, system-ui, sans-serif',
                   fontSize: '14px',
                   fontWeight: 600,
-                  color: 'rgba(80,70,40,0.75)',
-                  textShadow: '0 1px 1px rgba(255,255,255,0.18), 0 -1px 1px rgba(0,0,0,0.28)',
+                  color: 'rgba(90,80,50,0.72)',
+                  textShadow: '0 1px 1px rgba(255,255,255,0.18), 0 -1px 1px rgba(0,0,0,0.32)',
                   pointerEvents: 'none',
                   userSelect: 'none',
                   zIndex: 25,
@@ -957,10 +957,13 @@ export default function HeroPuzzle() {
             text-brand-secondary hover:text-white
             hover:border-brand-accent/40 hover:bg-white/5
             transition-all duration-200
-            disabled:opacity-40 disabled:pointer-events-none
+            disabled:opacity-40
             btn-glow-container btn-glow-surface
             group
           "
+          style={{
+            cursor: (phase === 'solving' || phase === 'black_responding') ? 'not-allowed' : 'pointer',
+          }}
         >
           <Play className="w-4 h-4 text-brand-accent group-hover:scale-110 transition-transform" />
           Solve
@@ -978,9 +981,12 @@ export default function HeroPuzzle() {
             text-brand-secondary hover:text-white
             hover:border-red-400/40 hover:bg-white/5
             transition-all duration-200
-            disabled:opacity-40 disabled:pointer-events-none
+            disabled:opacity-40
             group
           "
+          style={{
+            cursor: phase === 'idle' ? 'not-allowed' : 'pointer',
+          }}
         >
           <RotateCcw className="w-4 h-4 group-hover:rotate-[-45deg] transition-transform duration-300" />
           Reset

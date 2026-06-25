@@ -53,6 +53,17 @@ export interface PerspectiveTiltOptions {
   floatDistance?: number;
   /** Mobile float: full cycle duration in seconds. Default: 3 */
   floatDuration?: number;
+  /**
+   * When true, suppresses the mobile yoyo float entirely.
+   * Use this for elements that should never bounce or pulse (e.g. CTA buttons).
+   * Default: false
+   */
+  disableMobileFloat?: boolean;
+  /**
+   * Alpha multiplier for the dynamic drop-shadow (0–1).
+   * Higher = more vivid glow on hover. Default: 1
+   */
+  shadowStrength?: number;
 }
 
 /**
@@ -63,12 +74,14 @@ export function usePerspectiveTilt<T extends HTMLElement>(
   options: PerspectiveTiltOptions = {}
 ) {
   const {
-    maxRotate      = 8,
-    scalePeak      = 1.02,
-    quickToDuration = 0.4,
-    quickToEase    = 'power3.out',
-    floatDistance  = 8,
-    floatDuration  = 3,
+    maxRotate        = 8,
+    scalePeak        = 1.02,
+    quickToDuration  = 0.4,
+    quickToEase      = 'power3.out',
+    floatDistance    = 8,
+    floatDuration    = 3,
+    disableMobileFloat = false,
+    shadowStrength   = 1,
   } = options;
 
   const elRef = useRef<T | null>(null);
@@ -108,8 +121,12 @@ export function usePerspectiveTilt<T extends HTMLElement>(
         });
 
         // Shadow tweens — animate a CSS variable for the drop-shadow
+        // restAlpha: resting glow; hoverAlpha: peak glow on hover
+        const restAlpha  = +(0.15 * shadowStrength).toFixed(3);
+        const hoverAlpha = +(0.28 * shadowStrength).toFixed(3);
+
         gsap.set(el, {
-          filter: 'drop-shadow(0 16px 40px rgba(99,102,241,0.15))',
+          filter: `drop-shadow(0 16px 40px rgba(99,102,241,${restAlpha}))`,
         });
 
         // AbortController lets us remove all listeners in one call on cleanup
@@ -135,7 +152,7 @@ export function usePerspectiveTilt<T extends HTMLElement>(
             const shadowY = ny * 12 + 24;
             const blur    = 40 + Math.abs(nx + ny) * 10;
             gsap.to(el, {
-              filter: `drop-shadow(${shadowX}px ${shadowY}px ${blur}px rgba(99,102,241,0.28))`,
+              filter: `drop-shadow(${shadowX}px ${shadowY}px ${blur}px rgba(99,102,241,${hoverAlpha}))`,
               duration: 0.3,
               overwrite: 'auto',
             });
@@ -151,7 +168,7 @@ export function usePerspectiveTilt<T extends HTMLElement>(
             setRotateY(0);
             setScale(1);
             gsap.to(el, {
-              filter: 'drop-shadow(0 16px 40px rgba(99,102,241,0.15))',
+              filter: `drop-shadow(0 16px 40px rgba(99,102,241,${restAlpha}))`,
               duration: 0.5,
               overwrite: 'auto',
             });
@@ -165,20 +182,23 @@ export function usePerspectiveTilt<T extends HTMLElement>(
 
       // ════════════════════════════════════════════════════════════════════════
       // MOBILE / TABLET PATH — gentle floating animation (battery-friendly)
+      // Skipped when disableMobileFloat is true (e.g. CTA buttons).
       // ════════════════════════════════════════════════════════════════════════
-      gsap.to(el, {
-        y: -floatDistance,
-        duration: floatDuration,
-        ease: 'sine.inOut',
-        repeat: -1,
-        yoyo: true,
-      });
+      if (!disableMobileFloat) {
+        gsap.to(el, {
+          y: -floatDistance,
+          duration: floatDuration,
+          ease: 'sine.inOut',
+          repeat: -1,
+          yoyo: true,
+        });
+      }
     }); // end gsap.context
 
     return () => {
       ctx.revert(); // kills all tweens + calls any returned cleanup fns
     };
-  }, [maxRotate, scalePeak, quickToDuration, quickToEase, floatDistance, floatDuration]);
+  }, [maxRotate, scalePeak, quickToDuration, quickToEase, floatDistance, floatDuration, disableMobileFloat, shadowStrength]);
 
   return elRef;
 }
