@@ -27,6 +27,7 @@ export default function Hero() {
   const heroRef     = useRef<HTMLElement>(null);
   const heroLogoContainerRef = useRef<HTMLDivElement>(null);
   const heroLogoRef = useRef<HTMLImageElement>(null);
+  const playIconRef = useRef<HTMLImageElement>(null);
   const line1Ref    = useRef<HTMLSpanElement>(null);
   const line2Ref    = useRef<HTMLSpanElement>(null);
   const subtitleRef = useRef<HTMLParagraphElement>(null);
@@ -184,6 +185,54 @@ export default function Hero() {
           ease: 'sine.inOut',
         });
       }
+
+      // ── Play icon floating animation — identical motion to hero logo ──────
+      // Same 4-layer animation: float ↕, scale breathe, gentle rotation, glow pulse
+      if (playIconRef.current) {
+        // Layer 1: translateY float (-6px → 0) over 3s
+        gsap.to(playIconRef.current, {
+          y: -6,
+          duration: 3,
+          repeat: -1,
+          yoyo: true,
+          ease: 'power1.inOut',
+        });
+        // Layer 2: subtle X drift (-2px → +2px)
+        gsap.to(playIconRef.current, {
+          x: 2,
+          duration: 3.5,
+          repeat: -1,
+          yoyo: true,
+          ease: 'sine.inOut',
+          delay: 0.4,
+        });
+        // Layer 3: gentle scale breathe
+        gsap.to(playIconRef.current, {
+          scale: 1.04,
+          duration: 2.5,
+          repeat: -1,
+          yoyo: true,
+          ease: 'sine.inOut',
+          delay: 0.2,
+        });
+        // Layer 4: subtle rotation ±2°
+        gsap.to(playIconRef.current, {
+          rotation: 2,
+          duration: 4,
+          repeat: -1,
+          yoyo: true,
+          ease: 'sine.inOut',
+          delay: 0.6,
+        });
+        // Layer 5: indigo glow pulse matching hero logo
+        gsap.to(playIconRef.current, {
+          filter: 'drop-shadow(0 0 10px rgba(99, 102, 241, 0.55))',
+          duration: 2,
+          repeat: -1,
+          yoyo: true,
+          ease: 'sine.inOut',
+        });
+      }
     },
     heroRef,
     []
@@ -282,14 +331,23 @@ export default function Hero() {
                 style={{ 
                   transformStyle: 'preserve-3d', 
                   willChange: 'transform',
-                  width: '170px',
-                  height: '68px'
+                  width: '190px',
+                  height: '80px',
+                  padding: '0 20px',
                 }}
               >
                 <img
+                  ref={playIconRef}
                   src="/play icon.png"
                   alt="Play"
-                  style={{ width: '32px', height: '32px', objectFit: 'contain' }}
+                  style={{
+                    width: '62px',
+                    height: '62px',
+                    objectFit: 'contain',
+                    willChange: 'transform, filter',
+                    transformOrigin: 'center center',
+                    flexShrink: 0,
+                  }}
                   draggable={false}
                 />
                 Play
