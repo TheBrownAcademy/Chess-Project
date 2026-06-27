@@ -1,29 +1,31 @@
 /**
  * BrandSection.tsx
  * Mirrored hero-style section placed directly below the Hero.
- * Image on left, text on right (desktop). Image top, text bottom (mobile).
- * GSAP ScrollTrigger animations: image slides from left, text slides from right.
+ * Image on right, text on left (desktop).
+ * GSAP ScrollTrigger animations: image slides from right, text slides from left.
  */
 
 import { useRef } from 'react';
 import { useGSAP } from '../hooks/useGSAP';
 import { gsap, dur } from '../utils/gsapConfig';
+import { ArrowRight, Sparkles, Users, DollarSign, BarChart3 } from 'lucide-react';
 
 export default function BrandSection() {
   const sectionRef = useRef<HTMLElement>(null);
-  const imageRef = useRef<HTMLDivElement>(null);
   const textRef = useRef<HTMLDivElement>(null);
+  const imageRef = useRef<HTMLDivElement>(null);
+  const cardsRef = useRef<HTMLDivElement>(null);
 
   useGSAP(
     () => {
-      if (!sectionRef.current || !imageRef.current || !textRef.current) return;
+      if (!sectionRef.current || !imageRef.current || !textRef.current || !cardsRef.current) return;
 
-      // Image — fade up
+      // Text — fade right
       gsap.fromTo(
-        imageRef.current,
-        { y: 40, opacity: 0 },
+        textRef.current,
+        { x: -40, opacity: 0 },
         {
-          y: 0,
+          x: 0,
           opacity: 1,
           duration: dur(1),
           ease: 'power2.out',
@@ -35,12 +37,12 @@ export default function BrandSection() {
         }
       );
 
-      // Text — fade up
+      // Image — fade left
       gsap.fromTo(
-        textRef.current,
-        { y: 40, opacity: 0 },
+        imageRef.current,
+        { x: 40, opacity: 0 },
         {
-          y: 0,
+          x: 0,
           opacity: 1,
           duration: dur(1),
           delay: 0.15,
@@ -48,6 +50,24 @@ export default function BrandSection() {
           scrollTrigger: {
             trigger: sectionRef.current,
             start: 'top 80%',
+            toggleActions: 'play none none none',
+          },
+        }
+      );
+      
+      // Cards - stagger up
+      gsap.fromTo(
+        cardsRef.current.children,
+        { y: 30, opacity: 0 },
+        {
+          y: 0,
+          opacity: 1,
+          duration: dur(0.8),
+          stagger: 0.15,
+          ease: 'power2.out',
+          scrollTrigger: {
+            trigger: cardsRef.current,
+            start: 'top 85%',
             toggleActions: 'play none none none',
           },
         }
@@ -61,62 +81,128 @@ export default function BrandSection() {
     <section
       ref={sectionRef}
       id="brand-section"
-      className="relative py-20 md:py-28 overflow-hidden bg-brand-bg"
+      className="relative py-20 md:py-32 overflow-hidden bg-brand-bg"
     >
       {/* Soft blue ambient glow */}
       <div
         className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full blur-[140px] pointer-events-none"
-        style={{ background: 'rgba(99, 102, 241, 0.06)' }}
+        style={{ background: 'rgba(99, 102, 241, 0.04)' }}
         aria-hidden="true"
       />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-        <div className="flex flex-col items-center gap-12 lg:gap-16">
-
-          {/* Top — Image */}
+        
+        {/* Top Banner Area */}
+        <div className="flex flex-col lg:flex-row items-center gap-12 lg:gap-16 mb-24">
+          
+          {/* Left — Text Content */}
           <div
-            ref={imageRef}
-            className="w-full flex justify-center"
+            ref={textRef}
+            className="w-full lg:w-[55%] space-y-8 text-left"
             style={{ opacity: 0 }}
           >
-            <div className="w-full rounded-2xl overflow-hidden border border-brand-border/40 shadow-2xl"
-              style={{
-                boxShadow: '0 0 60px rgba(99, 102, 241, 0.08), 0 25px 50px rgba(0, 0, 0, 0.3)',
-              }}
-            >
+            {/* Top Pill */}
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-brand-accent/30 bg-brand-accent/10 shadow-[0_0_15px_rgba(99,102,241,0.2)]">
+              <span className="font-sans font-bold text-xs tracking-[0.15em] text-brand-accent drop-shadow-[0_0_8px_rgba(99,102,241,0.5)]">
+                FOR CREATORS WHO PLAY TO WIN
+              </span>
+            </div>
+
+            <div className="space-y-4 max-w-xl">
+              <h2 className="font-sans font-extrabold text-4xl sm:text-5xl md:text-6xl text-white tracking-tight leading-[1.05]">
+                <span className="block">Build More Than</span>
+                <span className="block text-transparent bg-clip-text bg-gradient-to-r from-brand-accent via-indigo-400 to-violet-400 drop-shadow-[0_0_24px_rgba(99,102,241,0.2)]">
+                  Subscribers
+                </span>
+              </h2>
+            </div>
+
+            <div className="space-y-4 max-w-lg">
+              <p className="font-sans text-base sm:text-[19px] text-brand-secondary/90 leading-relaxed font-medium">
+                You've already done the hard part: building an audience.
+              </p>
+              <p className="font-sans text-base sm:text-[19px] text-brand-secondary/90 leading-relaxed font-medium">
+                Now build a platform around your brand that grows with you.
+              </p>
+            </div>
+            
+            <div className="pt-4">
+              <button 
+                onClick={() => {
+                  document.getElementById('contact-us')?.scrollIntoView({ behavior: 'smooth' });
+                }}
+                className="inline-flex items-center justify-center gap-3 font-sans font-semibold text-[17px] bg-gradient-to-r from-[#6e63f6] via-[#7268f8] to-[#7b6dff] hover:brightness-110 text-white rounded-xl transition-all duration-300 shadow-[0_0_34px_rgba(110,99,246,0.35),0_12px_42px_rgba(0,0,0,0.35),inset_0_1px_0_rgba(255,255,255,0.25)] hover:shadow-[0_0_46px_rgba(110,99,246,0.55),0_16px_48px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.28)] hover:-translate-y-1 btn-glow-container btn-glow-accent cta-shine px-8 py-4 group"
+              >
+                Build Your Platform
+                <ArrowRight className="w-5 h-5 transition-transform duration-300 group-hover:translate-x-1" />
+              </button>
+            </div>
+          </div>
+
+          {/* Right — Artwork Image */}
+          <div
+            ref={imageRef}
+            className="w-full lg:w-[45%] flex justify-center lg:justify-end"
+            style={{ opacity: 0 }}
+          >
+            <div className="w-full max-w-[600px] relative scale-[1.1] origin-right">
+              <div className="absolute inset-0 bg-brand-accent/20 blur-[80px] rounded-full mix-blend-screen pointer-events-none" />
               <img
-                src="/new section .png"
-                alt="Build more than subscribers"
-                className="w-full h-auto object-cover"
+                src="/banner_artwork.png"
+                alt="Creator chess illustration"
+                className="w-full h-auto object-contain relative z-10 drop-shadow-[0_20px_40px_rgba(0,0,0,0.4)] transition-transform duration-700 hover:scale-[1.02]"
                 draggable={false}
               />
             </div>
           </div>
 
-          {/* Bottom — Text */}
-          <div
-            ref={textRef}
-            className="space-y-6 text-center max-w-3xl mx-auto"
-            style={{ opacity: 0 }}
-          >
-            <h2 className="font-sans font-extrabold text-3xl sm:text-4xl md:text-5xl text-white tracking-tight leading-[1.1]">
-              <span className="block">Build More Than</span>
-              <span className="block text-transparent bg-clip-text bg-gradient-to-r from-brand-accent via-indigo-400 to-violet-400">
-                Subscribers
-              </span>
-            </h2>
+        </div>
 
-            <div className="space-y-4">
-              <p className="font-sans text-base sm:text-lg text-brand-secondary leading-relaxed">
-                You've already done the hard part: building an audience.
-              </p>
-              <p className="font-sans text-base sm:text-lg text-brand-secondary leading-relaxed">
-                Now build a platform around your brand.
-              </p>
+        {/* Bottom Feature Cards */}
+        <div ref={cardsRef} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          
+          <div className="p-8 rounded-2xl bg-brand-surface/40 border border-white/5 backdrop-blur-sm shadow-xl hover:bg-brand-surface/60 transition-colors group">
+            <div className="w-12 h-12 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center mb-6 group-hover:bg-indigo-500/20 transition-colors">
+              <Sparkles className="w-6 h-6 text-indigo-400" />
             </div>
+            <h3 className="font-sans font-bold text-white text-lg mb-3">Own Your Platform</h3>
+            <p className="font-sans text-brand-secondary text-sm leading-relaxed">
+              No algorithms.<br/>No limits.
+            </p>
+          </div>
+
+          <div className="p-8 rounded-2xl bg-brand-surface/40 border border-white/5 backdrop-blur-sm shadow-xl hover:bg-brand-surface/60 transition-colors group">
+            <div className="w-12 h-12 rounded-xl bg-violet-500/10 border border-violet-500/20 flex items-center justify-center mb-6 group-hover:bg-violet-500/20 transition-colors">
+              <Users className="w-6 h-6 text-violet-400" />
+            </div>
+            <h3 className="font-sans font-bold text-white text-lg mb-3">Engage Your Community</h3>
+            <p className="font-sans text-brand-secondary text-sm leading-relaxed">
+              Tools to connect,<br/>interact and grow.
+            </p>
+          </div>
+
+          <div className="p-8 rounded-2xl bg-brand-surface/40 border border-white/5 backdrop-blur-sm shadow-xl hover:bg-brand-surface/60 transition-colors group">
+            <div className="w-12 h-12 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center mb-6 group-hover:bg-emerald-500/20 transition-colors">
+              <DollarSign className="w-6 h-6 text-emerald-400" />
+            </div>
+            <h3 className="font-sans font-bold text-white text-lg mb-3">Monetize Your Brand</h3>
+            <p className="font-sans text-brand-secondary text-sm leading-relaxed">
+              Turn your audience<br/>into real revenue.
+            </p>
+          </div>
+
+          <div className="p-8 rounded-2xl bg-brand-surface/40 border border-white/5 backdrop-blur-sm shadow-xl hover:bg-brand-surface/60 transition-colors group">
+            <div className="w-12 h-12 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center mb-6 group-hover:bg-blue-500/20 transition-colors">
+              <BarChart3 className="w-6 h-6 text-blue-400" />
+            </div>
+            <h3 className="font-sans font-bold text-white text-lg mb-3">Built to Scale</h3>
+            <p className="font-sans text-brand-secondary text-sm leading-relaxed">
+              All the analytics and<br/>insights you need.
+            </p>
           </div>
 
         </div>
+
       </div>
     </section>
   );

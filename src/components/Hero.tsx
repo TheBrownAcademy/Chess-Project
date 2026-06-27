@@ -19,6 +19,7 @@ import { useRef } from 'react';
 import { useGSAP } from '../hooks/useGSAP';
 import { usePerspectiveTilt } from '../hooks/usePerspectiveTilt';
 import { useMagneticWiggle } from '../hooks/useMagneticWiggle';
+import { useMagneticButton } from '../hooks/useMagneticButton';
 import { useButtonGlow } from '../hooks/useButtonGlow';
 import { gsap, dur, ease } from '../utils/gsapConfig';
 import HeroPuzzle from './HeroPuzzle';
@@ -73,7 +74,7 @@ export default function Hero() {
   };
 
   useMagneticWiggle({ targetRef: heroLogoRef, containerRef: heroLogoContainerRef, magneticStrength: 0.35 });
-  useMagneticWiggle({ targetRef: playIconRef, containerRef: ctaAnchorRef, magneticStrength: 0.4 });
+  useMagneticButton({ targetRef: ctaAnchorRef, containerRef: ctaRef, magneticStrength: 0.4 });
 
   // ── GSAP entrance animations ───────────────────────────────────────────────
   useGSAP(
@@ -219,7 +220,7 @@ export default function Hero() {
             >
               <img
                 ref={heroLogoRef}
-                src="/logo.png"
+                src="/logo_cropped.png"
                 alt="XLChess logo"
                 className="object-contain"
                 style={{
@@ -266,20 +267,21 @@ export default function Hero() {
                 href="#interactive-demo"
                 id="hero-cta-primary"
                 className="
-                  inline-flex items-center justify-center gap-3
+                  inline-flex items-center justify-center
                   font-sans font-semibold text-[17px]
                   bg-brand-accent hover:bg-brand-accent/95 text-white
                   rounded-lg
                   transition-colors duration-200
                   shadow-xl shadow-brand-accent/20
                   btn-glow-container btn-glow-accent cta-shine
+                  group
                 "
                 style={{ 
                   transformStyle: 'preserve-3d', 
                   willChange: 'transform',
                   width: '140px',
                   height: '64px',
-                  padding: '0 20px',
+                  padding: '0 10px',
                 }}
               >
                 <img
@@ -296,7 +298,7 @@ export default function Hero() {
                   }}
                   draggable={false}
                 />
-                Play
+                <span className="ml-2 transition-all duration-300 overflow-hidden whitespace-nowrap opacity-100 max-w-[80px] group-hover:opacity-0 group-hover:max-w-0 group-hover:ml-0">Play</span>
               </a>
             </div>
           </div>

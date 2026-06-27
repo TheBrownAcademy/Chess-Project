@@ -13,6 +13,14 @@ export default function Footer() {
     }
   };
 
+  const handlePuzzlesClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    e.preventDefault();
+    const heroSection = document.getElementById('hero-section');
+    if (heroSection) {
+      heroSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  };
+
   return (
     <footer
       ref={footerRef}
@@ -25,7 +33,7 @@ export default function Footer() {
           {/* Brand Signature — static logo, no animation, no hover */}
           <div className="flex items-center">
             <img
-              src="/logo.png"
+              src="/logo_cropped.png"
               alt="XLChess logo"
               className="h-[52px] sm:h-[62px] w-auto object-contain"
               style={{ display: 'block' }}
@@ -35,17 +43,25 @@ export default function Footer() {
 
           {/* Copyright — centered */}
           <p className="font-sans text-xs text-brand-secondary text-center">
-            &copy; 2026 XLChess. Demo concept
+            &copy; 2026 XLChess.
           </p>
 
-          {/* Single "Play" link */}
-          <div className="flex items-center">
+          {/* Navigation */}
+          <div className="flex items-center space-x-2 font-sans text-xs text-brand-secondary">
             <a
               href="#interactive-demo"
               onClick={handlePlayClick}
-              className="font-sans text-xs text-brand-secondary hover:text-white transition-colors"
+              className="hover:text-white transition-colors"
             >
               Play
+            </a>
+            <span>|</span>
+            <a
+              href="#hero-section"
+              onClick={handlePuzzlesClick}
+              className="hover:text-white transition-colors"
+            >
+              Puzzles
             </a>
           </div>
 

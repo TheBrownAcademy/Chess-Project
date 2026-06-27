@@ -4,16 +4,23 @@
  */
 
 import { useState, useRef } from 'react';
-import { CheckCircle2, ArrowRight, AlertCircle } from 'lucide-react';
+import { CheckCircle2, AlertCircle } from 'lucide-react';
 import { useScrollReveal } from '../hooks/useScrollReveal';
-import { useButtonGlow } from '../hooks/useButtonGlow';
-import { useGSAP } from '../hooks/useGSAP';
-import { gsap } from '../utils/gsapConfig';
 
 // Read recipient from environment — never hardcoded
 const RECIPIENT_EMAIL = import.meta.env.VITE_CONTACT_EMAIL as string | undefined;
 
 type FormStatus = 'idle' | 'submitting' | 'success' | 'error';
+
+const CONTACT_PARTICLES = Array.from({ length: 15 }).map((_, i) => ({
+  id: i,
+  size: Math.random() * 4 + 2,
+  left: Math.random() * 100,
+  duration: Math.random() * 10 + 8,
+  delay: Math.random() * 10,
+  drift: (Math.random() - 0.5) * 60,
+  opacity: Math.random() * 0.25 + 0.1,
+}));
 
 export default function ContactSection() {
   const [email, setEmail] = useState('');
@@ -23,7 +30,6 @@ export default function ContactSection() {
   const [status, setStatus] = useState<FormStatus>('idle');
 
   const ctaSectionRef = useRef<HTMLElement>(null);
-  const submitGlowRef = useButtonGlow<HTMLButtonElement>();
 
   // ScrollTrigger reveal for the section card
   const cardRef = useRef<HTMLDivElement>(null);
@@ -32,21 +38,6 @@ export default function ContactSection() {
     duration: 0.9,
     start: 'top 88%',
   });
-
-  useGSAP(() => {
-    const orb = ctaSectionRef.current?.querySelector('.cta-orb');
-    if (orb) {
-      gsap.to(orb, {
-        x: '+=40',
-        y: '-=50',
-        scale: 1.1,
-        duration: 14,
-        ease: 'sine.inOut',
-        repeat: -1,
-        yoyo: true,
-      });
-    }
-  }, ctaSectionRef, []);
 
   const validateEmail = (val: string) => {
     if (!val) return 'Email is required.';
@@ -99,54 +90,291 @@ export default function ContactSection() {
   };
 
   return (
-    <section ref={ctaSectionRef} id="partner-cta" className="py-20 md:py-28 bg-brand-bg relative overflow-hidden">
-      {/* Background glow */}
-      <div className="cta-orb absolute bottom-0 right-1/4 w-[500px] h-[500px] bg-brand-accent/5 rounded-full blur-[130px] pointer-events-none" />
+    <section ref={ctaSectionRef} id="contact-us" className="relative z-10 min-h-[calc(100vh-110px)] flex items-center justify-center py-16 px-6 overflow-hidden">
+      <style>{`
+        :root {
+          --card-bg: rgba(21, 27, 61, 0.72);
+          --input-bg: rgba(10, 19, 38, 0.9);
+          --purple-2: #7b6dff;
+          --ice: #89c2ff;
+          --muted: rgba(255, 255, 255, 0.62);
+          --placeholder: rgba(255, 255, 255, 0.35);
+        }
 
-      <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-        {/* ref attached here — ScrollTrigger fades this card up on enter */}
-        <div
-          ref={cardRef}
-          className="bg-brand-surface border border-brand-border rounded-2xl shadow-2xl py-8 px-6 sm:py-12 sm:px-8 text-center space-y-8 relative overflow-hidden"
-          style={{ opacity: 0 }}
-        >
+        .contact-page-bg {
+          position: absolute;
+          inset: 0;
+          background:
+            radial-gradient(circle at 18% 20%, rgba(123, 109, 255, 0.22), transparent 28%),
+            radial-gradient(circle at 80% 15%, rgba(137, 194, 255, 0.12), transparent 24%),
+            radial-gradient(circle at 50% 80%, rgba(110, 99, 246, 0.18), transparent 32%),
+            #0a0f24;
+          z-index: -2;
+        }
 
-          {/* Top accent line */}
-          <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-transparent via-brand-accent/60 to-transparent" />
+        .contact-page-bg::before {
+          content: "";
+          position: absolute;
+          inset: 0;
+          pointer-events: none;
+          background-image:
+            linear-gradient(rgba(255,255,255,0.026) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(255,255,255,0.026) 1px, transparent 1px);
+          background-size: 92px 92px;
+          mask-image: radial-gradient(circle at 50% 38%, black 0%, transparent 72%);
+          -webkit-mask-image: radial-gradient(circle at 50% 38%, black 0%, transparent 72%);
+        }
 
-          {/* Heading */}
-          <div className="max-w-xl mx-auto space-y-3">
-            <h2 className="font-sans font-extrabold text-3xl sm:text-4xl text-white tracking-tight">
-              Contact Us
-            </h2>
-          </div>
+        .contact-card {
+          position: relative;
+          width: min(1056px, 100%);
+          padding: 84px 96px 72px;
+          overflow: hidden;
+          border-radius: 24px;
+          background:
+            linear-gradient(135deg, rgba(255,255,255,0.08), transparent 34%),
+            radial-gradient(circle at 0% 0%, rgba(137, 194, 255, 0.16), transparent 28%),
+            radial-gradient(circle at 100% 0%, rgba(123, 109, 255, 0.18), transparent 26%),
+            var(--card-bg);
+          border: 1px solid rgba(255,255,255,0.1);
+          box-shadow:
+            0 28px 80px rgba(0, 0, 0, 0.45),
+            inset 0 1px 0 rgba(255,255,255,0.08),
+            inset 0 -1px 0 rgba(137,194,255,0.08);
+          backdrop-filter: blur(22px);
+        }
+
+        .contact-card::before {
+          content: "♞";
+          position: absolute;
+          right: 40px;
+          top: 8px;
+          font-size: 420px;
+          line-height: 1;
+          opacity: 0.035;
+          color: #fff;
+          transform: rotate(-8deg);
+          pointer-events: none;
+        }
+
+        .contact-card::after {
+          content: "";
+          position: absolute;
+          inset: 0;
+          border-radius: inherit;
+          pointer-events: none;
+          background:
+            radial-gradient(circle at top left, rgba(137,194,255,0.32), transparent 26%),
+            radial-gradient(circle at top right, rgba(123,109,255,0.32), transparent 25%),
+            radial-gradient(circle at bottom left, rgba(137,194,255,0.16), transparent 22%),
+            radial-gradient(circle at bottom right, rgba(110,99,246,0.25), transparent 24%);
+          opacity: 0.7;
+          mix-blend-mode: screen;
+        }
+
+        .contact-h2 {
+          margin: 0 0 58px;
+          text-align: center;
+          font-size: clamp(42px, 5vw, 58px);
+          line-height: 1;
+          letter-spacing: -0.06em;
+          text-shadow: 0 0 28px rgba(137,194,255,0.18);
+          color: #ffffff;
+        }
+
+        .field {
+          margin-bottom: 34px;
+        }
+
+        .contact-label {
+          display: block;
+          margin-bottom: 14px;
+          color: var(--muted);
+          font-size: 18px;
+          font-weight: 700;
+        }
+
+        .contact-label span {
+          color: var(--purple-2);
+          text-shadow: 0 0 12px rgba(123,109,255,0.7);
+        }
+
+        .contact-input,
+        .contact-textarea {
+          width: 100%;
+          border: 1px solid rgba(137,194,255,0.15);
+          background: var(--input-bg);
+          color: #fff;
+          border-radius: 12px;
+          padding: 20px 24px;
+          font: inherit;
+          font-size: 22px;
+          outline: none;
+          box-shadow:
+            inset 0 0 28px rgba(0,0,0,0.3),
+            0 0 0 0 rgba(137,194,255,0);
+          transition: border-color 180ms ease, box-shadow 180ms ease, transform 180ms ease;
+        }
+
+        .contact-textarea {
+          min-height: 182px;
+          resize: vertical;
+        }
+
+        .contact-input::placeholder,
+        .contact-textarea::placeholder {
+          color: var(--placeholder);
+        }
+
+        .contact-input:focus,
+        .contact-textarea:focus {
+          border-color: rgba(137,194,255,0.72);
+          box-shadow:
+            0 0 0 4px rgba(137,194,255,0.11),
+            0 0 28px rgba(137,194,255,0.12),
+            inset 0 0 28px rgba(0,0,0,0.3);
+          transform: translateY(-1px);
+        }
+          
+        .contact-input.error,
+        .contact-textarea.error {
+          border-color: rgba(239, 68, 68, 0.7);
+        }
+
+        .contact-btn {
+          position: relative;
+          width: 100%;
+          margin-top: 16px;
+          border: 0;
+          border-radius: 12px;
+          padding: 24px 30px;
+          color: #fff;
+          font-size: 22px;
+          font-weight: 800;
+          cursor: pointer;
+          overflow: hidden;
+          background: linear-gradient(90deg, #6e63f6 0%, #7268f8 50%, #7b6dff 100%);
+          box-shadow:
+            0 0 34px rgba(110,99,246,0.35),
+            0 12px 42px rgba(0,0,0,0.35),
+            inset 0 1px 0 rgba(255,255,255,0.25);
+          transition: transform 180ms ease, box-shadow 180ms ease;
+        }
+
+        .contact-btn::before {
+          content: "";
+          position: absolute;
+          top: 0;
+          left: -40%;
+          width: 30%;
+          height: 100%;
+          background: linear-gradient(90deg, transparent, rgba(255,255,255,0.55), transparent);
+          transform: skewX(-18deg);
+          animation: buttonShine 4.5s ease-in-out infinite;
+        }
+
+        .contact-btn:hover {
+          transform: translateY(-2px);
+          box-shadow:
+            0 0 46px rgba(110,99,246,0.55),
+            0 16px 48px rgba(0,0,0,0.4),
+            inset 0 1px 0 rgba(255,255,255,0.28);
+        }
+
+        @keyframes buttonShine {
+          0%, 35% { left: -42%; }
+          65%, 100% { left: 115%; }
+        }
+
+        @keyframes contactParticleFloat {
+          0% { transform: translate(0, 0); opacity: 0; }
+          20% { opacity: var(--p-opacity, 0.2); }
+          80% { opacity: var(--p-opacity, 0.2); }
+          100% { transform: translate(var(--p-drift), -120vh); opacity: 0; }
+        }
+
+        .contact-particle {
+          position: absolute;
+          bottom: -20px;
+          background: #89c2ff;
+          border-radius: 50%;
+          box-shadow: 0 0 12px 2px rgba(137, 194, 255, 0.6);
+          animation: contactParticleFloat linear infinite;
+        }
+
+        .arrow {
+          margin-left: 16px;
+          color: #fff;
+        }
+
+        @media (max-width: 760px) {
+          .contact-card {
+            padding: 54px 24px 42px;
+          }
+          .contact-input,
+          .contact-textarea,
+          .contact-btn {
+            font-size: 18px;
+          }
+        }
+      `}</style>
+      
+      <div className="contact-page-bg"></div>
+
+      {/* Floating Particles Background */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none z-[-1]">
+        {CONTACT_PARTICLES.map((p) => (
+          <div
+            key={p.id}
+            className="contact-particle"
+            style={{
+              width: `${p.size}px`,
+              height: `${p.size}px`,
+              left: `${p.left}%`,
+              animationDuration: `${p.duration}s`,
+              animationDelay: `${p.delay}s`,
+              ['--p-drift' as any]: `${p.drift}px`,
+              ['--p-opacity' as any]: p.opacity,
+            }}
+          />
+        ))}
+      </div>
+
+      <div
+        ref={cardRef}
+        className="contact-card"
+        style={{ opacity: 0 }}
+      >
+        <div className="relative z-10 max-w-[864px] mx-auto">
+          <h1 className="contact-h2 font-sans font-extrabold">
+            Contact Us
+          </h1>
 
           {status === 'success' ? (
-            <div className="max-w-md mx-auto py-8 space-y-4 animate-in zoom-in-95 duration-300">
-              <div className="w-16 h-16 rounded-full bg-brand-accent/10 border border-brand-accent/30 flex items-center justify-center text-brand-accent mx-auto">
+            <div className="max-w-md mx-auto py-8 space-y-4 animate-in zoom-in-95 duration-300 text-center">
+              <div className="w-16 h-16 rounded-full bg-[rgba(110,99,246,0.15)] border border-[rgba(110,99,246,0.3)] flex items-center justify-center text-[#7b6dff] mx-auto">
                 <CheckCircle2 className="w-8 h-8" />
               </div>
               <div className="space-y-2">
-                <h3 className="font-sans font-bold text-xl text-white">Message Sent</h3>
-                <p className="font-sans text-sm text-brand-secondary leading-relaxed">
+                <h3 className="font-sans font-bold text-2xl text-white">Message Sent</h3>
+                <p className="font-sans text-[var(--muted)] leading-relaxed">
                   Thank you for reaching out. Your default mail client has been opened with your message pre-filled.
                   We'll get back to you as soon as possible.
                 </p>
               </div>
               <button
                 onClick={handleReset}
-                className="text-xs text-brand-accent font-semibold hover:underline"
+                className="text-sm text-[var(--ice)] font-semibold hover:underline"
               >
                 Send another message
               </button>
             </div>
           ) : (
-            <form onSubmit={handleSubmit} noValidate className="text-left max-w-xl mx-auto space-y-5">
+            <form onSubmit={handleSubmit} noValidate>
 
-              {/* Email field */}
-              <div className="space-y-1.5">
-                <label htmlFor="contact-email" className="text-xs font-medium text-brand-secondary">
-                  Email <span className="text-brand-accent">*</span>
+              <div className="field font-sans">
+                <label htmlFor="contact-email" className="contact-label">
+                  Email <span>*</span>
                 </label>
                 <input
                   type="email"
@@ -158,75 +386,58 @@ export default function ContactSection() {
                     if (emailError) setEmailError(validateEmail(e.target.value));
                   }}
                   placeholder="you@example.com"
-                  className={`w-full bg-brand-bg border rounded-lg px-4 py-2.5 text-sm text-white placeholder-brand-secondary/40 focus:outline-none transition-all font-sans ${
-                    emailError
-                      ? 'border-red-500/70 focus:border-red-500'
-                      : 'border-brand-border focus:border-brand-accent/70'
-                  }`}
+                  className={`contact-input font-sans ${emailError ? 'error' : ''}`}
                 />
                 {emailError && (
-                  <p className="text-xs text-red-400 mt-1">{emailError}</p>
+                  <p className="text-sm text-red-400 mt-2 font-medium">{emailError}</p>
                 )}
               </div>
 
-              {/* Message field */}
-              <div className="space-y-1.5">
-                <label htmlFor="contact-message" className="text-xs font-medium text-brand-secondary">
-                  Message <span className="text-brand-accent">*</span>
+              <div className="field font-sans">
+                <label htmlFor="contact-message" className="contact-label">
+                  Message <span>*</span>
                 </label>
                 <textarea
                   id="contact-message"
                   required
-                  rows={5}
                   value={message}
                   onChange={(e) => {
                     setMessage(e.target.value);
                     if (messageError) setMessageError(validateMessage(e.target.value));
                   }}
                   placeholder="Tell us how we can help you."
-                  className={`w-full bg-brand-bg border rounded-lg px-4 py-2.5 text-sm text-white placeholder-brand-secondary/40 focus:outline-none transition-all font-sans resize-none ${
-                    messageError
-                      ? 'border-red-500/70 focus:border-red-500'
-                      : 'border-brand-border focus:border-brand-accent/70'
-                  }`}
+                  className={`contact-textarea font-sans ${messageError ? 'error' : ''}`}
                 />
-                <div className="flex items-start">
-                  {messageError ? (
-                    <p className="text-xs text-red-400">{messageError}</p>
-                  ) : null}
-                </div>
+                {messageError && (
+                  <p className="text-sm text-red-400 mt-2 font-medium">{messageError}</p>
+                )}
               </div>
 
-              {/* Error state */}
               {status === 'error' && (
-                <div className="flex items-center gap-2 p-3 rounded-lg bg-red-500/10 border border-red-500/30 text-red-400 text-xs">
-                  <AlertCircle className="w-4 h-4 shrink-0" />
+                <div className="flex items-center gap-2 p-4 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 text-sm mb-4">
+                  <AlertCircle className="w-5 h-5 shrink-0" />
                   Something went wrong. Please try again or email us directly.
                 </div>
               )}
 
-              {/* Submit button */}
               <button
-                ref={submitGlowRef}
                 type="submit"
                 disabled={status === 'submitting'}
-                className="w-full flex items-center justify-center gap-2 font-sans font-semibold text-sm bg-brand-accent hover:bg-brand-accent/95 text-white py-3.5 rounded-lg transition-all duration-200 shadow-lg shadow-brand-accent/20 disabled:opacity-75 disabled:pointer-events-none btn-glow-container btn-glow-accent"
+                className="contact-btn font-sans flex items-center justify-center gap-2 disabled:opacity-75 disabled:pointer-events-none"
               >
                 {status === 'submitting' ? (
                   <>
-                    <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                     Sending...
                   </>
                 ) : (
                   <>
-                    Submit
-                    <ArrowRight className="w-4 h-4" />
+                    Send Message <span className="arrow font-sans">→</span>
                   </>
                 )}
               </button>
             </form>
           )}
-
         </div>
       </div>
     </section>

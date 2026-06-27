@@ -847,21 +847,20 @@ export default function HeroPuzzle() {
             <MoveAnnotation activeAnnotation={activeAnnotation} />
 
             {/* ── Engraved board coordinates ── */}
-            {/* File labels a–h: 6px from bottom edge, right-aligned inside each square */}
+            {/* File labels a–h: bottom-left of each file column (left: calc(i*12.5% + 4px), bottom: 4px) */}
             {['a','b','c','d','e','f','g','h'].map((file, i) => (
               <span
                 key={`file-${file}`}
                 aria-hidden="true"
                 style={{
                   position: 'absolute',
-                  bottom: '6px',
-                  left: `${i * 12.5 + 6.25}%`,
-                  transform: 'translateX(-50%)',
+                  bottom: '4px',
+                  left: `calc(${i * 12.5}% + 4px)`,
                   fontFamily: 'Inter, system-ui, sans-serif',
-                  fontSize: '14px',
-                  fontWeight: 600,
-                  color: 'rgba(20, 30, 10, 0.5)',
-                  textShadow: '0 1px 0 rgba(255, 255, 255, 0.25)',
+                  fontSize: '13px',
+                  fontWeight: 700,
+                  color: i % 2 === 0 ? '#EEEED2' : '#769656', // a1 is dark -> text light
+                  opacity: 0.9,
                   pointerEvents: 'none',
                   userSelect: 'none',
                   zIndex: 25,
@@ -872,20 +871,20 @@ export default function HeroPuzzle() {
               </span>
             ))}
 
-            {/* Rank labels 8–1: 6px from left edge, 6px from top/bottom of each square */}
+            {/* Rank labels 8–1: top-left of each rank row (top: calc(i*12.5% + 4px), left: 4px) */}
             {['8','7','6','5','4','3','2','1'].map((rank, i) => (
               <span
                 key={`rank-${rank}`}
                 aria-hidden="true"
                 style={{
                   position: 'absolute',
-                  top: `${i * 12.5 + 0.8}%`,
-                  left: '6px',
+                  top: `calc(${i * 12.5}% + 4px)`,
+                  left: '4px',
                   fontFamily: 'Inter, system-ui, sans-serif',
-                  fontSize: '14px',
-                  fontWeight: 600,
-                  color: 'rgba(20, 30, 10, 0.5)',
-                  textShadow: '0 1px 0 rgba(255, 255, 255, 0.25)',
+                  fontSize: '13px',
+                  fontWeight: 700,
+                  color: i % 2 === 0 ? '#769656' : '#EEEED2', // a8 is light -> text dark
+                  opacity: 0.9,
                   pointerEvents: 'none',
                   userSelect: 'none',
                   zIndex: 25,

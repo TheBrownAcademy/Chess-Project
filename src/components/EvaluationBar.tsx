@@ -46,8 +46,9 @@ export function EvaluationBar({ evaluation, isDesktop, boardHeight }: Evaluation
         }}
       >
         <div
-          className="bg-white/80 transition-all duration-500 ease-out"
+          className="transition-all duration-500 ease-out"
           style={{
+            backgroundColor: '#ffffff',
             width: isDesktop ? '100%' : `${evalPercent}%`,
             height: isDesktop ? `${evalPercent}%` : '100%',
           }}
