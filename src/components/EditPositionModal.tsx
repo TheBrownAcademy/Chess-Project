@@ -43,6 +43,8 @@ export function EditPositionModal({
   const [selectedTool, setSelectedTool] = useState<EditorTool | null>(null);
   const [loadErrorMessage, setLoadErrorMessage] = useState<string | null>(null);
   const [boardSize, setBoardSize] = useState(720);
+  const [isDesktopLayout, setIsDesktopLayout] = useState(() => window.innerWidth >= 1024);
+  const [visualViewportHeight, setVisualViewportHeight] = useState<number | null>(null);
 
   const { evaluation, analyzePosition, stopSearch } = useStockfish();
   const analysisTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -57,18 +59,41 @@ export function EditPositionModal({
   useEffect(() => {
     if (!isOpen) return;
 
-    const updateBoardSize = () => {
+    const updateLayout = () => {
       const viewportWidth = window.innerWidth;
-      const viewportHeight = window.innerHeight;
-      const availableHeight = Math.floor(viewportHeight * 0.92) - 24;
-      const availableWidth = Math.max(320, viewportWidth - 480 - 48);
-      setBoardSize(Math.max(320, Math.min(availableHeight, availableWidth)));
+      const vv = window.visualViewport;
+      const currentHeight = vv ? vv.height : window.innerHeight;
+      const desktop = viewportWidth >= 1024;
+      
+      setIsDesktopLayout(desktop);
+      setVisualViewportHeight(currentHeight);
+
+      if (desktop) {
+        const availableHeight = Math.floor(currentHeight * 0.92) - 24;
+        const availableWidth = Math.max(320, viewportWidth - 480 - 48);
+        setBoardSize(Math.max(320, Math.min(availableHeight, availableWidth)));
+      } else {
+        const maxBoardWidth = viewportWidth - 48; // Account for 24px outer modal padding and 24px chessboard container padding
+        const maxBoardHeight = currentHeight - 280;
+        setBoardSize(Math.max(280, Math.min(maxBoardWidth, maxBoardHeight)));
+      }
     };
 
-    updateBoardSize();
-    window.addEventListener('resize', updateBoardSize);
+    updateLayout();
+    window.addEventListener('resize', updateLayout);
+    const vv = window.visualViewport;
+    if (vv) {
+      vv.addEventListener('resize', updateLayout);
+      vv.addEventListener('scroll', updateLayout);
+    }
 
-    return () => window.removeEventListener('resize', updateBoardSize);
+    return () => {
+      window.removeEventListener('resize', updateLayout);
+      if (vv) {
+        vv.removeEventListener('resize', updateLayout);
+        vv.removeEventListener('scroll', updateLayout);
+      }
+    };
   }, [isOpen]);
 
   useEffect(() => {
@@ -158,7 +183,13 @@ export function EditPositionModal({
 
   return (
     <div className="fixed inset-0 z-40 overflow-hidden bg-brand-bg/85 px-3 py-3 backdrop-blur-sm">
-      <div className="mx-auto flex h-[calc(100vh-1.5rem)] max-h-[calc(100vh-1.5rem)] max-w-[1460px] items-stretch">
+      <div
+        className="mx-auto flex w-full h-[calc(100dvh-1.5rem)] lg:h-[calc(100vh-1.5rem)] max-h-[calc(100dvh-1.5rem)] lg:max-h-[calc(100vh-1.5rem)] max-w-[1460px] items-stretch"
+        style={{
+          height: !isDesktopLayout && visualViewportHeight ? `${visualViewportHeight - 24}px` : undefined,
+          maxHeight: !isDesktopLayout && visualViewportHeight ? `${visualViewportHeight - 24}px` : undefined,
+        }}
+      >
         <div className={`relative flex h-full w-full overflow-hidden rounded-2xl border border-brand-border bg-brand-surface shadow-2xl ${isEraserActive ? 'eraser-mode-active' : ''}`}>
           <button
             onClick={onCancel}
@@ -169,12 +200,12 @@ export function EditPositionModal({
             <X className="w-4 h-4" />
           </button>
 
-          <div className="grid min-h-0 flex-1 grid-cols-1 gap-0 xl:grid-cols-[auto_minmax(0,1fr)_minmax(340px,420px)]">
-            <div className="flex min-h-0 items-stretch border-b border-brand-border bg-brand-bg/35 px-3 py-3 xl:border-b-0 xl:border-r xl:border-brand-border/80">
-              <EvaluationBar evaluation={evaluation} isDesktop boardHeight={boardSize} />
+          <div className="flex flex-col lg:grid min-h-0 flex-1 w-full max-w-full overflow-hidden lg:grid-cols-[auto_minmax(0,1fr)_minmax(340px,420px)] lg:gap-0">
+            <div className="flex-shrink-0 flex min-h-0 w-full lg:w-auto items-center lg:items-stretch border-b border-brand-border bg-brand-bg/35 px-3 py-3 pt-14 lg:pt-3 lg:border-b-0 lg:border-r lg:border-brand-border/80">
+              <EvaluationBar evaluation={evaluation} isDesktop={isDesktopLayout} boardHeight={boardSize} />
             </div>
 
-            <div className="flex min-h-0 items-center justify-center border-b border-brand-border px-3 py-3 xl:border-b-0 xl:border-r xl:border-brand-border/80">
+            <div className="flex-shrink-0 flex min-h-0 items-center justify-center border-b border-brand-border px-3 py-3 lg:border-b-0 lg:border-r lg:border-brand-border/80">
               <EditPositionBoard
                 position={editorState.position}
                 selectedTool={selectedTool}
@@ -184,9 +215,12 @@ export function EditPositionModal({
               />
             </div>
 
-            <div className="min-h-0 overflow-hidden px-3 py-3 sm:px-4 sm:py-4 xl:pt-14">
-              <div className="flex h-full min-h-0 flex-col gap-2">
-                <div className="grid grid-cols-1 gap-2">
+            <div
+              className="min-h-0 overflow-y-auto lg:overflow-hidden flex-1 px-3 py-3 sm:px-4 sm:py-4 lg:pt-14 w-full"
+              style={!isDesktopLayout ? { paddingBottom: 'calc(16px + env(safe-area-inset-bottom))' } : undefined}
+            >
+              <div className="flex h-auto lg:h-full min-h-0 flex-col gap-2">
+                <div className="grid grid-cols-1 gap-2 flex-shrink-0">
                   {PIECE_ROWS.map((row, rowIndex) => (
                     <div
                       key={rowIndex}
@@ -218,7 +252,7 @@ export function EditPositionModal({
 
                 <button
                   onClick={() => selectTool('erase')}
-                  className={`flex items-center justify-center gap-3 rounded-lg border px-4 py-2.5 transition-all ${selectedTool === 'erase'
+                  className={`flex-shrink-0 flex items-center justify-center gap-3 rounded-lg border px-4 py-2.5 transition-all duration-150 ${selectedTool === 'erase'
                     ? 'border-purple-400 bg-purple-400/15 text-white shadow-[0_0_0_1px_rgba(192,132,252,0.45),0_0_24px_rgba(192,132,252,0.22)] scale-[1.02]'
                     : 'border-brand-border bg-brand-bg text-brand-secondary hover:bg-white/5 hover:text-white'
                     }`}
@@ -252,7 +286,7 @@ export function EditPositionModal({
                   <Eraser className="w-4 h-4" />
                 </button>
 
-                <section className="flex flex-col min-h-0 flex-1 overflow-y-auto pr-1.5 gap-2 scrollbar-thin">
+                <section className="flex flex-col min-h-0 lg:flex-1 lg:overflow-y-auto pr-1.5 lg:pr-1.5 gap-2 scrollbar-thin lg:scrollbar-thin">
                   <div className="rounded-xl border border-brand-border bg-brand-bg/50 p-2.5">
                     <div className="grid grid-cols-2 gap-1.5">
                       {(['w', 'b'] as const).map((color) => (

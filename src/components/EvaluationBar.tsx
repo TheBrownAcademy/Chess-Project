@@ -30,13 +30,13 @@ export function EvaluationBar({ evaluation, isDesktop, boardHeight }: Evaluation
 
   return (
     <div
-      className="flex lg:flex-col items-center justify-center gap-2"
+      className={isDesktop ? "flex flex-col items-center justify-center gap-2" : "flex flex-row items-center justify-center gap-2 w-full"}
       style={{ alignSelf: 'stretch', padding: '0' }}
     >
       <div
-        className="relative overflow-hidden flex lg:flex-col-reverse items-start lg:items-end w-full h-full"
+        className={isDesktop ? "relative overflow-hidden flex flex-col-reverse items-end w-full" : "relative overflow-hidden flex flex-row items-center flex-1 h-full"}
         style={{
-          width: isDesktop ? '24px' : '100%',
+          width: isDesktop ? '24px' : undefined,
           borderRadius: '8px',
           height: isDesktop && boardHeight ? `${boardHeight}px` : '16px',
           background: 'rgba(255,255,255,0.04)',
@@ -56,7 +56,7 @@ export function EvaluationBar({ evaluation, isDesktop, boardHeight }: Evaluation
       </div>
       <div className="flex justify-center pointer-events-none">
         <span
-          className="font-mono font-semibold text-sm sm:text-base lg:text-lg px-2 py-1 shadow-sm leading-none rounded-md"
+          className="font-mono font-semibold text-sm sm:text-base px-2 py-1 shadow-sm leading-none rounded-md"
           style={{
             backgroundColor: '#ffffff',
             color: '#111827',
