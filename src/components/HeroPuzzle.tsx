@@ -859,9 +859,9 @@ export default function HeroPuzzle() {
                   fontFamily: 'Inter, system-ui, sans-serif',
                   fontSize: file === 'd' ? '11px' : '13px',
                   fontWeight: 700,
-                  color: i % 2 === 0 ? '#769656' : '#EEEED2', // engraved: same color as square
+                  color: i % 2 === 0 ? '#67834b' : '#d0d0b7', // engraved: 12% darker than square
                   textShadow: '0px -1px 1px rgba(0,0,0,0.35), 0px 1px 1px rgba(255,255,255,0.4)',
-                  opacity: 0.9,
+                  opacity: 0.92,
                   pointerEvents: 'none',
                   userSelect: 'none',
                   zIndex: 25,
@@ -884,9 +884,9 @@ export default function HeroPuzzle() {
                   fontFamily: 'Inter, system-ui, sans-serif',
                   fontSize: '13px',
                   fontWeight: 700,
-                  color: i % 2 === 0 ? '#EEEED2' : '#769656', // engraved: same color as square
+                  color: i % 2 === 0 ? '#d0d0b7' : '#67834b', // engraved: 12% darker than square
                   textShadow: '0px -1px 1px rgba(0,0,0,0.35), 0px 1px 1px rgba(255,255,255,0.4)',
-                  opacity: 0.9,
+                  opacity: 0.92,
                   pointerEvents: 'none',
                   userSelect: 'none',
                   zIndex: 25,
