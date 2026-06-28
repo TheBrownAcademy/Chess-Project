@@ -8,7 +8,7 @@
 import { useRef } from 'react';
 import { useGSAP } from '../hooks/useGSAP';
 import { gsap, dur } from '../utils/gsapConfig';
-import { ArrowRight, Sparkles, Users, DollarSign, BarChart3 } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 
 export default function BrandSection() {
   const sectionRef = useRef<HTMLElement>(null);

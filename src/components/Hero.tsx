@@ -18,7 +18,7 @@ import { useRef } from 'react';
 
 import { useGSAP } from '../hooks/useGSAP';
 import { usePerspectiveTilt } from '../hooks/usePerspectiveTilt';
-import { useMagneticWiggle } from '../hooks/useMagneticWiggle';
+
 import { useMagneticButton } from '../hooks/useMagneticButton';
 import { useButtonGlow } from '../hooks/useButtonGlow';
 import { gsap, dur, ease } from '../utils/gsapConfig';
