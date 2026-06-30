@@ -36,7 +36,7 @@
 import { useState, useRef, useCallback, useEffect, useLayoutEffect } from 'react';
 import { Chessboard } from 'react-chessboard';
 import { Chess } from 'chess.js';
-import { RotateCcw, Play, Trophy, AlertTriangle, ChevronRight, Zap } from 'lucide-react';
+import { RotateCcw, Play, Zap } from 'lucide-react';
 import { useConfetti } from '../hooks/useConfetti';
 import { useBoardCursorGlow } from '../hooks/useBoardCursorGlow';
 import { useMoveTrail } from '../hooks/useMoveTrail';
