@@ -124,8 +124,8 @@ export default function BrandSection() {
             <div className="w-full max-w-[600px] relative scale-[1.1] origin-right">
               <div className="absolute inset-0 bg-brand-accent/20 blur-[80px] rounded-full mix-blend-screen pointer-events-none" />
               <img
-                src="/banner_artwork.png"
-                alt="Creator chess illustration"
+                src="/final%20banner.png"
+                alt="Build More Than Subscribers Design"
                 className="w-full h-auto object-contain relative z-10 drop-shadow-[0_20px_40px_rgba(0,0,0,0.4)] transition-transform duration-700 hover:scale-[1.02]"
                 draggable={false}
               />

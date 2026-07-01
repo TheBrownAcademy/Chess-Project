@@ -54,7 +54,7 @@ export function EvaluationBar({ evaluation, isDesktop, boardHeight }: Evaluation
           }}
         />
       </div>
-      <div className={`flex justify-center pointer-events-none ${isDesktop ? 'mt-3' : ''}`}>
+      <div className={`flex justify-center pointer-events-none ${isDesktop ? 'mt-1' : ''}`}>
         <span
           className="font-mono font-semibold text-sm sm:text-base leading-none"
           style={{

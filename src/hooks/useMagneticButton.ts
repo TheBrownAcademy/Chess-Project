@@ -15,19 +15,21 @@ export function useMagneticButton<T extends HTMLElement, C extends HTMLElement>(
   useEffect(() => {
     const target = targetRef.current;
     const container = containerRef?.current || target;
-    
+
     if (!target || !container) return;
 
     const onMouseMove = (e: MouseEvent) => {
       const rect = container.getBoundingClientRect();
       const x = gsap.utils.mapRange(rect.left, rect.right, -rect.width / 2, rect.width / 2, e.clientX);
       const y = gsap.utils.mapRange(rect.top, rect.bottom, -rect.height / 2, rect.height / 2, e.clientY);
-      
+
       let moveX = x * magneticStrength;
       let moveY = y * magneticStrength;
 
-      const maxMoveX = Math.max(0, (rect.width - target.offsetWidth) / 2 - 2);
-      const maxMoveY = Math.max(0, (rect.height - target.offsetHeight) / 2 - 2);
+      // The image element is 62x62, but the visual chess piece inside the PNG is smaller (has transparent padding).
+      // We manually define the visual boundaries so it can move freely and bounce off the logical inner edges.
+      const maxMoveX = 32;
+      const maxMoveY = 12;
 
       moveX = gsap.utils.clamp(-maxMoveX, maxMoveX, moveX);
       moveY = gsap.utils.clamp(-maxMoveY, maxMoveY, moveY);
@@ -35,7 +37,7 @@ export function useMagneticButton<T extends HTMLElement, C extends HTMLElement>(
       gsap.to(target, {
         x: moveX,
         y: moveY,
-        duration: 0.4,
+        duration: 0.35,
         ease: 'power2.out',
         overwrite: true,
       });
@@ -45,8 +47,8 @@ export function useMagneticButton<T extends HTMLElement, C extends HTMLElement>(
       gsap.to(target, {
         x: 0,
         y: 0,
-        duration: 0.7,
-        ease: 'elastic.out(1, 0.4)',
+        duration: 0.8,
+        ease: 'elastic.out(1, 0.3)',
         overwrite: true,
       });
     };

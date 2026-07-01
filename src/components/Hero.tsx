@@ -26,24 +26,27 @@ import HeroPuzzle from './HeroPuzzle';
 
 export default function Hero() {
   // ── Animation refs ────────────────────────────────────────────────────────
-  const heroRef     = useRef<HTMLElement>(null);
+  const heroRef = useRef<HTMLElement>(null);
   const heroLogoContainerRef = useRef<HTMLDivElement>(null);
   const heroLogoRef = useRef<HTMLImageElement>(null);
   const playIconRef = useRef<HTMLImageElement>(null);
-  const line1Ref    = useRef<HTMLSpanElement>(null);
-  const line2Ref    = useRef<HTMLSpanElement>(null);
+  const playTextRef = useRef<HTMLSpanElement>(null);
+  const line1Ref = useRef<HTMLSpanElement>(null);
+  const line2Ref = useRef<HTMLSpanElement>(null);
   const subtitleRef = useRef<HTMLParagraphElement>(null);
-  const ctaRef      = useRef<HTMLDivElement>(null);
+  const subPara1Ref = useRef<HTMLParagraphElement>(null);
+  const subPara2Ref = useRef<HTMLParagraphElement>(null);
+  const ctaRef = useRef<HTMLDivElement>(null);
   const boardColRef = useRef<HTMLDivElement>(null);
 
   // ── Perspective tilt hook (manages its own ref) ────────────────────────────
   const tiltRef = usePerspectiveTilt<HTMLDivElement>({
-    maxRotate:       6,
-    scalePeak:       1.03,
+    maxRotate: 6,
+    scalePeak: 1.03,
     quickToDuration: 0.35,
-    quickToEase:     'power2.out',
-    floatDistance:   8,
-    floatDuration:   3,
+    quickToEase: 'power2.out',
+    floatDistance: 8,
+    floatDuration: 3,
   });
 
   const primaryGlowRef = useButtonGlow<HTMLAnchorElement>();
@@ -56,7 +59,7 @@ export default function Hero() {
     (ctaAnchorRef as React.MutableRefObject<HTMLAnchorElement | null>).current = el;
   };
 
-  useMagneticButton({ targetRef: playIconRef, containerRef: ctaAnchorRef, magneticStrength: 0.4 });
+  useMagneticButton({ targetRef: playIconRef, containerRef: ctaAnchorRef, magneticStrength: 1.0 });
 
   // ── GSAP entrance animations ───────────────────────────────────────────────
   useGSAP(
@@ -65,21 +68,75 @@ export default function Hero() {
 
       const tl = gsap.timeline({ defaults: { ease: ease.out } });
 
-
-
-      // ② Headline lines — staggered fade-up
+      // ① Logo — fade-down
       tl.fromTo(
-        [line1Ref.current, line2Ref.current],
-        { opacity: 0, y: 40 },
-        { opacity: 1, y: 0, duration: dur(0.8), stagger: 0.15 },
-        '-=0.2'
+        heroLogoRef.current,
+        { opacity: 0, y: -20 },
+        { opacity: 1, y: 0, duration: 0.8, ease: 'power2.out' },
+        0
       );
 
-      // ③ Subtitle → fade up, then CTA buttons spring in
+      // Make containers visible immediately (spans will be opacity 0 initially)
+      if (line1Ref.current) line1Ref.current.style.opacity = '1';
+      // Do NOT set line2Ref opacity to 1 here because we will animate the container itself
+      if (subtitleRef.current) subtitleRef.current.style.opacity = '1';
+
+      // ── Custom SplitText Utility ─────────────────────────────────────────
+      const splitText = (element: HTMLElement | null, type: 'char' | 'word') => {
+        if (!element) return { spans: [] };
+        
+        // Use textContent for reliability during React mount
+        const text = element.textContent?.trim() || '';
+        
+        // Preserve accessibility by setting aria-label on the parent container
+        // and hiding the split spans from screen readers.
+        element.setAttribute('aria-label', text);
+        element.innerHTML = '';
+        
+        const chunks = type === 'char' ? text.split('') : text.split(' ');
+        const spans: HTMLSpanElement[] = [];
+        
+        chunks.forEach((chunk, index) => {
+          if (type === 'char' && chunk === ' ') {
+             element.appendChild(document.createTextNode(' '));
+             return;
+          }
+          const span = document.createElement('span');
+          span.style.display = 'inline-block';
+          span.style.opacity = '0';
+          span.style.willChange = 'transform, opacity';
+          span.setAttribute('aria-hidden', 'true');
+          span.textContent = chunk;
+          element.appendChild(span);
+          spans.push(span);
+
+          // Correctly insert spaces as separate text nodes for 'word' splitting
+          if (type === 'word' && index < chunks.length - 1) {
+            element.appendChild(document.createTextNode(' '));
+          }
+        });
+        
+        return { spans };
+      };
+
+      const splitL1 = splitText(line1Ref.current, 'word');
+      // Do NOT split line2Ref to preserve its bg-clip-text gradient rendering
+      const splitS1 = splitText(subPara1Ref.current, 'word');
+      const splitS2 = splitText(subPara2Ref.current, 'word');
+
+      // ② Headline lines — staggered fade-up by word (avoiding filter to protect Safari gradient)
       tl.fromTo(
-        subtitleRef.current,
-        { opacity: 0, y: 30 },
-        { opacity: 1, y: 0, duration: dur(0.6) },
+        [...splitL1.spans, line2Ref.current],
+        { opacity: 0, y: 24 },
+        { opacity: 1, y: 0, duration: 0.8, stagger: 0.08, ease: 'expo.out' },
+        0.1
+      );
+
+      // ③ Subtitle → fade up by word
+      tl.fromTo(
+        [...splitS1.spans, ...splitS2.spans],
+        { opacity: 0, y: 20, filter: 'blur(4px)' },
+        { opacity: 1, y: 0, filter: 'blur(0px)', duration: 0.8, stagger: 0.02, ease: 'expo.out' },
         '-=0.4'
       );
 
@@ -148,6 +205,47 @@ export default function Hero() {
           ease: 'sine.inOut',
         });
       }
+
+      // ── Play text: split-char hover animation ───────────────────────────
+      const ctaEl = ctaAnchorRef.current;
+      const textEl = playTextRef.current;
+      if (ctaEl && textEl) {
+        const chars = textEl.querySelectorAll('.play-char');
+
+        const onMouseEnter = () => {
+          gsap.to(chars, {
+            y: -18,
+            opacity: 0,
+            duration: 0.22,
+            stagger: 0.028,
+            ease: 'power2.in',
+            overwrite: true,
+          });
+        };
+
+        const onMouseLeave = () => {
+          gsap.fromTo(
+            chars,
+            { y: 16, opacity: 0 },
+            {
+              y: 0,
+              opacity: 1,
+              duration: 0.38,
+              stagger: 0.045,
+              ease: 'back.out(1.6)',
+              overwrite: true,
+            }
+          );
+        };
+
+        ctaEl.addEventListener('mouseenter', onMouseEnter);
+        ctaEl.addEventListener('mouseleave', onMouseLeave);
+
+        return () => {
+          ctaEl.removeEventListener('mouseenter', onMouseEnter);
+          ctaEl.removeEventListener('mouseleave', onMouseLeave);
+        };
+      }
     },
     heroRef,
     []
@@ -195,7 +293,7 @@ export default function Hero() {
                   width: 'auto',
                   maxWidth: 'none',
                   willChange: 'transform, filter',
-                  transformOrigin: 'center center',
+                  transformOrigin: 'center left',
                 }}
                 draggable={false}
               />
@@ -220,10 +318,10 @@ export default function Hero() {
               className="font-sans max-w-xl leading-relaxed space-y-3"
               style={{ opacity: 0 }}
             >
-              <p className="text-xl sm:text-2xl font-medium text-white/90">
+              <p ref={subPara1Ref} className="text-xl sm:text-2xl font-medium text-white/90">
                 Making the Best Move on the Way to the Top.
               </p>
-              <p className="text-base sm:text-lg text-brand-secondary">
+              <p ref={subPara2Ref} className="text-base sm:text-lg text-brand-secondary">
                 A complete chess platform to play, learn, compete, and grow—built to become the world's #1 destination for chess.
               </p>
             </div>
@@ -248,8 +346,8 @@ export default function Hero() {
                   btn-glow-container btn-glow-accent cta-shine
                   group
                 "
-                style={{ 
-                  transformStyle: 'preserve-3d', 
+                style={{
+                  transformStyle: 'preserve-3d',
                   willChange: 'transform',
                   width: '140px',
                   height: '64px',
@@ -270,7 +368,21 @@ export default function Hero() {
                   }}
                   draggable={false}
                 />
-                <span className="ml-2 font-sans font-semibold text-[17px] opacity-100 group-hover:hidden">Play</span>
+                <span
+                  ref={playTextRef}
+                  className="ml-2 font-sans font-semibold text-[17px] flex overflow-hidden"
+                  style={{ lineHeight: 1 }}
+                >
+                  {'Play'.split('').map((char, i) => (
+                    <span
+                      key={i}
+                      className="play-char inline-block"
+                      style={{ display: 'inline-block' }}
+                    >
+                      {char}
+                    </span>
+                  ))}
+                </span>
               </a>
             </div>
           </div>

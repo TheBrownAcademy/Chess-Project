@@ -715,60 +715,7 @@ export default function HeroPuzzle() {
     );
   }, []);
 
-  // ── Magnetic piece hover effect ────────────────────────────────────────────
-  useEffect(() => {
-    const board = boardInnerRef.current;
-    if (!board || prefersReducedMotion()) return;
-
-    let activePiece: HTMLElement | null = null;
-
-    const onMouseMove = (e: MouseEvent) => {
-      const piece = (e.target as HTMLElement).closest('[data-testid^="piece-"]') as HTMLElement | null;
-
-      if (piece) {
-        if (activePiece && activePiece !== piece) {
-          activePiece.style.setProperty('--mag-x', '0px');
-          activePiece.style.setProperty('--mag-y', '0px');
-        }
-        activePiece = piece;
-
-        const rect = piece.getBoundingClientRect();
-        const cx = rect.left + rect.width / 2;
-        const cy = rect.top + rect.height / 2;
-        const dx = e.clientX - cx;
-        const dy = e.clientY - cy;
-
-        piece.style.setProperty('--mag-x', `${(dx * 0.25).toFixed(1)}px`);
-        piece.style.setProperty('--mag-y', `${(dy * 0.25).toFixed(1)}px`);
-      } else {
-        if (activePiece) {
-          activePiece.style.setProperty('--mag-x', '0px');
-          activePiece.style.setProperty('--mag-y', '0px');
-          activePiece = null;
-        }
-      }
-    };
-
-    const onMouseLeave = () => {
-      if (activePiece) {
-        activePiece.style.setProperty('--mag-x', '0px');
-        activePiece.style.setProperty('--mag-y', '0px');
-        activePiece = null;
-      }
-    };
-
-    board.addEventListener('mousemove', onMouseMove);
-    board.addEventListener('mouseleave', onMouseLeave);
-
-    return () => {
-      board.removeEventListener('mousemove', onMouseMove);
-      board.removeEventListener('mouseleave', onMouseLeave);
-      if (activePiece) {
-        activePiece.style.setProperty('--mag-x', '0px');
-        activePiece.style.setProperty('--mag-y', '0px');
-      }
-    };
-  }, []);
+  // Magnetic piece hover effect removed to allow standard react-chessboard drag without interference
 
   // ══════════════════════════════════════════════════════════════════════════
   // PREMIUM PIECE ANIMATION SYSTEM
@@ -1233,7 +1180,7 @@ export default function HeroPuzzle() {
       {/* ── Outer Wrapper: cursor glow + entrance animation ── */}
       <div
         ref={mergedWrapRef}
-        className="relative rounded-none overflow-hidden board-cursor-glow"
+        className="relative rounded-none overflow-hidden"
         style={{
           transition: 'box-shadow 0.4s ease',
           boxShadow: isCheckmateGlow
@@ -1279,8 +1226,6 @@ export default function HeroPuzzle() {
             className="aspect-square overflow-hidden relative"
             style={{
               willChange: 'filter',
-              transform: 'translateZ(24px)',
-              transformStyle: 'preserve-3d',
             }}
           >
             {/* SVG Trail overlay */}
