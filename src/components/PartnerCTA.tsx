@@ -389,7 +389,7 @@ export default function ContactSection() {
                   </>
                 ) : (
                   <>
-                    Send Message <span className="arrow font-sans font-black text-xl">→</span>
+                    Send Message <img src="/arrow.svg" alt="arrow" className="arrow w-6 h-6 inline-block" />
                   </>
                 )}
               </button>
