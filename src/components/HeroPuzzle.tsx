@@ -36,7 +36,7 @@
 import { useState, useRef, useCallback, useEffect, useLayoutEffect } from 'react';
 import { Chessboard } from 'react-chessboard';
 import { Chess } from 'chess.js';
-import { RotateCcw, Play, Zap } from 'lucide-react';
+import { RotateCcw, Play, Zap, Crown } from 'lucide-react';
 import { useConfetti } from '../hooks/useConfetti';
 import { useBoardCursorGlow } from '../hooks/useBoardCursorGlow';
 import { useMoveTrail } from '../hooks/useMoveTrail';
@@ -44,6 +44,19 @@ import { gsap } from '../utils/gsapConfig';
 import { prefersReducedMotion } from '../utils/gsapConfig';
 import { useMoveAnnotation } from '../hooks/useMoveAnnotation';
 import { MoveAnnotation } from './MoveAnnotation';
+import ChessAnimationLayer from './ChessAnimationLayer';
+
+interface ActiveMove {
+  startX: number;
+  startY: number;
+  targetX: number;
+  targetY: number;
+  fromSq: string;
+  toSq: string;
+  pieceType: string;
+  isCapture: boolean;
+  targetPieceEl: HTMLElement | null;
+}
 
 // ============================================================================
 // ORIGINAL HERO PUZZLE IMPLEMENTATION (COMMENTED OUT AS REQUESTED)
@@ -678,10 +691,46 @@ function processGameMoves(): ProcessedMove[] {
 const PROCESSED_MOVES = processGameMoves();
 const START_FEN = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
 
+const FA_CHESS_KING_PATH = "M224 0c17.7 0 32 14.3 32 32V48h16c17.7 0 32 14.3 32 32s-14.3 32-32 32H256v48H408c22.1 0 40 17.9 40 40c0 5.3-1 10.5-3.1 15.4L368 400H80L3.1 215.4C1 210.5 0 205.3 0 200c0-22.1 17.9-40 40-40H192V112H176c-17.7 0-32-14.3-32-32s14.3-32 32-32h16V32c0-17.7 14.3-32 32-32zM38.6 473.4L80 432H368l41.4 41.4c4.2 4.2 6.6 10 6.6 16c0 12.5-10.1 22.6-22.6 22.6H54.6C42.1 512 32 501.9 32 489.4c0-6 2.4-11.8 6.6-16z";
+
+const ChessKingIcon = ({ className, style }: { className?: string; style?: React.CSSProperties }) => (
+  <svg viewBox="0 0 448 512" className={className} style={style} fill="currentColor" aria-hidden="true">
+    <path d={FA_CHESS_KING_PATH} />
+  </svg>
+);
+
+
+
+const getKingSquares = (fen: string) => {
+  const tempGame = new Chess(fen);
+  let losingKingSq: string | null = null;
+  let winningKingSq: string | null = null;
+
+  if (tempGame.isCheckmate()) {
+    const losingColor = tempGame.turn();
+    const winningColor = losingColor === 'w' ? 'b' : 'w';
+
+    const board = tempGame.board();
+    for (let r = 0; r < 8; r++) {
+      for (let c = 0; c < 8; c++) {
+        const piece = board[r][c];
+        if (piece && piece.type === 'k') {
+          if (piece.color === losingColor) {
+            losingKingSq = piece.square;
+          } else if (piece.color === winningColor) {
+            winningKingSq = piece.square;
+          }
+        }
+      }
+    }
+  }
+  return { losingKingSq, winningKingSq };
+};
+
 export default function HeroPuzzle() {
   const { fireConfetti } = useConfetti();
   const glowRef = useBoardCursorGlow<HTMLDivElement>();
-  const { svgRef, showTrail, clearTrail } = useMoveTrail();
+  const { showTrail, clearTrail } = useMoveTrail();
   const { activeAnnotation, triggerAnnotation, clearAnnotation } = useMoveAnnotation();
 
   // ── Chessboard refs ────────────────────────────────────────────────────────
@@ -699,6 +748,31 @@ export default function HeroPuzzle() {
   const [checkedKingSquare, setCheckedKingSquare] = useState<string | null>(null);
   const [isCheckmateGlow, setIsCheckmateGlow] = useState<boolean>(false);
   const [showTryAgain, setShowTryAgain] = useState<boolean>(false);
+  const [checkmateBadges, setCheckmateBadges] = useState<{
+    losingSquare: string;
+    winningSquare: string;
+    losingX: number;
+    losingY: number;
+    winningX: number;
+    winningY: number;
+    squareSize: number;
+  } | null>(null);
+
+  // ── Overlay Animation State & Hooks ────────────────────────────────────────
+  const [activeMove, setActiveMove] = useState<ActiveMove | null>(null);
+  const [squareSize, setSquareSize] = useState<number>(50);
+  const animResolveRef = useRef<(() => void) | null>(null);
+
+  useEffect(() => {
+    const updateSize = () => {
+      if (boardInnerRef.current) {
+        setSquareSize(boardInnerRef.current.getBoundingClientRect().width / 8);
+      }
+    };
+    updateSize();
+    window.addEventListener('resize', updateSize);
+    return () => window.removeEventListener('resize', updateSize);
+  }, []);
 
   const abortRef = useRef<boolean>(false);
 
@@ -794,133 +868,82 @@ export default function HeroPuzzle() {
       const from = getSquareCenter(fromSq);
       const to = getSquareCenter(toSq);
       const pieceEl = boardEl.querySelector(
-        `[data-square="${fromSq}"] [data-testid^="piece-"]`
+        `[data-square="${fromSq}"] [data-piece]`
       ) as HTMLElement | null;
 
       if (!pieceEl || !from || !to) { resolve(); return; }
 
-      // Clean up stray ghosts
-      boardEl.querySelectorAll('.gsap-moving').forEach((el) => {
-        if (el !== boardEl) {
-          el.remove();
-        }
-      });
+      // Hide the source piece during the animation
+      pieceEl.style.opacity = '0';
 
-      const dx = to.x - from.x;
-      const dy = to.y - from.y;
-      const dist = Math.sqrt(dx * dx + dy * dy);
+      // Determine piece color and type for overlay styling
+      const pieceType = pieceEl.getAttribute('data-piece') || 'wP';
 
-      // Bezier curve calculations
-      const arcAmt = dist * 0.15;
-      const perpX = dist > 0 ? (-dy / dist) * arcAmt : 0;
-      const perpY = dist > 0 ? (dx / dist) * arcAmt : 0;
-      const controlX = dx / 2 + perpX;
-      const controlY = dy / 2 + perpY;
+      // Store resolve callback so it can be called on complete
+      animResolveRef.current = resolve;
 
-      // Add gsap-moving exemption class
-      pieceEl.classList.add('gsap-moving');
-
-      // Ghost trail setup
-      boardEl.style.position = 'relative';
-      const ghost = pieceEl.cloneNode(true) as HTMLElement;
-      ghost.classList.add('gsap-moving');
-      ghost.style.cssText = `
-        position: absolute; pointer-events: none; z-index: 15;
-        left: ${from.x - pieceEl.offsetWidth / 2}px;
-        top: ${from.y - pieceEl.offsetHeight / 2}px;
-        width: ${pieceEl.offsetWidth}px;
-        height: ${pieceEl.offsetHeight}px;
-        opacity: 0.25; filter: blur(1px); transform: none;
-      `;
-      boardEl.appendChild(ghost);
+      // Calculate starting and target positions relative to the overlay div
+      const sqW = boardEl.getBoundingClientRect().width / 8;
+      const startX = from.x - sqW / 2;
+      const startY = from.y - sqW / 2;
+      const targetX = to.x - sqW / 2;
+      const targetY = to.y - sqW / 2;
 
       // Captured piece lookup
       const targetPieceEl = boardEl.querySelector(
-        `[data-square="${toSq}"] [data-testid^="piece-"]`
+        `[data-square="${toSq}"] [data-piece]`
       ) as HTMLElement | null;
 
-      const tl = gsap.timeline({
-        onComplete: () => {
-          gsap.set(pieceEl, { clearProps: 'all' });
-          pieceEl.classList.remove('gsap-moving');
-          ghost.remove();
-          resolve();
-        },
-      });
-
-      // User-configurable movement durations
-      const moveSec = TIMING.MOVE_DURATION / 1000;
-      const lagSec = moveSec * 0.14; // scale lag proportionally (e.g. ~0.03s for 220ms duration)
-
-      // 1) Lift piece immediately
-      tl.to(pieceEl, {
-        scale: 1.08,
-        duration: 0.05,
-        ease: 'power2.out',
-        transformOrigin: 'center center',
-      });
-
-      // 2) Move piece along the Bezier curve
-      const pathObj = { t: 0 };
-      tl.to(pathObj, {
-        t: 1,
-        duration: moveSec,
-        ease: 'power3.out',
-        onUpdate: () => {
-          const t = pathObj.t;
-          const curX = 2 * (1 - t) * t * controlX + t * t * dx;
-          const curY = 2 * (1 - t) * t * controlY + t * t * dy;
-          gsap.set(pieceEl, { x: curX, y: curY });
-        }
-      }, 0);
-
-      // 3) Animate ghost trail following the curve with proportioned lag
-      const ghostObj = { t: 0 };
-      gsap.set(ghost, { scale: 1.08 });
-      tl.to(ghostObj, {
-        t: 1,
-        duration: moveSec,
-        ease: 'power3.out',
-        onUpdate: () => {
-          const t = ghostObj.t;
-          const curX = 2 * (1 - t) * t * controlX + t * t * dx;
-          const curY = 2 * (1 - t) * t * controlY + t * t * dy;
-          gsap.set(ghost, {
-            x: curX,
-            y: curY,
-            opacity: 0.25 * (1 - t)
-          });
-        }
-      }, lagSec);
-
-      // Capture animation polish: shrink and fade target piece
-      if (isCapture && targetPieceEl) {
-        tl.to(targetPieceEl, {
-          opacity: 0,
-          scale: 0.4,
-          duration: 0.15,
-          ease: 'power2.in',
-        }, 0);
-      }
-
-      // 4) Landing bounce (starts at moveSec)
-      tl.to(pieceEl, {
-        scale: isCapture ? 0.82 : 0.94, // deeper drop for capture moves
-        duration: 0.05,
-        ease: 'power1.in',
-      }, moveSec);
-      tl.to(pieceEl, {
-        scale: isCapture ? 1.05 : 1.02,
-        duration: 0.04,
-        ease: 'power1.out',
-      });
-      tl.to(pieceEl, {
-        scale: 1,
-        duration: 0.03,
-        ease: 'none',
+      setActiveMove({
+        startX,
+        startY,
+        targetX,
+        targetY,
+        fromSq,
+        toSq,
+        pieceType,
+        isCapture,
+        targetPieceEl
       });
     });
   }, []);
+
+  const handleAnimationComplete = useCallback(() => {
+    if (activeMove && activeMove.isCapture && activeMove.targetPieceEl) {
+      gsap.to(activeMove.targetPieceEl, {
+        opacity: 0,
+        scale: 0.4,
+        duration: 0.15,
+        ease: 'power2.in',
+      });
+    }
+
+    const currentFromSq = activeMove?.fromSq;
+
+    // Clear activeMove state to hide the overlay
+    setActiveMove(null);
+
+    // Call the resolve function of the pending promise
+    if (animResolveRef.current) {
+      animResolveRef.current();
+      animResolveRef.current = null;
+    }
+
+    // Restore opacity on the next frame to avoid flash
+    if (currentFromSq) {
+      requestAnimationFrame(() => {
+        const boardEl = boardInnerRef.current;
+        if (boardEl) {
+          const pieceEl = boardEl.querySelector(
+            `[data-square="${currentFromSq}"] [data-piece]`
+          ) as HTMLElement | null;
+          if (pieceEl) {
+            pieceEl.style.opacity = '';
+          }
+        }
+      });
+    }
+  }, [activeMove]);
 
   // ══════════════════════════════════════════════════════════════════════════
   // MOVE PLAYER AND TIMING COORDINATION
@@ -1059,7 +1082,93 @@ export default function HeroPuzzle() {
   }, []);
 
   const celebrate = useCallback(async (kingSq: string | null) => {
-    // Show CHECKMATE popup immediately using existing styling and GSAP timeline
+    // 1) Find the final checkmate FEN and king squares
+    const checkmateFen = PROCESSED_MOVES[PROCESSED_MOVES.length - 1].fenAfter;
+    const { losingKingSq, winningKingSq } = getKingSquares(checkmateFen);
+
+    const boardEl = boardInnerRef.current;
+    if (boardEl && losingKingSq && winningKingSq) {
+      const rect = boardEl.getBoundingClientRect();
+      const sqW = rect.width / 8;
+      const sqH = rect.height / 8;
+
+      const getSquarePos = (sq: string) => {
+        const file = sq.charCodeAt(0) - 97;
+        const rank = 8 - parseInt(sq[1], 10);
+        return {
+          x: file * sqW,
+          y: rank * sqH,
+        };
+      };
+
+      const losingPos = getSquarePos(losingKingSq);
+      const winningPos = getSquarePos(winningKingSq);
+
+      setCheckmateBadges({
+        losingSquare: losingKingSq,
+        winningSquare: winningKingSq,
+        losingX: losingPos.x,
+        losingY: losingPos.y,
+        winningX: winningPos.x,
+        winningY: winningPos.y,
+        squareSize: sqW,
+      });
+
+      // Set success phase immediately so board highlights kick in (0.05s)
+      setPhase('SUCCESS');
+      setIsCheckmateGlow(true);
+
+      // Animate checkmate badges after DOM render
+      setTimeout(() => {
+        const defeatBadge = boardEl.querySelector('.defeat-badge') as HTMLElement | null;
+        const victoryBadge = boardEl.querySelector('.victory-badge') as HTMLElement | null;
+
+        if (defeatBadge && victoryBadge) {
+          const tlBadges = gsap.timeline();
+
+          // 1) Appear centered and large (t=0.15s offset relative to move end)
+          tlBadges.fromTo(defeatBadge,
+            { scale: 0, opacity: 0, x: 0, y: 0, backgroundColor: 'transparent', boxShadow: 'none', rotation: 0 },
+            { scale: 1.5, opacity: 1, backgroundColor: 'rgba(239, 68, 68, 0.6)', duration: 0.4, ease: 'back.out(1.5)' },
+            0.1
+          );
+          tlBadges.fromTo(victoryBadge,
+            { scale: 0, opacity: 0, x: 0, y: 0, backgroundColor: 'transparent', boxShadow: 'none' },
+            { scale: 1.5, opacity: 1, backgroundColor: 'rgba(34, 197, 94, 0.6)', duration: 0.4, ease: 'back.out(1.5)' },
+            0.1
+          );
+
+          // 2) Pause briefly, then shrink, slide to top-right corner, and rotate the defeated king (t=0.6s)
+          const tx = sqW * 0.35;
+          const ty = -sqW * 0.35;
+
+          tlBadges.to(defeatBadge, {
+            x: tx,
+            y: ty,
+            scale: 0.45,
+            rotation: 90, // Defeated king falls over
+            opacity: 1,
+            backgroundColor: 'rgba(239, 68, 68, 0.8)',
+            boxShadow: '0 2px 6px rgba(0, 0, 0, 0.35)',
+            duration: 0.6,
+            ease: 'power2.inOut',
+          }, '+=0.4');
+
+          tlBadges.to(victoryBadge, {
+            x: tx,
+            y: ty,
+            scale: 0.45,
+            opacity: 1,
+            backgroundColor: 'rgba(34, 197, 94, 0.8)',
+            boxShadow: '0 2px 6px rgba(0, 0, 0, 0.35)',
+            duration: 0.6,
+            ease: 'power2.inOut',
+          }, '<');
+        }
+      }, 50); // small delay to allow React to render the badges in the DOM
+    }
+
+    // Show CHECKMATE popup
     await runCheckmateImpact(kingSq);
 
     // Hold the checkmate text for a brief pause before fading it out
@@ -1081,11 +1190,7 @@ export default function HeroPuzzle() {
         }
       });
     }
-
-    // Set success state to render card layout below the board
-    setPhase('SUCCESS');
-    setIsCheckmateGlow(true);
-  }, [runCheckmateImpact, fireConfetti]);
+  }, [fireConfetti, runCheckmateImpact]);
 
   // ══════════════════════════════════════════════════════════════════════════
   // INTERACTIVE USER DROP AND SOLUTION VALIDATION
@@ -1170,12 +1275,19 @@ export default function HeroPuzzle() {
     setPuzzleStep(0);
     setLastMove(null);
     setGameFen(START_FEN);
+    setCheckmateBadges(null);
+    setActiveMove(null);
+    if (animResolveRef.current) {
+      animResolveRef.current();
+      animResolveRef.current = null;
+    }
 
     // Reset checkmate overlay badge display immediately
     if (checkmateRef.current) {
       gsap.killTweensOf(checkmateRef.current);
       gsap.set(checkmateRef.current, { display: 'none', opacity: 0, scale: 0.6 });
     }
+    gsap.killTweensOf('.checkmate-badge-inner');
 
     setPhase('REPLAY');
 
@@ -1202,6 +1314,23 @@ export default function HeroPuzzle() {
       boxShadow: 'inset 0 0 20px rgba(239, 68, 68, 0.8)',
       animation: 'king-pulse 0.4s ease-in-out 3',
     };
+  }
+
+  if (phase === 'SUCCESS') {
+    const checkmateFen = PROCESSED_MOVES[PROCESSED_MOVES.length - 1].fenAfter;
+    const { losingKingSq, winningKingSq } = getKingSquares(checkmateFen);
+    if (losingKingSq) {
+      customSquareStyles[losingKingSq] = {
+        backgroundColor: 'rgba(239, 68, 68, 0.3)', // soft light-red overlay
+        transition: 'background-color 0.3s ease',
+      };
+    }
+    if (winningKingSq) {
+      customSquareStyles[winningKingSq] = {
+        backgroundColor: 'rgba(34, 197, 94, 0.3)', // subtle light-green overlay
+        transition: 'background-color 0.3s ease',
+      };
+    }
   }
 
   const movesLeft = phase === 'SUCCESS' ? 0 : 4 - puzzleStep;
@@ -1283,12 +1412,11 @@ export default function HeroPuzzle() {
               transformStyle: 'preserve-3d',
             }}
           >
-            {/* SVG Trail overlay */}
-            <svg
-              ref={svgRef}
-              className="absolute inset-0 w-full h-full pointer-events-none"
-              style={{ zIndex: 20 }}
-              aria-hidden="true"
+            {/* ChessAnimationLayer Overlay */}
+            <ChessAnimationLayer
+              activeMove={activeMove}
+              squareSize={squareSize}
+              onComplete={handleAnimationComplete}
             />
 
             {/* Chessboard component */}
@@ -1309,6 +1437,59 @@ export default function HeroPuzzle() {
                 allowDragging: isInteractive,
               }}
             />
+
+            {/* Victory/Defeat Checkmate Badges */}
+            {checkmateBadges && (
+              <>
+                {/* Defeat Badge (Losing King) */}
+                <div
+                  className="absolute z-30 pointer-events-none flex items-center justify-center"
+                  style={{
+                    left: checkmateBadges.losingX,
+                    top: checkmateBadges.losingY,
+                    width: checkmateBadges.squareSize,
+                    height: checkmateBadges.squareSize,
+                  }}
+                >
+                  <div
+                    className="checkmate-badge-inner defeat-badge flex items-center justify-center rounded-full"
+                    style={{
+                      width: checkmateBadges.squareSize * 0.65,
+                      height: checkmateBadges.squareSize * 0.65,
+                      transform: 'scale(0)',
+                      opacity: 0,
+                    }}
+                  >
+                    <ChessKingIcon
+                      className="w-2/3 h-2/3 text-neutral-900"
+                    />
+                  </div>
+                </div>
+
+                {/* Victory Badge (Winning King) */}
+                <div
+                  className="absolute z-30 pointer-events-none flex items-center justify-center"
+                  style={{
+                    left: checkmateBadges.winningX,
+                    top: checkmateBadges.winningY,
+                    width: checkmateBadges.squareSize,
+                    height: checkmateBadges.squareSize,
+                  }}
+                >
+                  <div
+                    className="checkmate-badge-inner victory-badge flex items-center justify-center rounded-full"
+                    style={{
+                      width: checkmateBadges.squareSize * 0.65,
+                      height: checkmateBadges.squareSize * 0.65,
+                      transform: 'scale(0)',
+                      opacity: 0,
+                    }}
+                  >
+                    <Crown className="w-2/3 h-2/3 text-white" />
+                  </div>
+                </div>
+              </>
+            )}
 
             {/* Move quality annotations (e.g. !!) */}
             <MoveAnnotation activeAnnotation={activeAnnotation} />

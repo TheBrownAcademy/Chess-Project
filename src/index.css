@@ -666,3 +666,17 @@ html::-webkit-scrollbar-corner,
   -ms-overflow-style: none;  /* IE and Edge */
   scrollbar-width: none;  /* Firefox */
 }
+
+/* ── Checkmate Victory & Defeat Badges ───────────────────────────────────── */
+.checkmate-badge-inner {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+  will-change: transform, opacity, background-color;
+  border: 1.5px solid rgba(255, 255, 255, 0.2);
+}
+
+.gsap-moving {
+  z-index: 150 !important;
+  transition: none !important;
+}
+
