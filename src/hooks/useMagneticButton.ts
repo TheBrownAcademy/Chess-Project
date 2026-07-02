@@ -10,7 +10,7 @@ interface UseMagneticButtonOptions<T extends HTMLElement, C extends HTMLElement>
 export function useMagneticButton<T extends HTMLElement, C extends HTMLElement>({
   targetRef,
   containerRef,
-  magneticStrength = 0.3,
+  magneticStrength = 1,
 }: UseMagneticButtonOptions<T, C>) {
   useEffect(() => {
     const target = targetRef.current;
@@ -18,25 +18,64 @@ export function useMagneticButton<T extends HTMLElement, C extends HTMLElement>(
 
     if (!target || !container) return;
 
+    let rect: DOMRect | null = null;
+    let targetRect: DOMRect | null = null;
+    let defaultLeft = 0;
+    let defaultTop = 0;
+
+    const onMouseEnter = () => {
+      rect = container.getBoundingClientRect();
+      targetRect = target.getBoundingClientRect();
+      
+      const currentX = parseFloat(gsap.getProperty(target, 'x') as string) || 0;
+      const currentY = parseFloat(gsap.getProperty(target, 'y') as string) || 0;
+      
+      defaultLeft = targetRect.left - rect.left - currentX;
+      defaultTop = targetRect.top - rect.top - currentY;
+    };
+
     const onMouseMove = (e: MouseEvent) => {
-      const rect = container.getBoundingClientRect();
-      const x = gsap.utils.mapRange(rect.left, rect.right, -rect.width / 2, rect.width / 2, e.clientX);
-      const y = gsap.utils.mapRange(rect.top, rect.bottom, -rect.height / 2, rect.height / 2, e.clientY);
+      if (!rect || !targetRect) {
+        onMouseEnter();
+      }
 
-      let moveX = x * magneticStrength;
-      let moveY = y * magneticStrength;
+      // Safe fallback check
+      if (!rect || !targetRect) return;
 
-      // The image element is 62x62, but the visual chess piece inside the PNG is smaller (has transparent padding).
-      // We manually define the visual boundaries so it can move freely and bounce off the logical inner edges.
-      const maxMoveX = 32;
-      const maxMoveY = 12;
+      const targetWidth = target.offsetWidth || targetRect.width;
+      const targetHeight = target.offsetHeight || targetRect.height;
 
-      moveX = gsap.utils.clamp(-maxMoveX, maxMoveX, moveX);
-      moveY = gsap.utils.clamp(-maxMoveY, maxMoveY, moveY);
+      // Normalize mouse coordinates relative to the button container [0, 1]
+      const normX = gsap.utils.clamp(0, 1, (e.clientX - rect.left) / rect.width);
+      const normY = gsap.utils.clamp(0, 1, (e.clientY - rect.top) / rect.height);
+
+      // Centering offset (offset needed to place the emoji exactly at the center of the button)
+      const offsetCenterX = (rect.width - targetWidth) / 2 - defaultLeft;
+      const offsetCenterY = (rect.height - targetHeight) / 2 - defaultTop;
+
+      // The image element is 62x62, but the visual chess piece inside the PNG is smaller (has 16px transparent padding on all sides).
+      const imgPadding = 16;
+      const visualWidth = targetWidth - 2 * imgPadding;
+      const visualHeight = targetHeight - 2 * imgPadding;
+
+      // Target padding between the visual emoji and button boundaries
+      const edgePadding = 0;
+
+      // Calculate maximum allowed symmetric translations from the centered position
+      const maxX = (rect.width - visualWidth) / 2 - edgePadding;
+      const maxY = (rect.height - visualHeight) / 2 - edgePadding;
+
+      // Translate the normalized coordinate [-0.5, 0.5] range to [-maxX, maxX]
+      const transX = (normX - 0.5) * 2 * maxX;
+      const transY = (normY - 0.5) * 2 * maxY;
+
+      // Final translation including centering offset and scaling with magnetic strength
+      const moveX = offsetCenterX + transX * magneticStrength;
+      const moveY = offsetCenterY + transY * magneticStrength;
 
       gsap.to(target, {
-        x: moveX,
-        y: moveY,
+        x: moveX+1,
+        y: moveY+1,
         duration: 0.35,
         ease: 'power2.out',
         overwrite: true,
@@ -44,6 +83,8 @@ export function useMagneticButton<T extends HTMLElement, C extends HTMLElement>(
     };
 
     const onMouseLeave = () => {
+      rect = null;
+      targetRect = null;
       gsap.to(target, {
         x: 0,
         y: 0,
@@ -53,10 +94,12 @@ export function useMagneticButton<T extends HTMLElement, C extends HTMLElement>(
       });
     };
 
+    container.addEventListener('mouseenter', onMouseEnter);
     container.addEventListener('mousemove', onMouseMove);
     container.addEventListener('mouseleave', onMouseLeave);
 
     return () => {
+      container.removeEventListener('mouseenter', onMouseEnter);
       container.removeEventListener('mousemove', onMouseMove);
       container.removeEventListener('mouseleave', onMouseLeave);
       gsap.killTweensOf(target, 'x,y');
