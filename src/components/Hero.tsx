@@ -318,8 +318,8 @@ export default function Hero() {
               className="font-sans max-w-xl leading-relaxed space-y-3"
               style={{ opacity: 0 }}
             >
-              <p ref={subPara1Ref} className="text-xl sm:text-2xl font-medium text-white/90">
-                Making the Best Move on the Way to the Top.
+              <p className="text-xl sm:text-2xl font-medium text-white/90">
+                Making the Best Move on the Way to the Top
               </p>
               <p ref={subPara2Ref} className="text-base sm:text-lg text-brand-secondary">
                 A complete chess platform to play, learn, compete, and grow—built to become the world's #1 destination for chess.
