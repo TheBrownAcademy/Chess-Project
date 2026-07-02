@@ -55,6 +55,7 @@ interface ActiveMove {
   toSq: string;
   pieceType: string;
   isCapture: boolean;
+  capturedPieceType: string | null;
   targetPieceEl: HTMLElement | null;
 }
 
@@ -591,9 +592,9 @@ export function OriginalHeroPuzzle() {
 // Values are defined in milliseconds (ms) for readability and ease of tweaking.
 const TIMING = {
   MOVE_DURATION: 250,       // Duration of the piece glide animation in milliseconds (default: 220ms)
-  NORMAL_MOVE_DELAY: 1000,   // Delay/pause after a normal move finishes in milliseconds (default: 300ms)
-  CAPTURE_DELAY: 1250,       // Delay/pause after a capture move finishes in milliseconds (default: 550ms)
-  CHECK_DELAY: 1250,         // Delay/pause after a checking move finishes in milliseconds (default: 400ms)
+  NORMAL_MOVE_DELAY: 500,   // Delay/pause after a normal move finishes in milliseconds (default: 300ms)
+  CAPTURE_DELAY: 750,       // Delay/pause after a capture move finishes in milliseconds (default: 550ms)
+  CHECK_DELAY: 750,         // Delay/pause after a checking move finishes in milliseconds (default: 400ms)
   PUZZLE_START_DELAY: 500, // Pause at the stop position before transitioning to puzzle mode in milliseconds (default: 1500ms)
   REPLAY_DELAY: 100,        // Pause/delay before replay autoplay loop begins in milliseconds (default: 100ms)
 };
@@ -762,6 +763,7 @@ export default function HeroPuzzle() {
   const [activeMove, setActiveMove] = useState<ActiveMove | null>(null);
   const [squareSize, setSquareSize] = useState<number>(50);
   const animResolveRef = useRef<(() => void) | null>(null);
+  const animLandRef = useRef<(() => void) | null>(null);
 
   useEffect(() => {
     const updateSize = () => {
@@ -852,10 +854,15 @@ export default function HeroPuzzle() {
     fromSq: string,
     toSq: string,
     boardEl: HTMLDivElement | null,
-    isCapture = false
+    isCapture: boolean,
+    updateBoardState: () => void
   ): Promise<void> => {
     return new Promise((resolve) => {
-      if (prefersReducedMotion() || !boardEl) { resolve(); return; }
+      if (prefersReducedMotion() || !boardEl) {
+        updateBoardState();
+        resolve();
+        return;
+      }
 
       const getSquareCenter = (sq: string) => {
         const el = boardEl.querySelector(`[data-square="${sq}"]`) as HTMLElement | null;
@@ -871,16 +878,23 @@ export default function HeroPuzzle() {
         `[data-square="${fromSq}"] [data-piece]`
       ) as HTMLElement | null;
 
-      if (!pieceEl || !from || !to) { resolve(); return; }
-
-      // Hide the source piece during the animation
-      pieceEl.style.opacity = '0';
+      if (!pieceEl || !from || !to) {
+        updateBoardState();
+        resolve();
+        return;
+      }
 
       // Determine piece color and type for overlay styling
       const pieceType = pieceEl.getAttribute('data-piece') || 'wP';
 
-      // Store resolve callback so it can be called on complete
-      animResolveRef.current = resolve;
+      // Store callbacks so they can be called on land/complete
+      animLandRef.current = () => {
+        updateBoardState();
+      };
+
+      animResolveRef.current = () => {
+        resolve();
+      };
 
       // Calculate starting and target positions relative to the overlay div
       const sqW = boardEl.getBoundingClientRect().width / 8;
@@ -893,6 +907,7 @@ export default function HeroPuzzle() {
       const targetPieceEl = boardEl.querySelector(
         `[data-square="${toSq}"] [data-piece]`
       ) as HTMLElement | null;
+      const capturedPieceType = targetPieceEl ? targetPieceEl.getAttribute('data-piece') : null;
 
       setActiveMove({
         startX,
@@ -903,47 +918,26 @@ export default function HeroPuzzle() {
         toSq,
         pieceType,
         isCapture,
+        capturedPieceType,
         targetPieceEl
       });
     });
   }, []);
 
-  const handleAnimationComplete = useCallback(() => {
-    if (activeMove && activeMove.isCapture && activeMove.targetPieceEl) {
-      gsap.to(activeMove.targetPieceEl, {
-        opacity: 0,
-        scale: 0.4,
-        duration: 0.15,
-        ease: 'power2.in',
-      });
+  const handleAnimationLand = useCallback(() => {
+    if (animLandRef.current) {
+      animLandRef.current();
+      animLandRef.current = null;
     }
+  }, []);
 
-    const currentFromSq = activeMove?.fromSq;
-
-    // Clear activeMove state to hide the overlay
+  const handleAnimationComplete = useCallback(() => {
     setActiveMove(null);
-
-    // Call the resolve function of the pending promise
     if (animResolveRef.current) {
       animResolveRef.current();
       animResolveRef.current = null;
     }
-
-    // Restore opacity on the next frame to avoid flash
-    if (currentFromSq) {
-      requestAnimationFrame(() => {
-        const boardEl = boardInnerRef.current;
-        if (boardEl) {
-          const pieceEl = boardEl.querySelector(
-            `[data-square="${currentFromSq}"] [data-piece]`
-          ) as HTMLElement | null;
-          if (pieceEl) {
-            pieceEl.style.opacity = '';
-          }
-        }
-      });
-    }
-  }, [activeMove]);
+  }, []);
 
   // ══════════════════════════════════════════════════════════════════════════
   // MOVE PLAYER AND TIMING COORDINATION
@@ -954,11 +948,17 @@ export default function HeroPuzzle() {
 
     setLastMove({ from: move.from, to: move.to });
 
-    await animatePieceMove(move.from, move.to, boardInnerRef.current, move.isCapture);
+    await animatePieceMove(
+      move.from,
+      move.to,
+      boardInnerRef.current,
+      move.isCapture,
+      () => {
+        setGameFen(move.fenAfter);
+        showTrail(move.from, move.to);
+      }
+    );
     if (abortRef.current) return;
-
-    setGameFen(move.fenAfter);
-    showTrail(move.from, move.to);
 
     // Pulse checked king's square if checked
     if (move.isCheck || move.isCheckmate) {
@@ -1237,11 +1237,17 @@ export default function HeroPuzzle() {
 
             setLastMove({ from: expectedBlackMove.from, to: expectedBlackMove.to });
 
-            await animatePieceMove(expectedBlackMove.from, expectedBlackMove.to, boardInnerRef.current, expectedBlackMove.isCapture);
+            await animatePieceMove(
+              expectedBlackMove.from,
+              expectedBlackMove.to,
+              boardInnerRef.current,
+              expectedBlackMove.isCapture,
+              () => {
+                setGameFen(expectedBlackMove.fenAfter);
+                showTrail(expectedBlackMove.from, expectedBlackMove.to);
+              }
+            );
             if (abortRef.current) return;
-
-            setGameFen(expectedBlackMove.fenAfter);
-            showTrail(expectedBlackMove.from, expectedBlackMove.to);
 
             if (expectedBlackMove.isCheck) {
               setCheckedKingSquare(expectedBlackMove.kingSquare);
@@ -1416,8 +1422,19 @@ export default function HeroPuzzle() {
             <ChessAnimationLayer
               activeMove={activeMove}
               squareSize={squareSize}
+              onLand={handleAnimationLand}
               onComplete={handleAnimationComplete}
             />
+
+            {/* Dynamic style tag to hide the real piece on fromSq during movement */}
+            {activeMove && (
+              <style>{`
+                [data-square="${activeMove.fromSq}"] [data-piece] {
+                  opacity: 0 !important;
+                  pointer-events: none !important;
+                }
+              `}</style>
+            )}
 
             {/* Chessboard component */}
             <Chessboard

@@ -9,9 +9,9 @@ const TRAIL_FADE_MS = 350;
 const TRAIL_LENGTH_RATIO = 1.95; 
 
 const PIECE_THICKNESS: Record<string, number> = {
-  Pawn: 0.4, 
+  Pawn: 0.3, 
   Knight: 0.4, 
-  Bishop: 0.4, 
+  Bishop: 0.35, 
   Rook: 0.4, 
   Queen: 0.65, 
   King: 0.65,
@@ -38,7 +38,6 @@ const PIECE_ASSETS: Record<string, string> = {
 
 const getPieceName = (code: string): string => {
   const map: Record<string, string> = { P: 'Pawn', N: 'Knight', B: 'Bishop', R: 'Rook', Q: 'Queen', K: 'King' };
-  // Fallback if code is just "P" or "wP"
   const char = code.length === 2 ? code.charAt(1) : code.charAt(0);
   return map[char] || 'Pawn';
 };
@@ -59,7 +58,6 @@ const getSweptStyle = (
   const ratio = PIECE_THICKNESS[name] || 0.4;
   const baseThickness = squareSize * ratio;
 
-  // Diagonal Widening Math
   const projection = Math.abs(Math.cos(angle)) + Math.abs(Math.sin(angle));
   const length = Math.sqrt(dx*dx + dy*dy);
   
@@ -79,37 +77,60 @@ interface ActiveMove {
   startY: number;
   targetX: number;
   targetY: number;
+  fromSq: string;
+  toSq: string;
   pieceType: string;
+  isCapture: boolean;
+  capturedPieceType: string | null;
+  targetPieceEl: HTMLElement | null;
 }
 
 interface ChessAnimationLayerProps {
   activeMove: ActiveMove | null;
   squareSize?: number;
+  onLand?: () => void;
   onComplete?: () => void;
 }
 
-export default function ChessAnimationLayer({ activeMove, squareSize = 50, onComplete }: ChessAnimationLayerProps) {
+export default function ChessAnimationLayer({ 
+  activeMove, 
+  squareSize = 50, 
+  onLand,
+  onComplete 
+}: ChessAnimationLayerProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   
-  // Local state to track the "Ghost Piece" position
-  const [ghost, setGhost] = useState<{ x: number; y: number; type: string } | null>(null);
+  const [ghost, setGhost] = useState<{
+    x: number;
+    y: number;
+    type: string;
+    scale: number;
+    opacity: number;
+  } | null>(null);
+
+  const [capturedGhost, setCapturedGhost] = useState<{
+    x: number;
+    y: number;
+    type: string;
+    scale: number;
+    opacity: number;
+  } | null>(null);
   
-  // Animation Engine State
   const anim = useRef<{ start: number | null; isPlaying: boolean }>({ start: null, isPlaying: false });
 
   useEffect(() => {
-    // If no move is active, clear canvas and stop
     if (!activeMove) {
       const ctx = canvasRef.current?.getContext("2d");
-      if(ctx) ctx.clearRect(0, 0, 1000, 1000);
+      if (ctx) ctx.clearRect(0, 0, 1000, 1000);
       setGhost(null);
+      setCapturedGhost(null);
       return;
     }
 
-    // Initialize Animation
     anim.current = { start: null, isPlaying: true };
-    const { startX, startY, targetX, targetY, pieceType } = activeMove;
+    const { startX, startY, targetX, targetY, pieceType, isCapture, capturedPieceType } = activeMove;
     const TRAIL_LEN = squareSize * TRAIL_LENGTH_RATIO;
+    let landed = false;
 
     let reqId: number;
     const ctx = canvasRef.current?.getContext("2d");
@@ -118,11 +139,9 @@ export default function ChessAnimationLayer({ activeMove, squareSize = 50, onCom
       if (!anim.current.start) anim.current.start = now;
       const elapsed = now - anim.current.start;
       
-      // 1. Calculate Phases
       const moveProgress = Math.min(elapsed / MOVE_DURATION, 1);
       const isFading = moveProgress >= 1;
       
-      // 2. Interpolate Position (Ease-In-Out)
       const ease = moveProgress < 0.5 
         ? 2 * moveProgress * moveProgress 
         : 1 - Math.pow(-2 * moveProgress + 2, 2) / 2;
@@ -130,27 +149,70 @@ export default function ChessAnimationLayer({ activeMove, squareSize = 50, onCom
       let cx = startX + (targetX - startX) * ease;
       let cy = startY + (targetY - startY) * ease;
       
-      // Lock position if move finished
       if (isFading) { cx = targetX; cy = targetY; }
 
-      // Update Ghost Piece (React State)
-      setGhost({ x: cx, y: cy, type: pieceType });
+      let ghostScale = 1.0;
+      let ghostOpacity = 1.0;
+      
+      let capturedOpacity = 0.0;
+      let capturedScale = 1.0;
 
-      // 3. Calculate Opacity (Fade Out)
-      let opacity = 1.0;
-      if (isFading) {
-        const fadeProgress = Math.min((elapsed - MOVE_DURATION) / TRAIL_FADE_MS, 1);
-        opacity = 1.0 - fadeProgress;
+      if (!isFading) {
+        // Smooth lift scaling: 1.0 -> 1.1 (first 15%), stays 1.1, lands smoothly to 1.0 (last 15%)
+        if (moveProgress < 0.15) {
+          const t = moveProgress / 0.15;
+          const easeT = 1 - Math.pow(1 - t, 3); // cubic ease-out
+          ghostScale = 1.0 + 0.1 * easeT;
+        } else if (moveProgress > 0.85) {
+          const t = (1 - moveProgress) / 0.15;
+          const easeT = 1 - Math.pow(1 - t, 3); // cubic ease-out
+          ghostScale = 1.0 + 0.1 * easeT;
+        } else {
+          ghostScale = 1.1;
+        }
+      } else {
+        // Ghost has landed at the target square
+        if (!landed) {
+          landed = true;
+          if (onLand) onLand();
+        }
+        
+        // Dissolve capture & fade ghost over a 100ms window
+        const fadeElapsed = elapsed - MOVE_DURATION;
+        const fadeProgress = Math.min(fadeElapsed / 100, 1);
+        
+        ghostOpacity = 1.0 - fadeProgress;
+        ghostScale = 1.0 + 0.1 * (1.0 - fadeProgress); // smoothly returns 1.1 -> 1.0
+        
+        if (isCapture && capturedPieceType) {
+          capturedOpacity = 1.0 - fadeProgress;
+          capturedScale = 1.0 + 0.1 * fadeProgress; // scale 100% -> 110%
+        }
       }
 
-      // 4. Draw Canvas Trail
+      setGhost({ x: cx, y: cy, type: pieceType, scale: ghostScale, opacity: ghostOpacity });
+
+      if (isCapture && capturedPieceType && isFading) {
+        setCapturedGhost({
+          x: targetX,
+          y: targetY,
+          type: capturedPieceType,
+          scale: capturedScale,
+          opacity: capturedOpacity
+        });
+      } else {
+        setCapturedGhost(null);
+      }
+
+      // Draw Canvas Trail
       const dpr = window.devicePixelRatio || 1;
-      // Note: We use canvas width/height from DOM ref for clearing
       if (canvasRef.current && ctx) {
         ctx.clearRect(0, 0, canvasRef.current.width/dpr, canvasRef.current.height/dpr);
       }
 
-      if (opacity > 0 && ctx) {
+      const trailOpacity = isFading ? 1.0 - Math.min((elapsed - MOVE_DURATION) / TRAIL_FADE_MS, 1) : 1.0;
+
+      if (trailOpacity > 0 && ctx) {
         const { thickness, dirX, dirY } = getSweptStyle(startX, startY, targetX, targetY, squareSize, pieceType);
         
         const hx = cx + squareSize/2; 
@@ -158,7 +220,6 @@ export default function ChessAnimationLayer({ activeMove, squareSize = 50, onCom
         let tx = hx - dirX * TRAIL_LEN;
         let ty = hy - dirY * TRAIL_LEN;
 
-        // "Emerge" Effect: Pin tail to start until piece moves far enough
         const dist = Math.sqrt((cx - startX)**2 + (cy - startY)**2);
         if (dist < TRAIL_LEN && !isFading) {
           tx = startX + squareSize/2; 
@@ -167,10 +228,10 @@ export default function ChessAnimationLayer({ activeMove, squareSize = 50, onCom
 
         if (dist > 1) {
           const gradient = ctx.createLinearGradient(hx, hy, tx, ty);
-          const isWhite = pieceType.startsWith('w') || pieceType === 'P'; // Adjust based on your naming convention
+          const isWhite = pieceType.startsWith('w') || pieceType === 'P';
           const colorStr = isWhite ? "255, 255, 255" : "40, 40, 40";
           
-          gradient.addColorStop(0, `rgba(${colorStr}, ${0.5 * opacity})`);
+          gradient.addColorStop(0, `rgba(${colorStr}, ${0.5 * trailOpacity})`);
           gradient.addColorStop(1, `rgba(${colorStr}, 0)`);
 
           ctx.beginPath();
@@ -183,7 +244,6 @@ export default function ChessAnimationLayer({ activeMove, squareSize = 50, onCom
         }
       }
 
-      // 5. Loop Control
       if (elapsed < (MOVE_DURATION + TRAIL_FADE_MS)) {
         reqId = requestAnimationFrame(render);
       } else {
@@ -194,7 +254,7 @@ export default function ChessAnimationLayer({ activeMove, squareSize = 50, onCom
 
     reqId = requestAnimationFrame(render);
     return () => cancelAnimationFrame(reqId);
-  }, [activeMove, squareSize, onComplete]);
+  }, [activeMove, squareSize, onLand, onComplete]);
 
   // Setup Canvas Resolution
   useEffect(() => {
@@ -209,7 +269,16 @@ export default function ChessAnimationLayer({ activeMove, squareSize = 50, onCom
         ctx.scale(dpr, dpr);
       }
     }
-  }, [squareSize]); // Resize if square size changes
+  }, [squareSize]);
+
+  // Compute outline drop shadow based on current piece lift (scale)
+  const liftPercentage = ghost ? (ghost.scale - 1.0) / 0.1 : 0;
+  const shadowBlur = liftPercentage * 8;
+  const shadowOffset = liftPercentage * 6;
+  const shadowOpacity = liftPercentage * 0.4;
+  const ghostFilter = liftPercentage > 0.01 
+    ? `drop-shadow(${shadowOffset}px ${shadowOffset}px ${shadowBlur}px rgba(0, 0, 0, ${shadowOpacity}))`
+    : undefined;
 
   return (
     <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', pointerEvents: 'none', zIndex: 99 }}>
@@ -220,12 +289,30 @@ export default function ChessAnimationLayer({ activeMove, squareSize = 50, onCom
           alt="" 
           style={{
             position: 'absolute',
-            left: ghost.x,
-            top: ghost.y,
+            top: 0,
+            left: 0,
             width: squareSize,
             height: squareSize,
-            willChange: 'left, top',
-            opacity: anim.current.isPlaying ? 1 : 0 // Hide ghost when done
+            willChange: 'transform',
+            transform: `translate3d(${ghost.x}px, ${ghost.y}px, 0) scale(${ghost.scale})`,
+            opacity: ghost.opacity,
+            filter: ghostFilter,
+          }} 
+        />
+      )}
+      {capturedGhost && (
+        <img 
+          src={PIECE_ASSETS[capturedGhost.type]} 
+          alt="" 
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            width: squareSize,
+            height: squareSize,
+            willChange: 'transform',
+            transform: `translate3d(${capturedGhost.x}px, ${capturedGhost.y}px, 0) scale(${capturedGhost.scale})`,
+            opacity: capturedGhost.opacity,
           }} 
         />
       )}
