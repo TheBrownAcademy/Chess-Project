@@ -221,7 +221,7 @@ export default function Hero() {
               style={{ opacity: 0 }}
             >
               <p className="text-xl sm:text-2xl font-medium text-white/90">
-                Making the Best Move on the Way to the Top.
+                Making the Best Move on the Way to the Top
               </p>
               <p className="text-base sm:text-lg text-brand-secondary">
                 A complete chess platform to play, learn, compete, and grow—built to become the world's #1 destination for chess.
