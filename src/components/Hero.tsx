@@ -394,7 +394,7 @@ export default function Hero() {
           */}
           <div
             ref={boardColRef}
-            className="lg:col-span-6 flex justify-center"
+            className="lg:col-span-6 flex justify-center lg:justify-center"
             style={{
               opacity: 0,
               perspective: '1000px',
@@ -424,7 +424,7 @@ export default function Hero() {
                 - board glow animation
               */}
               <div
-                className="bg-brand-surface border border-brand-border rounded-none shadow-2xl overflow-hidden hero-board-card"
+                className="bg-brand-surface border border-brand-border rounded-2xl shadow-2xl hero-board-card"
                 style={{ transformStyle: 'preserve-3d' }}
               >
                 {/* Board Area */}
