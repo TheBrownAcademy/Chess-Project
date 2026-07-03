@@ -218,16 +218,20 @@ export default function HeroPuzzle() {
   const boardCardRef = useRef<HTMLDivElement>(null);
   const boardInnerRef = useRef<HTMLDivElement>(null);
   const checkmateRef = useRef<HTMLDivElement>(null);
-  // ── State variables ────────────────────────────────────────────────────────
-  const [phase, setPhase] = useState<'AUTOPLAY' | 'PUZZLE' | 'SUCCESS' | 'REPLAY'>('AUTOPLAY');
-  const [gameFen, setGameFen] = useState<string>(START_FEN);
-  const [, setCurrentMoveIndex] = useState<number>(-1);
-  const [puzzleStep, setPuzzleStep] = useState<number>(0);
-  const [lastMove, setLastMove] = useState<{ from: string; to: string } | null>(null);
-  const [checkedKingSquare, setCheckedKingSquare] = useState<string | null>(null);
-  const [isCheckmateGlow, setIsCheckmateGlow] = useState<boolean>(false);
-  const [showTryAgain, setShowTryAgain] = useState<boolean>(false);
-  const [checkmateBadges, setCheckmateBadges] = useState<{
+  // ── State variables for Puzzle 0 (Evergreen Game Autoplay & Puzzle) ────────
+  const [phase0, setPhase0] = useState<'AUTOPLAY' | 'PUZZLE' | 'SUCCESS' | 'REPLAY'>('AUTOPLAY');
+  const [gameFen0, setGameFen0] = useState<string>(START_FEN);
+  const [currentMoveIndex0, setCurrentMoveIndex0] = useState<number>(-1);
+  const currentMoveIndex0Ref = useRef<number>(-1);
+  useEffect(() => {
+    currentMoveIndex0Ref.current = currentMoveIndex0;
+  }, [currentMoveIndex0]);
+  const [puzzleStep0, setPuzzleStep0] = useState<number>(0);
+  const [lastMove0, setLastMove0] = useState<{ from: string; to: string } | null>(null);
+  const [checkedKingSquare0, setCheckedKingSquare0] = useState<string | null>(null);
+  const [isCheckmateGlow0, setIsCheckmateGlow0] = useState<boolean>(false);
+  const [showTryAgain0, setShowTryAgain0] = useState<boolean>(false);
+  const [checkmateBadges0, setCheckmateBadges0] = useState<{
     losingSquare: string;
     winningSquare: string;
     losingX: number;
@@ -239,13 +243,27 @@ export default function HeroPuzzle() {
   // ── Carousel index & animation state ───────────────────────────────────────
   const [activeIndex, setActiveIndex] = useState<number>(0);
   const [interactiveIndex, setInteractiveIndex] = useState<number | null>(0);
-  // ── Original puzzle state variables ────────────────────────────────────────
-  const gameRefOriginal = useRef<Chess>(new Chess(PUZZLE_ORIGINAL.fen));
-  const [phaseOriginal, setPhaseOriginal] = useState<PuzzlePhaseOriginal>('idle');
+  // ── State variables for Puzzle 1 (Mate in Two) ──────────────────────────────
+  const gameRef1 = useRef<Chess>(new Chess(PUZZLE_ORIGINAL.fen));
+  const [gameFen1, setGameFen1] = useState<string>(PUZZLE_ORIGINAL.fen);
+  const [phase1, setPhase1] = useState<PuzzlePhaseOriginal>('idle');
   const [movesLeftOriginal, setMovesLeftOriginal] = useState<number>(PUZZLE_ORIGINAL.totalMoves);
   const [solveStepOriginal, setSolveStepOriginal] = useState<number>(-1);
   const [solveAnnotationOriginal, setSolveAnnotationOriginal] = useState<string>('');
   const [notationEntriesOriginal, setNotationEntriesOriginal] = useState<string[]>([]);
+  const [lastMove1, setLastMove1] = useState<{ from: string; to: string } | null>(null);
+  const [checkedKingSquare1, setCheckedKingSquare1] = useState<string | null>(null);
+  const [isCheckmateGlow1, setIsCheckmateGlow1] = useState<boolean>(false);
+  const [showTryAgain1, setShowTryAgain1] = useState<boolean>(false);
+  const [checkmateBadges1, setCheckmateBadges1] = useState<{
+    losingSquare: string;
+    winningSquare: string;
+    losingX: number;
+    losingY: number;
+    winningX: number;
+    winningY: number;
+    squareSize: number;
+  } | null>(null);
   const hasCelebratedOriginalRef = useRef<boolean>(false);
   const solveAbortRef = useRef<boolean>(false);
   const solveTimerRef = useRef<number | null>(null);
@@ -285,8 +303,13 @@ export default function HeroPuzzle() {
       // b) King square pulse (red tint)
       tl.call(() => {
         if (kingSq) {
-          setCheckedKingSquare(kingSq);
-          safeSetTimeout(() => setCheckedKingSquare(null), 1200);
+          if (activeIndex === 0) {
+            setCheckedKingSquare0(kingSq);
+            safeSetTimeout(() => setCheckedKingSquare0(null), 1200);
+          } else {
+            setCheckedKingSquare1(kingSq);
+            safeSetTimeout(() => setCheckedKingSquare1(null), 1200);
+          }
         }
       }, [], '<0.05');
       // c) CHECKMATE text overlay — scale in from 0
@@ -430,38 +453,38 @@ export default function HeroPuzzle() {
   // ══════════════════════════════════════════════════════════════════════════
   // MOVE PLAYER AND TIMING COORDINATION
   // ══════════════════════════════════════════════════════════════════════════
-  const playStep = useCallback(async (moveIndex: number): Promise<void> => {
+  const playStep0 = useCallback(async (moveIndex: number): Promise<void> => {
     const move = PROCESSED_MOVES[moveIndex];
     if (!move) return;
-    setLastMove({ from: move.from, to: move.to });
+    setLastMove0({ from: move.from, to: move.to });
     await animatePieceMove(
       move.from,
       move.to,
       boardInnerRef.current,
       move.isCapture,
       () => {
-        setGameFen(move.fenAfter);
+        setGameFen0(move.fenAfter);
         showTrail(move.from, move.to);
       }
     );
     if (abortRef.current) return;
     // Pulse checked king's square if checked
     if (move.isCheck || move.isCheckmate) {
-      setCheckedKingSquare(move.kingSquare);
+      setCheckedKingSquare0(move.kingSquare);
       await new Promise(r => setTimeout(r, 450));
-      setCheckedKingSquare(null);
+      setCheckedKingSquare0(null);
     }
   }, [animatePieceMove, showTrail]);
   // ══════════════════════════════════════════════════════════════════════════
   // AUTOPLAY TIMELINE LOOP
   // Plays moves 1-20 (Indices 0 to 39), then enters puzzle mode.
   // ══════════════════════════════════════════════════════════════════════════
-  const runAutoplay = useCallback(async (startIndex: number) => {
+  const runAutoplay0 = useCallback(async (startIndex: number) => {
     abortRef.current = false;
     for (let i = startIndex; i < 40; i++) {
       if (abortRef.current) return;
-      setCurrentMoveIndex(i);
-      await playStep(i);
+      setCurrentMoveIndex0(i);
+      await playStep0(i);
       if (abortRef.current) return;
       // Determine pause after the move based on move attributes
       const move = PROCESSED_MOVES[i];
@@ -477,21 +500,12 @@ export default function HeroPuzzle() {
     // Final pause before transition to puzzle (user-configurable)
     await new Promise(r => setTimeout(r, TIMING.PUZZLE_START_DELAY));
     if (abortRef.current) return;
-    setPhase('PUZZLE');
-    setCurrentMoveIndex(40);
-    setPuzzleStep(0);
-    setShowTryAgain(false);
-  }, [playStep]);
+    setPhase0('PUZZLE');
+    setCurrentMoveIndex0(40);
+    setPuzzleStep0(0);
+    setShowTryAgain0(false);
+  }, [playStep0]);
   // ─── Unified Cleanup and Initialization ───
-  const getCardFen = useCallback((i: number) => {
-    if (i === 0) {
-      return gameFen;
-    } else {
-      return activeIndex === 1 && interactiveIndex === 1
-        ? gameRefOriginal.current.fen()
-        : PUZZLE_ORIGINAL.fen;
-    }
-  }, [gameFen, activeIndex, interactiveIndex]);
   const cleanupGame = useCallback(() => {
     abortRef.current = true;
     solveAbortRef.current = true;
@@ -521,40 +535,46 @@ export default function HeroPuzzle() {
     abortRef.current = false;
     solveAbortRef.current = false;
     // Reset visual annotations/markers for a fresh game start
-    setLastMove(null);
-    setCheckedKingSquare(null);
-    setCheckmateBadges(null);
-    setIsCheckmateGlow(false);
-    setShowTryAgain(false);
     if (index === 0) {
-      setGameFen(START_FEN);
-      setPhase('AUTOPLAY');
-      setCurrentMoveIndex(-1);
-      setPuzzleStep(0);
+      setLastMove0(null);
+      setCheckedKingSquare0(null);
+      setCheckmateBadges0(null);
+      setIsCheckmateGlow0(false);
+      setShowTryAgain0(false);
+      setGameFen0(START_FEN);
+      setPhase0('AUTOPLAY');
+      setCurrentMoveIndex0(-1);
+      setPuzzleStep0(0);
       
-      runAutoplay(0);
+      runAutoplay0(0);
     } else {
-      gameRefOriginal.current = new Chess(PUZZLE_ORIGINAL.fen);
-      setGameFen(PUZZLE_ORIGINAL.fen);
-      setPhaseOriginal('idle');
+      setLastMove1(null);
+      setCheckedKingSquare1(null);
+      setCheckmateBadges1(null);
+      setIsCheckmateGlow1(false);
+      setShowTryAgain1(false);
+      gameRef1.current = new Chess(PUZZLE_ORIGINAL.fen);
+      setGameFen1(PUZZLE_ORIGINAL.fen);
+      setPhase1('idle');
       setMovesLeftOriginal(PUZZLE_ORIGINAL.totalMoves);
       setSolveStepOriginal(-1);
       setSolveAnnotationOriginal('');
       setNotationEntriesOriginal([]);
       hasCelebratedOriginalRef.current = false;
     }
-  }, [runAutoplay]);
+  }, [runAutoplay0]);
   // Synchronize board reset & initialization with active index changes
   const prevIndexRef = useRef(activeIndex);
   useEffect(() => {
     if (prevIndexRef.current !== activeIndex) {
-      // Actual slide change
+      // Slide changed!
       prevIndexRef.current = activeIndex;
       setInteractiveIndex(null);
       cleanupGame();
     } else {
-      // Mount or StrictMode remount
-      initGame(activeIndex);
+      // First mount or StrictMode remount
+      initGame(0);
+      initGame(1);
     }
     return () => {
       cleanupGame();
@@ -565,19 +585,18 @@ export default function HeroPuzzle() {
     // Only initialize the board and start logic once layout animation is finished
     if (interactiveIndex !== activeIndex) {
       setInteractiveIndex(activeIndex);
-      initGame(activeIndex);
     }
-  }, [activeIndex, interactiveIndex, initGame]);
+  }, [activeIndex, interactiveIndex]);
   // ══════════════════════════════════════════════════════════════════════════
   // MATE-IN-TWO PUZZLE LOGIC & ANCILLARY PROCEDURES (RESTORED & ADAPTED)
   // ══════════════════════════════════════════════════════════════════════════
   const applyMoveOriginal = useCallback(
     (from: string, to: string, promotion = 'q'): boolean => {
       try {
-        const result = gameRefOriginal.current.move({ from, to, promotion });
+        const result = gameRef1.current.move({ from, to, promotion });
         if (!result) return false;
-        setGameFen(gameRefOriginal.current.fen());
-        setLastMove({ from, to });
+        setGameFen1(gameRef1.current.fen());
+        setLastMove1({ from, to });
         showTrail(from, to);
         return true;
       } catch {
@@ -587,7 +606,7 @@ export default function HeroPuzzle() {
     [showTrail]
   );
   const pickSafeBlackMoveOriginal = useCallback((): string | null => {
-    const game = gameRefOriginal.current;
+    const game = gameRef1.current;
     const legalMoves = game.moves();
     if (legalMoves.length === 0) return null;
     const safeMoves = legalMoves.filter((move) => {
@@ -606,7 +625,7 @@ export default function HeroPuzzle() {
   const celebrateOriginal = useCallback(async () => {
     if (hasCelebratedOriginalRef.current) return;
     hasCelebratedOriginalRef.current = true;
-    const checkmateFen = gameRefOriginal.current.fen();
+    const checkmateFen = gameRef1.current.fen();
     const { losingKingSq, winningKingSq } = getKingSquares(checkmateFen);
     const boardEl = boardInnerRef.current;
     if (boardEl && losingKingSq && winningKingSq) {
@@ -623,7 +642,7 @@ export default function HeroPuzzle() {
       };
       const losingPos = getSquarePos(losingKingSq);
       const winningPos = getSquarePos(winningKingSq);
-      setCheckmateBadges({
+      setCheckmateBadges1({
         losingSquare: losingKingSq,
         winningSquare: winningKingSq,
         losingX: losingPos.x,
@@ -632,8 +651,8 @@ export default function HeroPuzzle() {
         winningY: winningPos.y,
         squareSize: sqW,
       });
-      setPhaseOriginal('solved');
-      setIsCheckmateGlow(true);
+      setPhase1('solved');
+      setIsCheckmateGlow1(true);
       safeSetTimeout(() => {
         const defeatBadge = boardEl.querySelector('.defeat-badge') as HTMLElement | null;
         const victoryBadge = boardEl.querySelector('.victory-badge') as HTMLElement | null;
@@ -693,11 +712,11 @@ export default function HeroPuzzle() {
     }
     setMovesLeftOriginal(0);
   }, [fireConfetti, runCheckmateImpact, safeSetTimeout]);
-  const onDropOriginal = useCallback(
+  const onDrop1 = useCallback(
     (sourceSquare: string, targetSquare: string): boolean => {
-      if (phaseOriginal !== 'idle' && phaseOriginal !== 'awaiting_mate') return false;
-      if (gameRefOriginal.current.turn() !== 'w') return false;
-      const moves = gameRefOriginal.current.moves({ verbose: true });
+      if (phase1 !== 'idle' && phase1 !== 'awaiting_mate') return false;
+      if (gameRef1.current.turn() !== 'w') return false;
+      const moves = gameRef1.current.moves({ verbose: true });
       const targetMove = moves.find(m => m.from === sourceSquare && m.to === targetSquare);
       if (!targetMove) return false;
       const isCapture = !!targetMove.captured;
@@ -711,11 +730,11 @@ export default function HeroPuzzle() {
         }
       ).then(() => {
         if (solveAbortRef.current) return;
-        const game = gameRefOriginal.current;
+        const game = gameRef1.current;
         const history = game.history({ verbose: true });
         const lastEntry = history[history.length - 1];
         const displaySan = lastEntry.san.replace('x', '');
-        if (phaseOriginal === 'idle') {
+        if (phase1 === 'idle') {
           setNotationEntriesOriginal([`1. ${displaySan}`]);
           if (game.isCheckmate()) {
             setMovesLeftOriginal(0);
@@ -724,7 +743,7 @@ export default function HeroPuzzle() {
             return;
           }
           setMovesLeftOriginal(1);
-          setPhaseOriginal('black_responding');
+          setPhase1('black_responding');
           triggerAnnotation(targetSquare, '!!');
           safeSetTimeout(() => {
             if (solveAbortRef.current) return;
@@ -739,29 +758,29 @@ export default function HeroPuzzle() {
                   boardInnerRef.current,
                   !!moveResult.captured,
                   () => {
-                    gameRefOriginal.current.move(blackMove);
-                    setGameFen(gameRefOriginal.current.fen());
-                    setLastMove({ from: moveResult.from, to: moveResult.to });
+                    gameRef1.current.move(blackMove);
+                    setGameFen1(gameRef1.current.fen());
+                    setLastMove1({ from: moveResult.from, to: moveResult.to });
                     showTrail(moveResult.from, moveResult.to);
                     const blackSan = moveResult.san.replace('x', '');
                     setNotationEntriesOriginal(prev => [...prev, `   ...${blackSan}`]);
                   }
                 ).then(() => {
-                  setPhaseOriginal('awaiting_mate');
+                  setPhase1('awaiting_mate');
                 });
               } else {
-                setPhaseOriginal('awaiting_mate');
+                setPhase1('awaiting_mate');
               }
             } else {
-              setPhaseOriginal('awaiting_mate');
+              setPhase1('awaiting_mate');
             }
           }, 600);
-        } else if (phaseOriginal === 'awaiting_mate') {
+        } else if (phase1 === 'awaiting_mate') {
           setNotationEntriesOriginal(prev => [...prev, `2. ${displaySan}`]);
           if (game.isCheckmate()) {
             celebrateOriginal();
           } else {
-            setPhaseOriginal('black_responding');
+            setPhase1('black_responding');
             safeSetTimeout(() => {
               if (solveAbortRef.current) return;
               const blackMove = pickSafeBlackMoveOriginal();
@@ -775,21 +794,21 @@ export default function HeroPuzzle() {
                     boardInnerRef.current,
                     !!moveResult.captured,
                     () => {
-                      gameRefOriginal.current.move(blackMove);
-                      setGameFen(gameRefOriginal.current.fen());
-                      setLastMove({ from: moveResult.from, to: moveResult.to });
+                      gameRef1.current.move(blackMove);
+                      setGameFen1(gameRef1.current.fen());
+                      setLastMove1({ from: moveResult.from, to: moveResult.to });
                       showTrail(moveResult.from, moveResult.to);
                       const blackSan = moveResult.san.replace('x', '');
                       setNotationEntriesOriginal(prev => [...prev, `   ...${blackSan}`]);
                     }
                   ).then(() => {
-                    setPhaseOriginal('awaiting_mate');
+                    setPhase1('awaiting_mate');
                   });
                 } else {
-                  setPhaseOriginal('awaiting_mate');
+                  setPhase1('awaiting_mate');
                 }
               } else {
-                setPhaseOriginal('awaiting_mate');
+                setPhase1('awaiting_mate');
               }
             }, 600);
           }
@@ -797,12 +816,12 @@ export default function HeroPuzzle() {
       });
       return true;
     },
-    [phaseOriginal, applyMoveOriginal, celebrateOriginal, triggerAnnotation, pickSafeBlackMoveOriginal, animatePieceMove, showTrail, safeSetTimeout]
+    [phase1, applyMoveOriginal, celebrateOriginal, triggerAnnotation, pickSafeBlackMoveOriginal, animatePieceMove, showTrail, safeSetTimeout]
   );
-  const handleSolveOriginal = useCallback(async () => {
+  const handleSolve1 = useCallback(async () => {
     cleanupGame();
     solveAbortRef.current = false;
-    setPhaseOriginal('solving');
+    setPhase1('solving');
     const step1 = PUZZLE_ORIGINAL.solution[0];
     await new Promise(r => safeSetTimeout(r as () => void, 500));
     if (solveAbortRef.current) return;
@@ -842,14 +861,14 @@ export default function HeroPuzzle() {
     }
   }, [cleanupGame, animatePieceMove, applyMoveOriginal, triggerAnnotation, celebrateOriginal, safeSetTimeout]);
   // ─── Verification state alignment helper ───
-  const getExpectedPrevFEN = useCallback(() => {
-    if (puzzleStep === 0) return PROCESSED_MOVES[39].fenAfter;
-    return PROCESSED_MOVES[40 + puzzleStep * 2 - 1].fenAfter;
-  }, [puzzleStep]);
+  const getExpectedPrevFEN0 = useCallback(() => {
+    if (puzzleStep0 === 0) return PROCESSED_MOVES[39].fenAfter;
+    return PROCESSED_MOVES[40 + puzzleStep0 * 2 - 1].fenAfter;
+  }, [puzzleStep0]);
   // ══════════════════════════════════════════════════════════════════════════
   // CHECKMATE POPUP CELEBRATION (RESTORED PREVIOUS BEHAVIOUR)
   // ══════════════════════════════════════════════════════════════════════════
-  const celebrate = useCallback(async (kingSq: string | null) => {
+  const celebrate0 = useCallback(async (kingSq: string | null) => {
     // 1) Find the final checkmate FEN and king squares
     const checkmateFen = PROCESSED_MOVES[PROCESSED_MOVES.length - 1].fenAfter;
     const { losingKingSq, winningKingSq } = getKingSquares(checkmateFen);
@@ -868,7 +887,7 @@ export default function HeroPuzzle() {
       };
       const losingPos = getSquarePos(losingKingSq);
       const winningPos = getSquarePos(winningKingSq);
-      setCheckmateBadges({
+      setCheckmateBadges0({
         losingSquare: losingKingSq,
         winningSquare: winningKingSq,
         losingX: losingPos.x,
@@ -878,8 +897,8 @@ export default function HeroPuzzle() {
         squareSize: sqW,
       });
       // Set success phase immediately so board highlights kick in (0.05s)
-      setPhase('SUCCESS');
-      setIsCheckmateGlow(true);
+      setPhase0('SUCCESS');
+      setIsCheckmateGlow0(true);
       // Animate checkmate badges after DOM render
       setTimeout(() => {
         const defeatBadge = boardEl.querySelector('.defeat-badge') as HTMLElement | null;
@@ -950,80 +969,80 @@ export default function HeroPuzzle() {
   const onDrop = useCallback(
     (sourceSquare: string, targetSquare: string): boolean => {
       if (activeIndex === 1) {
-        return onDropOriginal(sourceSquare, targetSquare);
+        return onDrop1(sourceSquare, targetSquare);
       }
-      if (phase !== 'PUZZLE') return false;
+      if (phase0 !== 'PUZZLE') return false;
       // Safety check to ensure the board is actually ready for the user move
-      const expectedPrevFen = getExpectedPrevFEN();
-      if (gameFen !== expectedPrevFen) {
+      const expectedPrevFen = getExpectedPrevFEN0();
+      if (gameFen0 !== expectedPrevFen) {
         return false;
       }
-      const expectedWhiteMove = PROCESSED_MOVES[40 + puzzleStep * 2];
+      const expectedWhiteMove = PROCESSED_MOVES[40 + puzzleStep0 * 2];
       if (!expectedWhiteMove) return false;
       // Validate White move correctness
       if (sourceSquare === expectedWhiteMove.from && targetSquare === expectedWhiteMove.to) {
-        setShowTryAgain(false);
+        setShowTryAgain0(false);
         // Update to White move position immediately
-        setGameFen(expectedWhiteMove.fenAfter);
-        setLastMove({ from: expectedWhiteMove.from, to: expectedWhiteMove.to });
+        setGameFen0(expectedWhiteMove.fenAfter);
+        setLastMove0({ from: expectedWhiteMove.from, to: expectedWhiteMove.to });
         showTrail(expectedWhiteMove.from, expectedWhiteMove.to);
         triggerAnnotation(expectedWhiteMove.to, '!!');
         if (expectedWhiteMove.isCheck || expectedWhiteMove.isCheckmate) {
-          setCheckedKingSquare(expectedWhiteMove.kingSquare);
-          safeSetTimeout(() => setCheckedKingSquare(null), 450);
+          setCheckedKingSquare0(expectedWhiteMove.kingSquare);
+          safeSetTimeout(() => setCheckedKingSquare0(null), 450);
         }
         // Final move solved
         if (expectedWhiteMove.isCheckmate) {
-          celebrate(expectedWhiteMove.kingSquare);
+          celebrate0(expectedWhiteMove.kingSquare);
           return true;
         }
         // Play forced Black reply after a brief pause
-        const expectedBlackMove = PROCESSED_MOVES[40 + puzzleStep * 2 + 1];
+        const expectedBlackMove = PROCESSED_MOVES[40 + puzzleStep0 * 2 + 1];
         if (expectedBlackMove) {
           safeSetTimeout(async () => {
             if (abortRef.current) return;
-            setLastMove({ from: expectedBlackMove.from, to: expectedBlackMove.to });
+            setLastMove0({ from: expectedBlackMove.from, to: expectedBlackMove.to });
             await animatePieceMove(
               expectedBlackMove.from,
               expectedBlackMove.to,
               boardInnerRef.current,
               expectedBlackMove.isCapture,
               () => {
-                setGameFen(expectedBlackMove.fenAfter);
+                setGameFen0(expectedBlackMove.fenAfter);
                 showTrail(expectedBlackMove.from, expectedBlackMove.to);
               }
             );
             if (abortRef.current) return;
             if (expectedBlackMove.isCheck) {
-              setCheckedKingSquare(expectedBlackMove.kingSquare);
-              safeSetTimeout(() => setCheckedKingSquare(null), 450);
+              setCheckedKingSquare0(expectedBlackMove.kingSquare);
+              safeSetTimeout(() => setCheckedKingSquare0(null), 450);
             }
-            setPuzzleStep(prev => prev + 1);
+            setPuzzleStep0(prev => prev + 1);
           }, 600);
         }
         return true;
       } else {
         // Wrong move - snap back and show try again
-        setShowTryAgain(true);
+        setShowTryAgain0(true);
         return false;
       }
     },
-    [activeIndex, phase, puzzleStep, gameFen, getExpectedPrevFEN, showTrail, triggerAnnotation, animatePieceMove, celebrate, onDropOriginal, safeSetTimeout]
+    [activeIndex, phase0, puzzleStep0, gameFen0, getExpectedPrevFEN0, showTrail, triggerAnnotation, animatePieceMove, celebrate0, onDrop1, safeSetTimeout]
   );
   // ══════════════════════════════════════════════════════════════════════════
   // REPLAY TIMELINE RESET AND TRIGGER
   // ══════════════════════════════════════════════════════════════════════════
-  const handleReplay = useCallback(() => {
+  const handleReplay0 = useCallback(() => {
     abortRef.current = true;
     clearTrail();
     clearAnnotation();
-    setCheckedKingSquare(null);
-    setIsCheckmateGlow(false);
-    setShowTryAgain(false);
-    setPuzzleStep(0);
-    setLastMove(null);
-    setGameFen(START_FEN);
-    setCheckmateBadges(null);
+    setCheckedKingSquare0(null);
+    setIsCheckmateGlow0(false);
+    setShowTryAgain0(false);
+    setPuzzleStep0(0);
+    setLastMove0(null);
+    setGameFen0(START_FEN);
+    setCheckmateBadges0(null);
     setActiveMove(null);
     if (animResolveRef.current) {
       animResolveRef.current();
@@ -1035,69 +1054,22 @@ export default function HeroPuzzle() {
       gsap.set(checkmateRef.current, { display: 'none', opacity: 0, scale: 0.6 });
     }
     gsap.killTweensOf('.checkmate-badge-inner');
-    setPhase('REPLAY');
+    setPhase0('REPLAY');
     setTimeout(() => {
       abortRef.current = false;
-      setPhase('AUTOPLAY');
-      runAutoplay(0);
+      setPhase0('AUTOPLAY');
+      runAutoplay0(0);
     }, TIMING.REPLAY_DELAY);
-  }, [runAutoplay, clearTrail, clearAnnotation]);
+  }, [runAutoplay0, clearTrail, clearAnnotation]);
   // ══════════════════════════════════════════════════════════════════════════
   // RENDER SETUP & CAROUSEL CONFIG
   // ══════════════════════════════════════════════════════════════════════════
-  const customSquareStyles: Record<string, React.CSSProperties> = {};
-  if (lastMove) {
-    customSquareStyles[lastMove.from] = { backgroundColor: 'rgba(255, 214, 10, 0.35)' };
-    customSquareStyles[lastMove.to] = { backgroundColor: 'rgba(255, 214, 10, 0.50)' };
-  }
-  if (checkedKingSquare) {
-    customSquareStyles[checkedKingSquare] = {
-      backgroundColor: 'rgba(239, 68, 68, 0.55)',
-      boxShadow: 'inset 0 0 20px rgba(239, 68, 68, 0.8)',
-      animation: 'king-pulse 0.4s ease-in-out 3',
-    };
-  }
-  if (activeIndex === 0) {
-    if (phase === 'SUCCESS') {
-      const checkmateFen = PROCESSED_MOVES[PROCESSED_MOVES.length - 1].fenAfter;
-      const { losingKingSq, winningKingSq } = getKingSquares(checkmateFen);
-      if (losingKingSq) {
-        customSquareStyles[losingKingSq] = {
-          backgroundColor: 'rgba(239, 68, 68, 0.3)',
-          transition: 'background-color 0.3s ease',
-        };
-      }
-      if (winningKingSq) {
-        customSquareStyles[winningKingSq] = {
-          backgroundColor: 'rgba(34, 197, 94, 0.3)',
-          transition: 'background-color 0.3s ease',
-        };
-      }
-    }
-  } else {
-    if (phaseOriginal === 'solved') {
-      const checkmateFen = gameRefOriginal.current.fen();
-      const { losingKingSq, winningKingSq } = getKingSquares(checkmateFen);
-      if (losingKingSq) {
-        customSquareStyles[losingKingSq] = {
-          backgroundColor: 'rgba(239, 68, 68, 0.3)',
-          transition: 'background-color 0.3s ease',
-        };
-      }
-      if (winningKingSq) {
-        customSquareStyles[winningKingSq] = {
-          backgroundColor: 'rgba(34, 197, 94, 0.3)',
-          transition: 'background-color 0.3s ease',
-        };
-      }
-    }
-  }
   const movesLeft = activeIndex === 0
-    ? (phase === 'SUCCESS' ? 0 : 4 - puzzleStep)
-    : (phaseOriginal === 'solved' ? 0 : movesLeftOriginal);
+    ? (phase0 === 'SUCCESS' ? 0 : 4 - puzzleStep0)
+    : (phase1 === 'solved' ? 0 : movesLeftOriginal);
   const isInteractive = activeIndex === 0
-    ? (phase === 'PUZZLE' && gameFen === getExpectedPrevFEN())
-    : (phaseOriginal === 'idle' || phaseOriginal === 'awaiting_mate');
+    ? (phase0 === 'PUZZLE' && gameFen0 === getExpectedPrevFEN0())
+    : (phase1 === 'idle' || phase1 === 'awaiting_mate');
   // Merge outer wrapper and cursor glow refs
   const mergedWrapRef = useCallback((el: HTMLDivElement | null) => {
     boardWrapRef.current = el;
@@ -1108,22 +1080,22 @@ export default function HeroPuzzle() {
   let descTop = "THE EVERGREEN GAME";
   let descBottom = "Anderssen vs Dufresne, 1852";
   if (activeIndex === 0) {
-    if (phase === 'PUZZLE') {
+    if (phase0 === 'PUZZLE') {
       descTop = "CAN YOU FINISH THE EVERGREEN GAME?";
       descBottom = "White to move.";
-    } else if (phase === 'SUCCESS') {
+    } else if (phase0 === 'SUCCESS') {
       descTop = "BRILLIANT.";
       descBottom = "Anderssen vs Dufresne, 1852 — The Evergreen Game.";
-    } else if (phase === 'REPLAY') {
+    } else if (phase0 === 'REPLAY') {
       descTop = "RESETTING POSITION...";
       descBottom = "Restarting autoplay...";
     }
   } else {
     topTitle = "MATE IN TWO";
-    if (phaseOriginal === 'solving') {
+    if (phase1 === 'solving') {
       descTop = "SOLVING MATE-IN-TWO...";
       descBottom = solveAnnotationOriginal || "White to play and checkmate in two.";
-    } else if (phaseOriginal === 'solved') {
+    } else if (phase1 === 'solved') {
       descTop = "BRILLIANT.";
       descBottom = "Checkmate! The rook delivers the final blow.";
     } else {
@@ -1157,12 +1129,6 @@ export default function HeroPuzzle() {
     cleanupGame();
     initGame(1);
   }, [cleanupGame, initGame]);
-  // ── Per-card FEN for the preview thumbnails ──
-  // For the active card we show its live game FEN; for inactive we show the start FEN.
-  const getPreviewFen = (i: number) => {
-    if (i === activeIndex) return gameFen;
-    return i === 0 ? START_FEN : PUZZLE_ORIGINAL.fen;
-  };
   return (
     <div className="flex flex-col gap-0.5">
       {/* Top Title fixed above the board inside the panel */}
@@ -1188,7 +1154,7 @@ export default function HeroPuzzle() {
           className="absolute inset-0 rounded-xl pointer-events-none z-10"
           style={{
             transition: 'box-shadow 0.4s ease',
-            boxShadow: isCheckmateGlow
+            boxShadow: (activeIndex === 0 ? isCheckmateGlow0 : isCheckmateGlow1)
               ? '0 0 50px 10px rgba(99, 102, 241, 0.4), 0 0 20px 5px rgba(139, 92, 246, 0.3)'
               : undefined,
           }}
@@ -1200,8 +1166,8 @@ export default function HeroPuzzle() {
           style={{ display: 'none' }}
         >
           <div className="checkmate-overlay-badge">
-            <Zap className="w-6 h-6 text-yellow-300 mb-1" />
-            <span className="checkmate-text">CHECKMATE</span>
+             <Zap className="w-6 h-6 text-yellow-300 mb-1" />
+             <span className="checkmate-text">CHECKMATE</span>
           </div>
         </div>
         {/* Floating background particles */}
@@ -1219,10 +1185,15 @@ export default function HeroPuzzle() {
           animate={{ x: `calc(-${activeIndex * 100}% - ${activeIndex * 32}px)` }}
           transition={{ type: 'spring', stiffness: 260, damping: 32, mass: 1.1 }}
           onAnimationComplete={() => {
-            // Initialize the game AFTER the slide animation finishes
             if (interactiveIndex !== activeIndex) {
               setInteractiveIndex(activeIndex);
-              initGame(activeIndex);
+              // Resume slide 0 autoplay if it was aborted in AUTOPLAY phase
+              if (activeIndex === 0 && phase0 === 'AUTOPLAY') {
+                const nextIndex = currentMoveIndex0Ref.current === -1 ? 0 : currentMoveIndex0Ref.current + 1;
+                if (nextIndex < 40) {
+                  runAutoplay0(nextIndex);
+                }
+              }
             }
           }}
           style={{ willChange: 'transform' }}
@@ -1234,6 +1205,65 @@ export default function HeroPuzzle() {
             const rotateX = 0;
             const rotateZ = offset * 3;
             const scale = isActive ? 1 : 0.7;
+
+            const boardFen = i === 0 ? gameFen0 : gameFen1;
+            const boardLastMove = i === 0 ? lastMove0 : lastMove1;
+            const boardCheckedKingSquare = i === 0 ? checkedKingSquare0 : checkedKingSquare1;
+            const boardCheckmateBadges = i === 0 ? checkmateBadges0 : checkmateBadges1;
+            const boardIsInteractive = i === 0
+              ? (phase0 === 'PUZZLE' && gameFen0 === getExpectedPrevFEN0())
+              : (phase1 === 'idle' || phase1 === 'awaiting_mate');
+
+            // Construct custom square styles for this specific board
+            const boardSquareStyles: Record<string, React.CSSProperties> = {};
+            if (boardLastMove) {
+              boardSquareStyles[boardLastMove.from] = { backgroundColor: 'rgba(255, 214, 10, 0.35)' };
+              boardSquareStyles[boardLastMove.to] = { backgroundColor: 'rgba(255, 214, 10, 0.50)' };
+            }
+            if (boardCheckedKingSquare) {
+              boardSquareStyles[boardCheckedKingSquare] = {
+                backgroundColor: 'rgba(239, 68, 68, 0.55)',
+                boxShadow: 'inset 0 0 20px rgba(239, 68, 68, 0.8)',
+                animation: 'king-pulse 0.4s ease-in-out 3',
+              };
+            }
+            // Add checkmate victory/defeat styles if solved
+            if (i === 0) {
+              if (phase0 === 'SUCCESS') {
+                const checkmateFen = PROCESSED_MOVES[PROCESSED_MOVES.length - 1].fenAfter;
+                const { losingKingSq, winningKingSq } = getKingSquares(checkmateFen);
+                if (losingKingSq) {
+                  boardSquareStyles[losingKingSq] = {
+                    backgroundColor: 'rgba(239, 68, 68, 0.3)',
+                    transition: 'background-color 0.3s ease',
+                  };
+                }
+                if (winningKingSq) {
+                  boardSquareStyles[winningKingSq] = {
+                    backgroundColor: 'rgba(34, 197, 94, 0.3)',
+                    transition: 'background-color 0.3s ease',
+                  };
+                }
+              }
+            } else {
+              if (phase1 === 'solved') {
+                const checkmateFen = gameRef1.current.fen();
+                const { losingKingSq, winningKingSq } = getKingSquares(checkmateFen);
+                if (losingKingSq) {
+                  boardSquareStyles[losingKingSq] = {
+                    backgroundColor: 'rgba(239, 68, 68, 0.3)',
+                    transition: 'background-color 0.3s ease',
+                  };
+                }
+                if (winningKingSq) {
+                  boardSquareStyles[winningKingSq] = {
+                    backgroundColor: 'rgba(34, 197, 94, 0.3)',
+                    transition: 'background-color 0.3s ease',
+                  };
+                }
+              }
+            }
+
             return (
               <div
                 key={i}
@@ -1256,194 +1286,192 @@ export default function HeroPuzzle() {
                   }}
                   onClick={() => { if (!isActive) toSlide(i); }}
                 >
-                  {isActive ? (
-                    /* ACTIVE SLOT: Full Hero chessboard */
+                  <div
+                    ref={isActive ? boardCardRef : null}
+                    className={`relative rounded-xl overflow-hidden transition-all duration-500 flex flex-col ${
+                      isActive
+                        ? 'bg-brand-surface p-0 border-transparent'
+                        : 'bg-[#1A1E2E] border border-brand-border/60 p-4'
+                    }`}
+                    style={{
+                      willChange: 'transform, opacity, box-shadow',
+                      transformStyle: 'preserve-3d',
+                      transition: 'box-shadow 1.5s ease-in-out, background-color 0.5s ease, border-color 0.5s ease, padding 0.5s ease',
+                      backdropFilter: isActive ? undefined : 'blur(8px)',
+                      boxShadow: isActive
+                        ? undefined
+                        : '0 20px 40px -10px rgba(0,0,0,0.5), 0 0 20px 2px rgba(99, 102, 241, 0.15)',
+                    }}
+                  >
+                    {/* Chessboard Container */}
                     <div
-                      ref={boardCardRef}
-                      className="relative bg-brand-surface rounded-xl overflow-hidden"
-                      style={{
-                        willChange: 'transform, opacity, box-shadow',
-                        transformStyle: 'preserve-3d',
-                        transition: 'box-shadow 1.5s ease-in-out',
-                        opacity: 0,
-                      }}
+                      ref={isActive ? boardInnerRef : null}
+                      className={`aspect-square overflow-hidden relative transition-all duration-500 ${
+                        isActive
+                          ? 'w-full'
+                          : 'w-full pointer-events-none select-none rounded-sm mb-4 border border-black/20'
+                      }`}
+                      style={{ willChange: 'filter' }}
                     >
-                      {/* Board inner frame — ref used by GSAP effects */}
-                      <div
-                        ref={boardInnerRef}
-                        className="aspect-square overflow-hidden relative"
-                        style={{ willChange: 'filter' }}
-                      >
-                        {/* GSAP piece movement overlay */}
+                      {/* GSAP piece movement overlay (only active on active board) */}
+                      {isActive && activeMove && (
                         <ChessAnimationLayer
                           activeMove={activeMove}
                           squareSize={squareSize}
                           onLand={handleAnimationLand}
                           onComplete={handleAnimationComplete}
                         />
-                        {/* Hide real piece during GSAP move */}
-                        {activeMove && (
-                          <style>{`
-                            [data-square="${activeMove.fromSq}"] [data-piece] {
-                              opacity: 0 !important;
-                              pointer-events: none !important;
-                            }
-                          `}</style>
-                        )}
-                        {/* The one and only interactive Chessboard */}
-                        <Chessboard
-                          options={{
-                            position: interactiveIndex === activeIndex ? gameFen : getPreviewFen(i),
-                            onPieceDrop: ({ sourceSquare, targetSquare }) =>
-                              onDrop(sourceSquare, targetSquare ?? ''),
-                            darkSquareStyle: { backgroundColor: BOARD_DARK },
-                            lightSquareStyle: { backgroundColor: BOARD_LIGHT },
-                            boardStyle: {
-                              borderRadius: '0px',
-                              boxShadow: '0 8px 24px rgba(0, 0, 0, 0.6)',
-                            },
-                            showNotation: false,
-                            squareStyles: customSquareStyles,
-                            animationDurationInMs: 0,
-                            allowDragging: interactiveIndex === activeIndex && isInteractive,
+                      )}
+                      
+                      {/* Hide real piece during GSAP move */}
+                      {isActive && activeMove && (
+                        <style>{`
+                          [data-square="${activeMove.fromSq}"] [data-piece] {
+                            opacity: 0 !important;
+                            pointer-events: none !important;
+                          }
+                        `}</style>
+                      )}
+
+                      {/* The Chessboard - ALWAYS mounted! */}
+                      <Chessboard
+                        options={{
+                          position: boardFen,
+                          onPieceDrop: ({ sourceSquare, targetSquare }) =>
+                            onDrop(sourceSquare, targetSquare ?? ''),
+                          darkSquareStyle: { backgroundColor: BOARD_DARK },
+                          lightSquareStyle: { backgroundColor: BOARD_LIGHT },
+                          boardStyle: {
+                            borderRadius: '0px',
+                            boxShadow: isActive ? '0 8px 24px rgba(0, 0, 0, 0.6)' : 'none',
+                          },
+                          showNotation: false,
+                          squareStyles: boardSquareStyles,
+                          animationDurationInMs: 0,
+                          allowDragging: isActive && boardIsInteractive,
+                        }}
+                      />
+
+                      {/* Victory/Defeat Checkmate Badges */}
+                      {isActive && boardCheckmateBadges && (
+                        <>
+                          <div
+                            className="absolute z-30 pointer-events-none flex items-center justify-center"
+                            style={{
+                              left: boardCheckmateBadges.losingX,
+                              top: boardCheckmateBadges.losingY,
+                              width: boardCheckmateBadges.squareSize,
+                              height: boardCheckmateBadges.squareSize,
+                            }}
+                          >
+                            <div
+                              className="checkmate-badge-inner defeat-badge flex items-center justify-center rounded-full"
+                              style={{
+                                width: boardCheckmateBadges.squareSize * 0.65,
+                                height: boardCheckmateBadges.squareSize * 0.65,
+                                transform: 'scale(0)',
+                                opacity: 0,
+                              }}
+                            >
+                              <ChessKingIcon className="w-2/3 h-2/3 text-neutral-900" />
+                            </div>
+                          </div>
+                          <div
+                            className="absolute z-30 pointer-events-none flex items-center justify-center"
+                            style={{
+                              left: boardCheckmateBadges.winningX,
+                              top: boardCheckmateBadges.winningY,
+                              width: boardCheckmateBadges.squareSize,
+                              height: boardCheckmateBadges.squareSize,
+                            }}
+                          >
+                            <div
+                              className="checkmate-badge-inner victory-badge flex items-center justify-center rounded-full"
+                              style={{
+                                width: boardCheckmateBadges.squareSize * 0.65,
+                                height: boardCheckmateBadges.squareSize * 0.65,
+                                transform: 'scale(0)',
+                                opacity: 0,
+                              }}
+                            >
+                              <Crown className="w-2/3 h-2/3 text-white" />
+                            </div>
+                          </div>
+                        </>
+                      )}
+
+                      {/* Move quality annotations */}
+                      {isActive && (
+                        <MoveAnnotation activeAnnotation={activeAnnotation} />
+                      )}
+
+                      {/* Board coordinate letters & numbers */}
+                      {isActive && ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'].map((file, fi) => (
+                        <span
+                          key={`file-${file}`}
+                          aria-hidden="true"
+                          style={{
+                            position: 'absolute',
+                            bottom: '2px',
+                            left: `calc(${fi * 12.5}% + 2px)`,
+                            fontFamily: 'Inter, system-ui, sans-serif',
+                            fontSize: '15px',
+                            fontWeight: 700,
+                            color: fi % 2 === 0 ? '#5e7a44' : '#c8c8a6',
+                            textShadow: '0px -1px 1px rgba(0,0,0,0.35), 0px 1px 1px rgba(255,255,255,0.4)',
+                            opacity: 0.92,
+                            pointerEvents: 'none',
+                            userSelect: 'none',
+                            zIndex: 25,
+                            lineHeight: 1,
                           }}
-                        />
-                        {/* Victory/Defeat Checkmate Badges */}
-                        {checkmateBadges && interactiveIndex === activeIndex && (
-                          <>
-                            <div
-                              className="absolute z-30 pointer-events-none flex items-center justify-center"
-                              style={{
-                                left: checkmateBadges.losingX,
-                                top: checkmateBadges.losingY,
-                                width: checkmateBadges.squareSize,
-                                height: checkmateBadges.squareSize,
-                              }}
-                            >
-                              <div
-                                className="checkmate-badge-inner defeat-badge flex items-center justify-center rounded-full"
-                                style={{
-                                  width: checkmateBadges.squareSize * 0.65,
-                                  height: checkmateBadges.squareSize * 0.65,
-                                  transform: 'scale(0)',
-                                  opacity: 0,
-                                }}
-                              >
-                                <ChessKingIcon className="w-2/3 h-2/3 text-neutral-900" />
-                              </div>
-                            </div>
-                            <div
-                              className="absolute z-30 pointer-events-none flex items-center justify-center"
-                              style={{
-                                left: checkmateBadges.winningX,
-                                top: checkmateBadges.winningY,
-                                width: checkmateBadges.squareSize,
-                                height: checkmateBadges.squareSize,
-                              }}
-                            >
-                              <div
-                                className="checkmate-badge-inner victory-badge flex items-center justify-center rounded-full"
-                                style={{
-                                  width: checkmateBadges.squareSize * 0.65,
-                                  height: checkmateBadges.squareSize * 0.65,
-                                  transform: 'scale(0)',
-                                  opacity: 0,
-                                }}
-                              >
-                                <Crown className="w-2/3 h-2/3 text-white" />
-                              </div>
-                            </div>
-                          </>
-                        )}
-                        {/* Move quality annotations */}
-                        {interactiveIndex === activeIndex && (
-                          <MoveAnnotation activeAnnotation={activeAnnotation} />
-                        )}
-                        {/* Board coordinate letters */}
-                        {['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'].map((file, fi) => (
-                          <span
-                            key={`file-${file}`}
-                            aria-hidden="true"
-                            style={{
-                              position: 'absolute',
-                              bottom: '2px',
-                              left: `calc(${fi * 12.5}% + 2px)`,
-                              fontFamily: 'Inter, system-ui, sans-serif',
-                              fontSize: '15px',
-                              fontWeight: 700,
-                              color: fi % 2 === 0 ? '#5e7a44' : '#c8c8a6',
-                              textShadow: '0px -1px 1px rgba(0,0,0,0.35), 0px 1px 1px rgba(255,255,255,0.4)',
-                              opacity: 0.92,
-                              pointerEvents: 'none',
-                              userSelect: 'none',
-                              zIndex: 25,
-                              lineHeight: 1,
-                            }}
-                          >
-                            {file}
-                          </span>
-                        ))}
-                        {['8', '7', '6', '5', '4', '3', '2', '1'].map((rank, ri) => (
-                          <span
-                            key={`rank-${rank}`}
-                            aria-hidden="true"
-                            style={{
-                              position: 'absolute',
-                              top: `calc(${ri * 12.5}% + 2px)`,
-                              left: '2px',
-                              fontFamily: 'Inter, system-ui, sans-serif',
-                              fontSize: '15px',
-                              fontWeight: 700,
-                              color: ri % 2 === 0 ? '#c8c8a6' : '#5e7a44',
-                              textShadow: '0px -1px 1px rgba(0,0,0,0.35), 0px 1px 1px rgba(255,255,255,0.4)',
-                              opacity: 0.92,
-                              pointerEvents: 'none',
-                              userSelect: 'none',
-                              zIndex: 25,
-                              lineHeight: 1,
-                            }}
-                          >
-                            {rank}
-                          </span>
-                        ))}
-                      </div>
+                        >
+                          {file}
+                        </span>
+                      ))}
+                      {isActive && ['8', '7', '6', '5', '4', '3', '2', '1'].map((rank, ri) => (
+                        <span
+                          key={`rank-${rank}`}
+                          aria-hidden="true"
+                          style={{
+                            position: 'absolute',
+                            top: `calc(${ri * 12.5}% + 2px)`,
+                            left: '2px',
+                            fontFamily: 'Inter, system-ui, sans-serif',
+                            fontSize: '15px',
+                            fontWeight: 700,
+                            color: ri % 2 === 0 ? '#c8c8a6' : '#5e7a44',
+                            textShadow: '0px -1px 1px rgba(0,0,0,0.35), 0px 1px 1px rgba(255,255,255,0.4)',
+                            opacity: 0.92,
+                            pointerEvents: 'none',
+                            userSelect: 'none',
+                            zIndex: 25,
+                            lineHeight: 1,
+                          }}
+                        >
+                          {rank}
+                        </span>
+                      ))}
                     </div>
-                  ) : (
-                    /* INACTIVE SLIDE: Preview card with miniature board */
+
+                    {/* Label strip at the bottom of the card - visible only when inactive */}
                     <div
-                      className="relative bg-[#1A1E2E] border border-brand-border/60 rounded-xl overflow-hidden p-4 flex flex-col"
+                      className="flex flex-col flex-1 px-1 transition-all duration-500 overflow-hidden"
                       style={{
-                        backdropFilter: 'blur(8px)',
-                        boxShadow: '0 20px 40px -10px rgba(0,0,0,0.5), 0 0 20px 2px rgba(99, 102, 241, 0.15)',
+                        height: isActive ? 0 : 'auto',
+                        opacity: isActive ? 0 : 1,
+                        visibility: isActive ? 'hidden' : 'visible',
+                        marginTop: isActive ? 0 : '0.5rem',
                       }}
                     >
-                      {/* Mini board */}
-                      <div className="aspect-square w-full pointer-events-none select-none rounded-sm overflow-hidden mb-4 border border-black/20">
-                        <Chessboard
-                          options={{
-                            position: getPreviewFen(i),
-                            allowDragging: false,
-                            showNotation: false,
-                            darkSquareStyle: { backgroundColor: BOARD_DARK },
-                            lightSquareStyle: { backgroundColor: BOARD_LIGHT },
-                            boardStyle: {
-                              borderRadius: '0px',
-                              boxShadow: 'none',
-                            },
-                          }}
-                        />
-                      </div>
-                      {/* Label strip at the bottom of the preview card */}
-                      <div className="flex flex-col flex-1 px-1">
-                        <p className="text-sm font-sans font-bold text-brand-accent uppercase tracking-widest leading-tight">
-                          {item.title}
-                        </p>
-                        <p className="text-sm font-sans text-brand-secondary mt-1.5 leading-snug whitespace-pre-line">
-                          {item.subtitle}
-                        </p>
-                      </div>
+                      <p className="text-sm font-sans font-bold text-brand-accent uppercase tracking-widest leading-tight">
+                        {item.title}
+                      </p>
+                      <p className="text-sm font-sans text-brand-secondary mt-1.5 leading-snug whitespace-pre-line">
+                        {item.subtitle}
+                      </p>
                     </div>
-                  )}
+                  </div>
                 </motion.div>
               </div>
             );
@@ -1496,7 +1524,7 @@ export default function HeroPuzzle() {
             <span className="text-[15px] font-sans text-white font-bold leading-tight">
               {descBottom}
             </span>
-            {activeIndex === 0 && phase === 'PUZZLE' && showTryAgain && (
+            {activeIndex === 0 && phase0 === 'PUZZLE' && showTryAgain0 && (
               <span className="text-xs font-sans text-red-400 font-medium animate-pulse mt-0.5">
                 Incorrect move. Try again.
               </span>
@@ -1507,9 +1535,9 @@ export default function HeroPuzzle() {
           className={`
             flex flex-col items-center px-4 py-1 rounded-xl border
             transition-all duration-500
-            ${((activeIndex === 0 && phase === 'SUCCESS') || (activeIndex === 1 && phaseOriginal === 'solved'))
+            ${((activeIndex === 0 && phase0 === 'SUCCESS') || (activeIndex === 1 && phase1 === 'solved'))
               ? 'bg-brand-accent/20 border-brand-accent/50 text-brand-accent shadow-lg shadow-brand-accent/15'
-              : (activeIndex === 0 && phase === 'PUZZLE' && showTryAgain)
+              : (activeIndex === 0 && phase0 === 'PUZZLE' && showTryAgain0)
                 ? 'bg-red-500/10 border-red-500/30 text-red-400'
                 : 'bg-brand-surface border-brand-border text-white'}
           `}
@@ -1526,7 +1554,7 @@ export default function HeroPuzzle() {
       <div className="flex gap-3 mt-1">
         {activeIndex === 0 ? (
           <>
-            {phase === 'AUTOPLAY' && (
+            {phase0 === 'AUTOPLAY' && (
               <button
                 disabled
                 className="
@@ -1542,16 +1570,16 @@ export default function HeroPuzzle() {
                 Autoplay in Progress...
               </button>
             )}
-            {phase === 'PUZZLE' && (
+            {phase0 === 'PUZZLE' && (
               <>
                 <button
                   onClick={() => {
-                    setPuzzleStep(0);
+                    setPuzzleStep0(0);
                     const afterAutoplayMove = PROCESSED_MOVES[39];
-                    setGameFen(afterAutoplayMove.fenAfter);
-                    setLastMove({ from: afterAutoplayMove.from, to: afterAutoplayMove.to });
-                    setCheckedKingSquare(null);
-                    setShowTryAgain(false);
+                    setGameFen0(afterAutoplayMove.fenAfter);
+                    setLastMove0({ from: afterAutoplayMove.from, to: afterAutoplayMove.to });
+                    setCheckedKingSquare0(null);
+                    setShowTryAgain0(false);
                   }}
                   className="
                     flex-1 flex items-center justify-center gap-2
@@ -1568,7 +1596,7 @@ export default function HeroPuzzle() {
                   Reset Puzzle
                 </button>
                 <button
-                  onClick={handleReplay}
+                  onClick={handleReplay0}
                   className="
                     flex-1 flex items-center justify-center gap-2
                     px-4 py-2.5 rounded-lg
@@ -1585,9 +1613,9 @@ export default function HeroPuzzle() {
                 </button>
               </>
             )}
-            {phase === 'SUCCESS' && (
+            {phase0 === 'SUCCESS' && (
               <button
-                onClick={handleReplay}
+                onClick={handleReplay0}
                 className="
                   flex-1 flex items-center justify-center gap-2
                   px-4 py-2.5 rounded-lg
@@ -1606,7 +1634,7 @@ export default function HeroPuzzle() {
           </>
         ) : (
           <>
-            {phaseOriginal === 'solving' && (
+            {phase1 === 'solving' && (
               <button
                 disabled
                 className="
@@ -1622,7 +1650,7 @@ export default function HeroPuzzle() {
                 Solving in Progress...
               </button>
             )}
-            {(phaseOriginal === 'idle' || phaseOriginal === 'white_moved' || phaseOriginal === 'black_responding' || phaseOriginal === 'awaiting_mate' || phaseOriginal === 'failed') && (
+            {(phase1 === 'idle' || phase1 === 'white_moved' || phase1 === 'black_responding' || phase1 === 'awaiting_mate' || phase1 === 'failed') && (
               <>
                 <button
                   onClick={() => {
@@ -1644,7 +1672,7 @@ export default function HeroPuzzle() {
                   Reset Puzzle
                 </button>
                 <button
-                  onClick={handleSolveOriginal}
+                  onClick={handleSolve1}
                   className="
                     flex-1 flex items-center justify-center gap-2
                     px-4 py-2.5 rounded-lg
@@ -1661,7 +1689,7 @@ export default function HeroPuzzle() {
                 </button>
               </>
             )}
-            {phaseOriginal === 'solved' && (
+            {phase1 === 'solved' && (
               <button
                 onClick={handleReplayOriginal}
                 className="
