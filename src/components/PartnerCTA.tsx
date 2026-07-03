@@ -32,13 +32,13 @@ export default function ContactSection() {
   });
 
   const validateEmail = (val: string) => {
-    if (!val) return 'Email is required.';
+    if (!val) return 'Required';
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val)) return 'Enter a valid email address.';
     return '';
   };
 
   const validateMessage = (val: string) => {
-    if (!val) return 'Message is required.';
+    if (!val) return 'Required';
     if (val.trim().length < 10) return 'Message must be at least 10 characters.';
     return '';
   };
@@ -57,7 +57,7 @@ export default function ContactSection() {
     try {
       // Using mailto: as the submission mechanism since no backend exists in this demo.
       // In production, replace with a real API endpoint (e.g. /api/contact).
-      const recipient = RECIPIENT_EMAIL || 'contact@xlchess.com';
+      const recipient = RECIPIENT_EMAIL || 'orandsw@gmail.com';
       const subject = encodeURIComponent('ChessCraft Contact Form');
       const body = encodeURIComponent(`From: ${email}\n\n${message}`);
       const mailtoLink = `mailto:${recipient}?subject=${subject}&body=${body}`;
@@ -389,7 +389,7 @@ export default function ContactSection() {
                   </>
                 ) : (
                   <>
-                    Send Message <img src="/arrow.svg" alt="arrow" className="arrow w-6 h-6 inline-block" />
+                    Send Message <img src="/arrow.svg" alt="arrow" className="arrow w-7 h-7 inline-block" style={{ filter: 'brightness(0) invert(1)' }} />
                   </>
                 )}
               </button>
