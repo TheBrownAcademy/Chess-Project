@@ -278,34 +278,25 @@ export default function Hero() {
           {/* ── Text Column ────────────────────────────────────────────────── */}
           <div className="lg:col-span-6 space-y-6 md:space-y-8 text-left">
 
+            {/* Logo above heading */}
             <div
               ref={heroLogoContainerRef}
               className="flex items-center select-none"
             >
-              <div
+              <img
                 ref={heroLogoRef}
-                className="flex items-center gap-6"
+                src="/final%20logo.png"
+                alt="XLChess logo"
+                className="object-contain"
                 style={{
+                  height: '160px',
+                  width: 'auto',
+                  maxWidth: 'none',
                   willChange: 'transform, filter',
                   transformOrigin: 'center left',
                 }}
-              >
-                <img
-                  src="/logo without text.png"
-                  alt="XLChess horse icon"
-                  className="object-contain"
-                  style={{
-                    height: '160px',
-                    width: 'auto',
-                    maxWidth: 'none',
-                  }}
-                  draggable={false}
-                />
-                <div className="flex flex-col justify-center text-left">
-                  <span className="font-sans font-bold text-[56px] md:text-[64px] leading-none text-white tracking-wide">XLCHESS</span>
-                  <span className="font-sans text-[24px] md:text-[32px] text-brand-secondary mt-1 md:mt-2 leading-none">Excel at Chess</span>
-                </div>
-              </div>
+                draggable={false}
+              />
             </div>
 
             <h1 className="font-sans font-extrabold text-4xl sm:text-5xl md:text-6xl text-white tracking-tight leading-[1.1] md:leading-[1.05]">

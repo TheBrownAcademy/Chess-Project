@@ -58,26 +58,18 @@ export default function Navbar() {
             role="link"
             aria-label="XLChess — scroll to top"
           >
-            <div
+            <img
               ref={logoRef}
-              className="flex items-center gap-3"
+              src="/final%20logo.png"
+              alt="XLChess logo"
+              className="h-[68px] sm:h-[80px] w-auto object-contain"
               style={{
                 willChange: 'transform, filter',
                 transformStyle: 'preserve-3d',
-                transformOrigin: 'center left',
+                transformOrigin: 'center center',
               }}
-            >
-              <img
-                src="/logo without text.png"
-                alt="XLChess horse icon"
-                className="h-[48px] sm:h-[56px] w-auto object-contain"
-                draggable={false}
-              />
-              <div className="flex flex-col justify-center text-left">
-                <span className="font-sans font-bold text-xl sm:text-[22px] leading-none text-white tracking-wide">XLCHESS</span>
-                <span className="font-sans text-xs sm:text-[13px] text-brand-secondary mt-1 leading-none">Excel at Chess</span>
-              </div>
-            </div>
+              draggable={false}
+            />
           </div>
 
           {/* Desktop Nav Links — .nav-link enables CSS underline-grow */}

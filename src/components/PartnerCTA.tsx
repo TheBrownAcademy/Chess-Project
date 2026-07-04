@@ -7,8 +7,8 @@ import { useState, useRef } from 'react';
 import { CheckCircle2, AlertCircle } from 'lucide-react';
 import { useScrollReveal } from '../hooks/useScrollReveal';
 
-// Read recipient from environment — never hardcoded
-const RECIPIENT_EMAIL = import.meta.env.VITE_CONTACT_EMAIL as string | undefined;
+
+
 
 type FormStatus = 'idle' | 'submitting' | 'success' | 'error';
 
@@ -57,7 +57,7 @@ export default function ContactSection() {
     try {
       // Using mailto: as the submission mechanism since no backend exists in this demo.
       // In production, replace with a real API endpoint (e.g. /api/contact).
-      const recipient = RECIPIENT_EMAIL || 'orandsw@gmail.com';
+      const recipient = 'orandsw@gmail.com';
       const subject = encodeURIComponent('ChessCraft Contact Form');
       const body = encodeURIComponent(`From: ${email}\n\n${message}`);
       const mailtoLink = `mailto:${recipient}?subject=${subject}&body=${body}`;
@@ -236,16 +236,16 @@ export default function ContactSection() {
           border: 0;
           border-radius: 12px;
           padding: 24px 30px;
-          color: #fff;
+          color: #1a1a2e;
           font-size: 22px;
           font-weight: 800;
           cursor: pointer;
           overflow: hidden;
-          background: linear-gradient(90deg, #6e63f6 0%, #7268f8 50%, #7b6dff 100%);
+          background: linear-gradient(90deg, #cfcfd6 0%, #b8b8c2 50%, #9e9ea8 100%);
           box-shadow:
-            0 0 34px rgba(110,99,246,0.35),
+            0 0 34px rgba(207,207,214,0.15),
             0 12px 42px rgba(0,0,0,0.35),
-            inset 0 1px 0 rgba(255,255,255,0.25);
+            inset 0 1px 0 rgba(255,255,255,0.6);
           transition: transform 180ms ease, box-shadow 180ms ease;
         }
 
@@ -256,7 +256,7 @@ export default function ContactSection() {
           left: -40%;
           width: 30%;
           height: 100%;
-          background: linear-gradient(90deg, transparent, rgba(255,255,255,0.55), transparent);
+          background: linear-gradient(90deg, transparent, rgba(255,255,255,0.8), transparent);
           transform: skewX(-18deg);
           animation: buttonShine 4.5s ease-in-out infinite;
         }
@@ -264,9 +264,9 @@ export default function ContactSection() {
         .contact-btn:hover {
           transform: translateY(-2px);
           box-shadow:
-            0 0 46px rgba(110,99,246,0.55),
+            0 0 46px rgba(255,255,255,0.25),
             0 16px 48px rgba(0,0,0,0.4),
-            inset 0 1px 0 rgba(255,255,255,0.28);
+            inset 0 1px 0 rgba(255,255,255,1);
         }
 
         @keyframes buttonShine {
@@ -389,7 +389,7 @@ export default function ContactSection() {
                   </>
                 ) : (
                   <>
-                    Send Message <img src="/arrow.svg" alt="arrow" className="arrow w-7 h-7 inline-block" style={{ filter: 'brightness(0) invert(1)' }} />
+                    Send Message <img src="/arrow.svg" alt="arrow" className="arrow w-7 h-7 inline-block" />
                   </>
                 )}
               </button>

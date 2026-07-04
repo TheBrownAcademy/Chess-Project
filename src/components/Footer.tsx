@@ -31,18 +31,14 @@ export default function Footer() {
         <div className="flex flex-col md:flex-row items-center justify-between gap-6">
 
           {/* Brand Signature — static logo, no animation, no hover */}
-          <div className="flex items-center gap-3 select-none">
+          <div className="flex items-center space-x-3 select-none">
             <img
-              src="/logo without text.png"
-              alt="XLChess horse icon"
-              className="h-[48px] sm:h-[56px] w-auto object-contain"
+              src="/final%20logo.png"
+              alt="XLChess logo"
+              className="h-[72px] sm:h-[86px] w-auto object-contain"
               style={{ display: 'block' }}
               draggable={false}
             />
-            <div className="flex flex-col justify-center text-left">
-              <span className="font-sans font-bold text-xl sm:text-[22px] leading-none text-white tracking-wide">XLCHESS</span>
-              <span className="font-sans text-xs sm:text-[13px] text-brand-secondary mt-1 leading-none">Excel at Chess</span>
-            </div>
           </div>
 
           {/* Copyright — centered */}
