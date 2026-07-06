@@ -98,7 +98,7 @@ export default function ContactSection() {
 
       <section
         ref={ctaSectionRef}
-        id="contact-us"
+        id="partner-cta"
         className="relative z-10 min-h-screen flex items-center justify-center py-20 md:py-32 px-6 overflow-hidden"
         aria-labelledby="contact-heading"
       >

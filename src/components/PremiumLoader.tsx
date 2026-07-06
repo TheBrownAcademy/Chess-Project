@@ -17,22 +17,21 @@
  * Accessibility: respects prefers-reduced-motion.
  */
 
-import { useEffect, useRef, useState } from 'react';
-import { gsap } from '../utils/gsapConfig';
-import { prefersReducedMotion } from '../utils/gsapConfig';
+import { useEffect, useRef, useState } from "react";
+import { gsap } from "../utils/gsapConfig";
+import { prefersReducedMotion } from "../utils/gsapConfig";
 
 interface PremiumLoaderProps {
   onComplete?: () => void;
 }
 
 export default function PremiumLoader({ onComplete }: PremiumLoaderProps) {
-  const loaderRef    = useRef<HTMLDivElement>(null);
-  const pulseRef     = useRef<HTMLDivElement>(null);
-  const fillRef      = useRef<SVGGElement>(null);
+  const loaderRef = useRef<HTMLDivElement>(null);
+  const rookContainerRef = useRef<HTMLDivElement>(null);
+  const fillRef = useRef<SVGGElement>(null);
   const wireframeRef = useRef<SVGGElement>(null);
   const engravingRef = useRef<SVGGElement>(null);
-  const progressRef  = useRef<HTMLDivElement>(null);
-  const progressLabelRef = useRef<HTMLSpanElement>(null);
+
 
   const [progress, setProgress] = useState(0);
 
@@ -42,8 +41,8 @@ export default function PremiumLoader({ onComplete }: PremiumLoaderProps) {
     if (reduced) {
       // Skip animation — dissolve immediately
       if (loaderRef.current) {
-        loaderRef.current.style.opacity = '0';
-        loaderRef.current.style.pointerEvents = 'none';
+        loaderRef.current.style.opacity = "0";
+        loaderRef.current.style.pointerEvents = "none";
       }
       onComplete?.();
       return;
@@ -51,76 +50,121 @@ export default function PremiumLoader({ onComplete }: PremiumLoaderProps) {
 
     const masterTl = gsap.timeline();
 
-    // ── Phase 1: Engraving draws in (0s → 1.2s) ────────────────────────────
+    // ── Phase 1: Engraving draws in (0s → 1.34s) ────────────────────────────
     if (engravingRef.current) {
-      const paths = engravingRef.current.querySelectorAll('path, rect, polygon');
-      masterTl.to(paths, {
-        strokeDashoffset: 0,
-        duration: 1.4,
-        stagger: 0.12,
-        ease: 'power2.inOut',
-      }, 0.2);
+      const paths = engravingRef.current.querySelectorAll(
+        "path, rect, polygon",
+      );
+      masterTl.to(
+        paths,
+        {
+          strokeDashoffset: 0,
+          duration: 1.18,
+          stagger: 0.09,
+          ease: "power2.inOut",
+        },
+        0.16,
+      );
     }
 
-    // ── Phase 2: Wireframe materialises (1.0s → 1.8s) ──────────────────────
+    // ── Phase 2: Wireframe materialises (0.82s → 1.47s) ──────────────────────
     if (wireframeRef.current) {
-      const paths = wireframeRef.current.querySelectorAll('path, rect, polygon');
-      masterTl.to(paths, {
-        strokeDashoffset: 0,
-        opacity: 1,
-        duration: 0.8,
-        stagger: 0.08,
-        ease: 'power2.out',
-      }, 1.0);
+      const paths = wireframeRef.current.querySelectorAll(
+        "path, rect, polygon",
+      );
+      masterTl.to(
+        paths,
+        {
+          strokeDashoffset: 0,
+          opacity: 1,
+          duration: 0.65,
+          stagger: 0.06,
+          ease: "power2.out",
+        },
+        0.82,
+      );
     }
 
-    // ── Phase 3: Polished fill resolves (1.6s → 2.4s) ──────────────────────
+    // ── Phase 3: Polished fill resolves (1.32s → 2.06s) ──────────────────────
     if (fillRef.current) {
-      masterTl.to(fillRef.current, {
-        opacity: 1,
-        duration: 0.9,
-        ease: 'power2.out',
-      }, 1.6);
+      masterTl.to(
+        fillRef.current,
+        {
+          opacity: 1,
+          duration: 0.74,
+          ease: "power2.out",
+        },
+        1.32,
+      );
     }
 
-    // ── Phase 4: Glow pulse (2.4s → 3.0s) ──────────────────────────────────
-    masterTl.to({}, { duration: 0.2 }, 2.4); // brief hold
-    masterTl.call(() => {
-      if (pulseRef.current) {
-        pulseRef.current.classList.add('animate');
+    // ── Phase 4: Rook scale reveal (2.0s → 2.7s) ────────────────────────────
+    if (rookContainerRef.current) {
+      // Fade out the rook body fill to make it transparent as it enlarges
+      if (fillRef.current) {
+        masterTl.to(
+          fillRef.current,
+          { opacity: 0, duration: 0.7, ease: "power2.out" },
+          2.0,
+        );
       }
-    }, [], 2.5);
 
-    // ── Phase 5: Brief hold then exit (3.0s → 3.8s) ─────────────────────────
-    masterTl.to(loaderRef.current, {
-      opacity: 0,
-      scale: 1.04,
-      duration: 0.9,
-      ease: 'power2.inOut',
-      onComplete: () => {
+      // Fade out wireframe and engraving details
+      if (engravingRef.current) {
+        masterTl.to(engravingRef.current, { opacity: 0, duration: 0.2 }, 2.0);
+      }
+      if (wireframeRef.current) {
+        masterTl.to(wireframeRef.current, { opacity: 0, duration: 0.2 }, 2.0);
+      }
+
+      // Enlarge the rook centerpiece to cover the entire screen
+      masterTl.to(
+        rookContainerRef.current,
+        {
+          scale: 40,
+          duration: 0.7,
+          ease: "power3.in",
+        },
+        2.0,
+      );
+
+      // Fade out the loader container itself to reveal the website
+      if (loaderRef.current) {
+        masterTl.to(
+          loaderRef.current,
+          {
+            opacity: 0,
+            duration: 0.7,
+            ease: "power2.inOut",
+          },
+          2.0,
+        );
+      }
+    }
+
+    // ── Phase 5: Complete loader transition (2.8s) ──────────────────────────
+    masterTl.to({}, { duration: 0.1 }, 2.7); // small buffer
+    masterTl.call(
+      () => {
         if (loaderRef.current) {
-          loaderRef.current.style.display = 'none';
-          loaderRef.current.style.pointerEvents = 'none';
+          loaderRef.current.style.display = "none";
+          loaderRef.current.style.pointerEvents = "none";
         }
         onComplete?.();
       },
-    }, 3.0);
+      [],
+      2.8,
+    );
 
     // ── Simulate progress bar filling ────────────────────────────────────────
-    // Maps to the visual phase duration: 0% → 100% over 3s
+    // Maps to the visual phase duration: 0% → 100% over 2.0s
     const startTime = Date.now();
-    const totalDuration = 3000; // ms
+    const totalDuration = 2000; // ms
 
     const tick = () => {
       const elapsed = Date.now() - startTime;
       const pct = Math.min(100, Math.round((elapsed / totalDuration) * 100));
       setProgress(pct);
-      if (progressRef.current) {
-        progressRef.current.style.width = `${pct}%`;
-      }
-      if (progressLabelRef.current) {
-        progressLabelRef.current.textContent = `${pct}`;
-      }
       if (pct < 100) {
         requestAnimationFrame(tick);
       }
@@ -145,7 +189,11 @@ export default function PremiumLoader({ onComplete }: PremiumLoaderProps) {
       <div className="premium-loader__bg" aria-hidden="true" />
 
       {/* The Rook — centerpiece */}
-      <div className="loader-rook-container" aria-hidden="true">
+      <div
+        ref={rookContainerRef}
+        className="loader-rook-container"
+        aria-hidden="true"
+      >
         <svg
           className="loader-rook-svg"
           viewBox="0 0 100 130"
@@ -178,7 +226,7 @@ export default function PremiumLoader({ onComplete }: PremiumLoaderProps) {
             {/* Base platform */}
             <rect x="10" y="82" width="80" height="10" rx="1" />
             {/* Bottom plinth */}
-            <rect x="6"  y="92" width="88" height="8" rx="1" />
+            <rect x="6" y="92" width="88" height="8" rx="1" />
           </g>
 
           {/* ── ENGRAVING LAYER (fine lines that draw in) ─────────────────── */}
@@ -223,19 +271,34 @@ export default function PremiumLoader({ onComplete }: PremiumLoaderProps) {
           {/* ── WIREFRAME LAYER (structural form that appears) ─────────────── */}
           <g ref={wireframeRef} opacity="0">
             {/* Battlements outline */}
-            <rect x="20" y="10" width="14" height="18" rx="0.5"
+            <rect
+              x="20"
+              y="10"
+              width="14"
+              height="18"
+              rx="0.5"
               style={{ strokeDasharray: 300, strokeDashoffset: 300 }}
               stroke="rgba(212, 175, 110, 0.5)"
               strokeWidth="1"
               fill="none"
             />
-            <rect x="43" y="10" width="14" height="18" rx="0.5"
+            <rect
+              x="43"
+              y="10"
+              width="14"
+              height="18"
+              rx="0.5"
               style={{ strokeDasharray: 300, strokeDashoffset: 300 }}
               stroke="rgba(212, 175, 110, 0.5)"
               strokeWidth="1"
               fill="none"
             />
-            <rect x="66" y="10" width="14" height="18" rx="0.5"
+            <rect
+              x="66"
+              y="10"
+              width="14"
+              height="18"
+              rx="0.5"
               style={{ strokeDasharray: 300, strokeDashoffset: 300 }}
               stroke="rgba(212, 175, 110, 0.5)"
               strokeWidth="1"
@@ -250,13 +313,23 @@ export default function PremiumLoader({ onComplete }: PremiumLoaderProps) {
               fill="none"
             />
             {/* Base outlines */}
-            <rect x="16" y="74" width="68" height="8" rx="1"
+            <rect
+              x="16"
+              y="74"
+              width="68"
+              height="8"
+              rx="1"
               style={{ strokeDasharray: 200, strokeDashoffset: 200 }}
               stroke="rgba(212, 175, 110, 0.4)"
               strokeWidth="0.8"
               fill="none"
             />
-            <rect x="6"  y="92" width="88" height="8" rx="1"
+            <rect
+              x="6"
+              y="92"
+              width="88"
+              height="8"
+              rx="1"
               style={{ strokeDasharray: 250, strokeDashoffset: 250 }}
               stroke="rgba(212, 175, 110, 0.35)"
               strokeWidth="0.8"
@@ -267,23 +340,43 @@ export default function PremiumLoader({ onComplete }: PremiumLoaderProps) {
           {/* ── POLISHED FILL LAYER (reveals at completion) ────────────────── */}
           <g ref={fillRef} className="rook-fill" opacity="0">
             {/* Battlements */}
-            <rect x="20" y="10" width="14" height="18" rx="0.5"
+            <rect
+              x="20"
+              y="10"
+              width="14"
+              height="18"
+              rx="0.5"
               fill="url(#goldFill)"
               stroke="rgba(255,220,150,0.5)"
               strokeWidth="0.4"
             />
-            <rect x="43" y="10" width="14" height="18" rx="0.5"
+            <rect
+              x="43"
+              y="10"
+              width="14"
+              height="18"
+              rx="0.5"
               fill="url(#goldFill)"
               stroke="rgba(255,220,150,0.5)"
               strokeWidth="0.4"
             />
-            <rect x="66" y="10" width="14" height="18" rx="0.5"
+            <rect
+              x="66"
+              y="10"
+              width="14"
+              height="18"
+              rx="0.5"
               fill="url(#goldFill)"
               stroke="rgba(255,220,150,0.5)"
               strokeWidth="0.4"
             />
             {/* Upper neck */}
-            <rect x="24" y="26" width="52" height="8" rx="0.5"
+            <rect
+              x="24"
+              y="26"
+              width="52"
+              height="8"
+              rx="0.5"
               fill="url(#goldFill)"
               stroke="rgba(255,220,150,0.4)"
               strokeWidth="0.4"
@@ -296,21 +389,41 @@ export default function PremiumLoader({ onComplete }: PremiumLoaderProps) {
               strokeWidth="0.4"
             />
             {/* Waist */}
-            <rect x="18" y="56" width="64" height="6" rx="0.5"
+            <rect
+              x="18"
+              y="56"
+              width="64"
+              height="6"
+              rx="0.5"
               fill="url(#goldHighlight)"
             />
             {/* Base ring */}
-            <rect x="16" y="74" width="68" height="8" rx="1"
+            <rect
+              x="16"
+              y="74"
+              width="68"
+              height="8"
+              rx="1"
               fill="url(#goldFill)"
               stroke="rgba(255,220,150,0.4)"
               strokeWidth="0.4"
             />
             {/* Base platform */}
-            <rect x="10" y="82" width="80" height="10" rx="1"
+            <rect
+              x="10"
+              y="82"
+              width="80"
+              height="10"
+              rx="1"
               fill="url(#goldFill)"
             />
             {/* Bottom plinth */}
-            <rect x="6"  y="92" width="88" height="8" rx="1"
+            <rect
+              x="6"
+              y="92"
+              width="88"
+              height="8"
+              rx="1"
               fill="url(#goldFill)"
               stroke="rgba(255,220,150,0.3)"
               strokeWidth="0.4"
@@ -325,31 +438,40 @@ export default function PremiumLoader({ onComplete }: PremiumLoaderProps) {
           {/* ── SVG GRADIENT DEFINITIONS ───────────────────────────────────── */}
           <defs>
             <linearGradient id="goldFill" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%"   stopColor="#E8C88A" />
-              <stop offset="40%"  stopColor="#D4AF6E" />
-              <stop offset="70%"  stopColor="#B8934A" />
+              <stop offset="0%" stopColor="#E8C88A" />
+              <stop offset="40%" stopColor="#D4AF6E" />
+              <stop offset="70%" stopColor="#B8934A" />
               <stop offset="100%" stopColor="#D4AF6E" />
             </linearGradient>
-            <linearGradient id="goldHighlight" x1="0%" y1="0%" x2="100%" y2="0%">
-              <stop offset="0%"   stopColor="rgba(212,175,110,0.8)" />
-              <stop offset="50%"  stopColor="rgba(255,230,170,0.9)" />
+            <linearGradient
+              id="goldHighlight"
+              x1="0%"
+              y1="0%"
+              x2="100%"
+              y2="0%"
+            >
+              <stop offset="0%" stopColor="rgba(212,175,110,0.8)" />
+              <stop offset="50%" stopColor="rgba(255,230,170,0.9)" />
               <stop offset="100%" stopColor="rgba(212,175,110,0.8)" />
             </linearGradient>
           </defs>
         </svg>
-
-        {/* Pulse ring — emitted at completion */}
-        <div ref={pulseRef} className="rook-pulse-ring" aria-hidden="true" />
       </div>
 
       {/* Progress Bar */}
-      <div className="loader-progress-track" role="progressbar" aria-valuenow={progress} aria-valuemin={0} aria-valuemax={100}>
-        <div ref={progressRef} className="loader-progress-fill" />
+      <div
+        className="loader-progress-track"
+        role="progressbar"
+        aria-valuenow={progress}
+        aria-valuemin={0}
+        aria-valuemax={100}
+      >
+        <div className="loader-progress-fill" style={{ width: `${progress}%` }} />
       </div>
 
       {/* Label */}
       <span className="loader-label" aria-hidden="true">
-        <span ref={progressLabelRef}>0</span>% &nbsp;/&nbsp; Loading
+        <span>{progress}</span>% &nbsp;/&nbsp; Loading
       </span>
     </div>
   );

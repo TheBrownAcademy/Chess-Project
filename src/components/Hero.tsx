@@ -49,6 +49,7 @@ export default function Hero() {
   const boardColRef        = useRef<HTMLDivElement>(null);
   const beam1Ref           = useRef<HTMLDivElement>(null);
   const beam2Ref           = useRef<HTMLDivElement>(null);
+  const boardCardRef       = useRef<HTMLDivElement>(null);
 
   // ── Perspective tilt hook ─────────────────────────────────────────────────
   const tiltRef = usePerspectiveTilt<HTMLDivElement>({
@@ -69,6 +70,15 @@ export default function Hero() {
   };
 
   useMagneticButton({ targetRef: playIconRef, containerRef: ctaAnchorRef, magneticStrength: 1.0 });
+
+  const handleViewPuzzleClick = () => {
+    if (boardCardRef.current) {
+      boardCardRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      boardCardRef.current.classList.remove('highlight-glow-active');
+      void boardCardRef.current.offsetWidth; // trigger reflow to restart animation
+      boardCardRef.current.classList.add('highlight-glow-active');
+    }
+  };
 
   // ── GSAP entrance animations ───────────────────────────────────────────────
   useGSAP(
@@ -272,7 +282,7 @@ export default function Hero() {
   return (
     <>
       {/* Navbar sits at top — within the hero section visually */}
-      <Navbar />
+      <Navbar onViewPuzzleClick={handleViewPuzzleClick} />
 
       <header
         ref={heroRef}
@@ -504,6 +514,7 @@ export default function Hero() {
               >
                 {/* Board card — luxury obsidian + gold hairline */}
                 <div
+                  ref={boardCardRef}
                   className="shadow-deep overflow-hidden hero-board-card"
                   style={{ transformStyle: 'preserve-3d', borderRadius: '2px' }}
                 >

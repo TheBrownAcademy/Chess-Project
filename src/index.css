@@ -52,7 +52,7 @@
   --glass-blur:      saturate(180%) blur(20px);
 
   /* --- Shadows --- */
-  --shadow-gold:     0 0 40px rgba(212, 175, 110, 0.12), 0 4px 24px rgba(0,0,0,0.6);
+  --shadow-gold:     0 0 12px rgba(212, 175, 110, 0.015), 0 1px 12px rgba(0,0,0,0.6);
   --shadow-deep:     0 32px 80px rgba(0,0,0,0.5), 0 8px 24px rgba(0,0,0,0.4);
   --shadow-card:     0 2px 1px rgba(255,255,255,0.03) inset, 0 24px 60px rgba(0,0,0,0.45);
 
@@ -218,6 +218,7 @@ html::-webkit-scrollbar-corner,
   justify-content: center;
   background: var(--obsidian);
   overflow: hidden;
+  isolation: isolate;
 }
 
 .premium-loader__bg {
@@ -287,26 +288,7 @@ html::-webkit-scrollbar-corner,
   transition: opacity 0.6s ease 0.2s;
 }
 
-/* Light pulse at completion */
-@keyframes rook-pulse {
-  0%   { opacity: 0; transform: scale(0.8); }
-  50%  { opacity: 1; transform: scale(1.4); }
-  100% { opacity: 0; transform: scale(2.0); }
-}
 
-.rook-pulse-ring {
-  position: absolute;
-  inset: -20px;
-  border-radius: 50%;
-  border: 1px solid var(--gold-bright);
-  opacity: 0;
-  transform: scale(0.8);
-  pointer-events: none;
-}
-
-.rook-pulse-ring.animate {
-  animation: rook-pulse 0.8s var(--ease-luxury) forwards;
-}
 
 /* Progress bar */
 .loader-progress-track {
@@ -1529,4 +1511,28 @@ html::-webkit-scrollbar-corner,
 
 .animate-spin-reverse {
   animation: spin-reverse 10s linear infinite;
+}
+
+/* --- Chessboard Highlight Pulse Animation --- */
+@keyframes highlight-puzzle-glow {
+  0%, 100% {
+    box-shadow:
+      0 0 0 1px rgba(212, 175, 110, 0.15),
+      0 32px 80px rgba(0, 0, 0, 0.6),
+      0 4px 20px rgba(0, 0, 0, 0.4),
+      inset 0 1px 0 rgba(212, 175, 110, 0.06);
+    border-color: rgba(212, 175, 110, 0.15);
+  }
+  50% {
+    box-shadow:
+      0 0 35px 8px rgba(212, 175, 110, 0.9),
+      0 32px 80px rgba(0, 0, 0, 0.8),
+      0 4px 25px rgba(212, 175, 110, 0.35),
+      inset 0 1px 0 rgba(212, 175, 110, 0.2);
+    border-color: rgba(212, 175, 110, 0.95);
+  }
+}
+
+.highlight-glow-active {
+  animation: highlight-puzzle-glow 0.7s ease-in-out 3;
 }

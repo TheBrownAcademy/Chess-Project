@@ -48,7 +48,7 @@ export default {
         'precise':   'cubic-bezier(0.4, 0, 0.2, 1)',
       },
       boxShadow: {
-        'gold': '0 0 40px rgba(212, 175, 110, 0.12), 0 4px 24px rgba(0,0,0,0.6)',
+        'gold': 'var(--shadow-gold)',
         'gold-sm': '0 0 20px rgba(212, 175, 110, 0.15)',
         'deep': '0 32px 80px rgba(0,0,0,0.5), 0 8px 24px rgba(0,0,0,0.4)',
         'card': '0 2px 1px rgba(255,255,255,0.03) inset, 0 24px 60px rgba(0,0,0,0.45)',
