@@ -6,20 +6,19 @@ export function useConfetti() {
   const fireConfetti = useCallback(() => {
     if (prefersReducedMotion()) return;
     
-    // Confetti should cover only the hero section
-    const heroSection = document.getElementById('hero-section') || document.querySelector('header');
-    if (!heroSection) return;
+    // Confetti should cover the whole screen, rendering on top of portal overlays
+    const mountNode = document.body;
 
-    // Create a temporary canvas scoped to the hero section
+    // Create a temporary canvas scoped to the viewport
     const canvas = document.createElement('canvas');
-    canvas.style.position = 'absolute';
+    canvas.style.position = 'fixed';
     canvas.style.top = '0';
     canvas.style.left = '0';
-    canvas.style.width = '100%';
-    canvas.style.height = '100%';
+    canvas.style.width = '100vw';
+    canvas.style.height = '100vh';
     canvas.style.pointerEvents = 'none';
-    canvas.style.zIndex = '50';
-    heroSection.appendChild(canvas);
+    canvas.style.zIndex = '200';
+    mountNode.appendChild(canvas);
 
     const myConfetti = confetti.create(canvas, {
       resize: true,
@@ -51,8 +50,8 @@ export function useConfetti() {
       } else {
         // Allow particles to clear naturally before removing canvas
         setTimeout(() => {
-          if (canvas.parentNode === heroSection) {
-            heroSection.removeChild(canvas);
+          if (canvas.parentNode === mountNode) {
+            mountNode.removeChild(canvas);
           }
         }, 5000);
       }

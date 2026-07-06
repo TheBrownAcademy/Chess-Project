@@ -34,9 +34,10 @@
  */
 
 import { useState, useRef, useCallback, useEffect, useLayoutEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { Chessboard } from 'react-chessboard';
 import { Chess } from 'chess.js';
-import { RotateCcw, Play, Zap, Crown } from 'lucide-react';
+import { RotateCcw, Play, Crown } from 'lucide-react';
 import { useConfetti } from '../hooks/useConfetti';
 import { useBoardCursorGlow } from '../hooks/useBoardCursorGlow';
 import { useMoveTrail } from '../hooks/useMoveTrail';
@@ -765,6 +766,13 @@ export default function HeroPuzzle() {
   const animResolveRef = useRef<(() => void) | null>(null);
   const animLandRef = useRef<(() => void) | null>(null);
 
+  // ── Celebration Overlay State & Refs ───────────────────────────────────────
+  const [showCelebrationOverlay, setShowCelebrationOverlay] = useState<boolean>(false);
+  const celebrationOverlayRef = useRef<HTMLDivElement>(null);
+  const celebrationKingContainerRef = useRef<HTMLDivElement>(null);
+  const celebrationKingRef = useRef<HTMLDivElement>(null);
+  const celebrationTextRef = useRef<HTMLHeadingElement>(null);
+
   useEffect(() => {
     const updateSize = () => {
       if (boardInnerRef.current) {
@@ -790,6 +798,79 @@ export default function HeroPuzzle() {
       { opacity: 1, y: 0, scale: 1, duration: 0.8, ease: 'power3.out', delay: 0.6 }
     );
   }, []);
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // PUZZLE SOLVED CELEBRATION TIMELINE
+  // Drives the White King coin toss vertical-flip (X-axis) visual overlay
+  // ══════════════════════════════════════════════════════════════════════════
+  useEffect(() => {
+    if (!showCelebrationOverlay) return;
+
+    const tl = gsap.timeline();
+
+    // 1) Fade in overlay backdrop
+    tl.to(celebrationOverlayRef.current, {
+      opacity: 1,
+      duration: 0.3,
+      ease: "power2.out"
+    });
+
+    // 2) Slide King in from left + flip on X axis (3D flip)
+    tl.fromTo(celebrationKingContainerRef.current,
+      { x: "-120%" },
+      { x: "0%", duration: 0.8, ease: "power2.out" },
+      "<"
+    );
+
+    tl.fromTo(celebrationKingRef.current,
+      { rotationX: 0, scale: 0.8 },
+      { rotationX: 720, scale: 1, duration: 0.8, ease: "power2.out" },
+      "<"
+    );
+
+    // 3) Scale up winner text and fire confetti right as it lands!
+    tl.fromTo(celebrationTextRef.current,
+      { opacity: 0, scale: 0.6 },
+      { 
+        opacity: 1, 
+        scale: 1, 
+        duration: 0.4, 
+        ease: "back.out(1.8)",
+        onComplete: () => {
+          fireConfetti();
+        }
+      },
+      "-=0.2"
+    );
+
+    // 4) Idle/Wait in center (1.3 seconds)
+    tl.to({}, { duration: 1.3 });
+
+    // 5) Exit King to the right + flip on X axis again
+    tl.to(celebrationKingContainerRef.current, {
+      x: "120%",
+      duration: 0.6,
+      ease: "power2.in"
+    });
+
+    tl.to(celebrationKingRef.current, {
+      rotationX: 1440,
+      scale: 0.8,
+      duration: 0.6,
+      ease: "power2.in"
+    }, "<");
+
+    // 6) Fade out backdrop and clean up state
+    tl.to(celebrationOverlayRef.current, {
+      opacity: 0,
+      duration: 0.3,
+      ease: "power2.in",
+      onComplete: () => {
+        setShowCelebrationOverlay(false);
+      }
+    }, "-=0.2");
+
+  }, [showCelebrationOverlay, fireConfetti]);
 
   // Magnetic piece hover effect removed to allow standard react-chessboard drag without interference
 
@@ -967,67 +1048,6 @@ export default function HeroPuzzle() {
   // ══════════════════════════════════════════════════════════════════════════
   // CHECKMATE POPUP CELEBRATION (RESTORED PREVIOUS BEHAVIOUR)
   // ══════════════════════════════════════════════════════════════════════════
-  const runCheckmateImpact = useCallback((kingSq: string | null): Promise<void> => {
-    return new Promise(resolve => {
-      if (prefersReducedMotion()) { resolve(); return; }
-
-      const board = boardInnerRef.current;
-      const card = boardCardRef.current;
-      const overlay = checkmateRef.current;
-      if (!board || !card || !overlay) { resolve(); return; }
-
-      const tl = gsap.timeline({ onComplete: resolve });
-
-      // a) Flash: board briefly goes bright white then snaps back
-      tl.to(board, {
-        filter: 'brightness(3)',
-        duration: 0.08,
-        ease: 'none',
-      })
-        .to(board, {
-          filter: 'brightness(1)',
-          duration: 0.25,
-          ease: 'power2.out',
-        });
-
-      // b) King square pulse (red tint)
-      tl.call(() => {
-        if (kingSq) {
-          setCheckedKingSquare(kingSq);
-          setTimeout(() => setCheckedKingSquare(null), 1200);
-        }
-      }, [], '<0.05');
-
-      // c) CHECKMATE text overlay — scale in from 0
-      tl.set(overlay, { display: 'flex', opacity: 0, scale: 0.6 })
-        .to(overlay, {
-          opacity: 1,
-          scale: 1,
-          duration: 0.45,
-          ease: 'back.out(1.7)',
-        }, '+=0.1');
-
-      // d) Glow expansion ring around board card
-      tl.fromTo(card,
-        { boxShadow: '0 0 0px 0px rgba(99,102,241,0)' },
-        {
-          boxShadow: '0 0 80px 24px rgba(99,102,241,0.6)',
-          duration: 0.5,
-          ease: 'power2.out',
-          yoyo: true,
-          repeat: 2,
-          onComplete: () => {
-            gsap.to(card, {
-              boxShadow: '0 0 30px 8px rgba(99,102,241,0.25)',
-              duration: 0.8,
-            });
-          },
-        },
-        '<'
-      );
-    });
-  }, []);
-
   const celebrate = useCallback(async (kingSq: string | null) => {
     // 1) Find the final checkmate FEN and king squares
     const checkmateFen = PROCESSED_MOVES[PROCESSED_MOVES.length - 1].fenAfter;
@@ -1115,29 +1135,30 @@ export default function HeroPuzzle() {
       }, 50); // small delay to allow React to render the badges in the DOM
     }
 
-    // Show CHECKMATE popup
-    await runCheckmateImpact(kingSq);
+    // Trigger board flash and king pulse
+    if (kingSq && !prefersReducedMotion() && boardEl) {
+      gsap.timeline()
+        .to(boardEl, {
+          filter: 'brightness(3)',
+          duration: 0.08,
+          ease: 'none',
+        })
+        .to(boardEl, {
+          filter: 'brightness(1)',
+          duration: 0.25,
+          ease: 'power2.out',
+        });
+      setCheckedKingSquare(kingSq);
+      setTimeout(() => setCheckedKingSquare(null), 1200);
+    }
 
-    // Hold the checkmate text for a brief pause before fading it out
-    await new Promise(r => setTimeout(r, 900));
+    // Wait a brief moment after the checkmate board flash, then trigger the new celebration overlay
+    await new Promise(r => setTimeout(r, 200));
     if (abortRef.current) return;
 
-    fireConfetti();
-
-    // Fade checkmate badge overlay out smoothly
-    if (checkmateRef.current) {
-      gsap.to(checkmateRef.current, {
-        opacity: 0,
-        scale: 0.8,
-        duration: 0.3,
-        onComplete: () => {
-          if (checkmateRef.current) {
-            checkmateRef.current.style.display = 'none';
-          }
-        }
-      });
-    }
-  }, [fireConfetti, runCheckmateImpact]);
+    // Show the custom white king coin toss overlay
+    setShowCelebrationOverlay(true);
+  }, [fireConfetti]);
 
   // ══════════════════════════════════════════════════════════════════════════
   // INTERACTIVE USER DROP AND SOLUTION VALIDATION
@@ -1242,6 +1263,13 @@ export default function HeroPuzzle() {
     }
     gsap.killTweensOf('.checkmate-badge-inner');
 
+    // Reset and kill celebration overlay animations
+    if (celebrationOverlayRef.current) gsap.killTweensOf(celebrationOverlayRef.current);
+    if (celebrationKingContainerRef.current) gsap.killTweensOf(celebrationKingContainerRef.current);
+    if (celebrationKingRef.current) gsap.killTweensOf(celebrationKingRef.current);
+    if (celebrationTextRef.current) gsap.killTweensOf(celebrationTextRef.current);
+    setShowCelebrationOverlay(false);
+
     setPhase('REPLAY');
 
     setTimeout(() => {
@@ -1312,6 +1340,63 @@ export default function HeroPuzzle() {
 
   return (
     <div className="flex flex-col gap-4">
+      {/* Custom White King Outline 3D-Flip Celebration Overlay */}
+      {showCelebrationOverlay && createPortal(
+        <div
+          ref={celebrationOverlayRef}
+          className="fixed inset-0 z-[100] flex flex-col items-center justify-center pointer-events-none"
+          style={{
+            background: 'rgba(8, 11, 20, 0.85)',
+            backdropFilter: 'blur(8px)',
+            opacity: 0,
+            perspective: '1000px',
+          }}
+        >
+          <div
+            ref={celebrationKingContainerRef}
+            className="flex flex-col items-center justify-center gap-6"
+            style={{ transform: 'translateX(-120%)' }}
+          >
+            <div
+              ref={celebrationKingRef}
+              className="relative flex items-center justify-center"
+              style={{
+                transformStyle: 'preserve-3d',
+              }}
+            >
+              {/* Actual outline of white king piece */}
+              <svg
+                viewBox="0 0 448 512"
+                className="w-36 h-36"
+                style={{
+                  color: 'rgba(212, 175, 110, 0.95)',
+                  filter: 'drop-shadow(0 0 30px rgba(212, 175, 110, 0.8))',
+                }}
+                fill="rgba(8, 11, 20, 0.5)"
+                stroke="currentColor"
+                strokeWidth="16"
+                aria-hidden="true"
+              >
+                <path d={FA_CHESS_KING_PATH} />
+              </svg>
+            </div>
+            <h2
+              ref={celebrationTextRef}
+              className="font-display text-4xl font-extrabold tracking-widest text-gold-gradient"
+              style={{
+                textShadow: '0 0 25px rgba(212, 175, 110, 0.6)',
+                fontStyle: 'italic',
+                opacity: 0,
+                transform: 'scale(0.7)',
+              }}
+            >
+              VICTORY!
+            </h2>
+          </div>
+        </div>,
+        document.body
+      )}
+
       {/* ── Outer Wrapper: cursor glow + entrance animation ── */}
       <div
         ref={mergedWrapRef}
@@ -1330,18 +1415,6 @@ export default function HeroPuzzle() {
               {symbol}
             </span>
           ))}
-        </div>
-
-        {/* ── CHECKMATE impact overlay — GSAP toggles display:flex ── */}
-        <div
-          ref={checkmateRef}
-          className="absolute inset-0 z-40 items-center justify-center pointer-events-none"
-          style={{ display: 'none' }}
-        >
-          <div className="checkmate-overlay-badge">
-            <Zap className="w-6 h-6 text-yellow-300 mb-1" />
-            <span className="checkmate-text">CHECKMATE</span>
-          </div>
         </div>
 
         {/* Board card container */}
