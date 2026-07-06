@@ -349,17 +349,48 @@ export default function ProductDemo() {
   const canUndo = history.length > 0 && !gameOverReason;
 
   return (
-    <section id="interactive-demo" className="py-12 md:py-16 relative overflow-hidden">
-      <div className="absolute top-1/2 left-1/4 -translate-y-1/2 w-[600px] h-[600px] bg-brand-accent/5 rounded-full blur-[140px] pointer-events-none" />
+    <>
+      {/* Section divider */}
+      <div className="section-divider" aria-hidden="true" />
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-
-        {/* Dashboard */}
+      <section id="interactive-demo" className="py-20 md:py-32 relative overflow-hidden">
         <div
-          ref={dashboardRef}
-          className="bg-brand-surface border border-brand-border rounded-xl shadow-2xl p-4 sm:p-6 lg:p-8 max-w-5xl mx-auto"
-          style={{ opacity: 0 }}
-        >
+          className="absolute top-1/2 left-1/4 -translate-y-1/2 w-[700px] h-[700px] rounded-full blur-[160px] pointer-events-none"
+          style={{ background: 'rgba(212, 175, 110, 0.025)' }}
+        />
+
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+
+          {/* Section header */}
+          <div className="text-center max-w-2xl mx-auto mb-16 md:mb-20 space-y-6">
+            <div className="section-eyebrow justify-center" aria-hidden="true">Live Demo</div>
+            <h2
+              className="font-display text-5xl sm:text-6xl tracking-editorial leading-[0.95]"
+              style={{ color: 'var(--text-primary)' }}
+            >
+              Play Against
+              <span
+                className="block text-gold-gradient font-display"
+                style={{ fontStyle: 'italic', fontWeight: 400 }}
+              >
+                Stockfish
+              </span>
+            </h2>
+            <p
+              className="font-sans text-base sm:text-[17px] leading-relaxed"
+              style={{ color: 'var(--text-secondary)' }}
+            >
+              Experience what your students will see — an elite interactive chess environment,
+              powered by Stockfish, built to challenge every level.
+            </p>
+          </div>
+
+          {/* Dashboard */}
+          <div
+            ref={dashboardRef}
+            className="luxury-card p-4 sm:p-6 lg:p-8 max-w-5xl mx-auto"
+            style={{ opacity: 0, borderRadius: '4px' }}
+          >
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:items-stretch">
 
             {/* ── Col 1: Eval Bar ──────────────────────────────────── */}
@@ -624,7 +655,8 @@ export default function ProductDemo() {
         onCancel={handleCancelEditor}
         onValidate={handleValidateEditorPosition}
       />
-    </section>
+      </section>
+    </>
   );
 }
 

@@ -1,21 +1,35 @@
+/**
+ * GlobalBackground.tsx
+ * Ambient drifting chess pieces — luxury upgrade.
+ *
+ * Changes from original:
+ *   - CSS variables now reference luxury palette (gold tints)
+ *   - Subset of pieces (every 3rd) get a warm gold tint class (.piece-gold)
+ *   - Animation durations extended (60–100s range) for a slower, more elegant drift
+ *   - Piece count kept at 15 (performance preserved)
+ *   - Size range: 75px–110px
+ *   - Some pieces get a subtle blur for a depth-of-field effect
+ */
+
 import React from 'react';
 
 const CHESS_PIECE_TYPES = ['rook', 'bishop', 'knight', 'queen', 'king', 'pawn'] as const;
 
-// Spawns chess pieces evenly across the screen width (0% to 100%) with small random jitter
 const BACKGROUND_PIECES = Array.from({ length: 15 }).map((_, i) => {
   const type = CHESS_PIECE_TYPES[i % CHESS_PIECE_TYPES.length];
   const baseLeft = (i / 15) * 100;
-  const jitter = (Math.random() - 0.5) * 4; // +/- 2%
-  const left = Math.min(95, Math.max(2, baseLeft + jitter)); // Keep away from very edges slightly
+  const jitter = (Math.random() - 0.5) * 4;
+  const left = Math.min(95, Math.max(2, baseLeft + jitter));
 
-  const size = Math.floor(Math.random() * 30 + 85); // 85px to 115px
-  const duration = Math.floor(Math.random() * 25 + 50); // 50s to 75s (very slow and elegant)
-  const delay = -(Math.random() * 75); // negative delay so they start animated at random scroll points
-  const drift = (Math.random() - 0.5) * 80; // horizontal drift +/- 40px
-  const startRotate = Math.floor(Math.random() * 40 - 20); // -20deg to 20deg
-  const endRotate = Math.floor(Math.random() * 40 - 20); // -20deg to 20deg
-  const opacity = Math.random() * 0.4 + 0.5; // subtle opacity factor
+  const size        = Math.floor(Math.random() * 30 + 75);   // 75–105px
+  const duration    = Math.floor(Math.random() * 40 + 60);   // 60–100s (slower = more elegant)
+  const delay       = -(Math.random() * 100);                 // negative = already mid-flight
+  const drift       = (Math.random() - 0.5) * 70;
+  const startRotate = Math.floor(Math.random() * 30 - 15);
+  const endRotate   = Math.floor(Math.random() * 30 - 15);
+  const opacity     = Math.random() * 0.35 + 0.4;
+  const isGold      = i % 3 === 0;                           // every 3rd piece gets gold tint
+  const blur        = i % 5 === 0 ? 0.8 : 0.2;              // depth variation
 
   return {
     id: i,
@@ -28,6 +42,8 @@ const BACKGROUND_PIECES = Array.from({ length: 15 }).map((_, i) => {
     startRotate,
     endRotate,
     opacity,
+    isGold,
+    blur,
   };
 });
 
@@ -92,79 +108,27 @@ function renderPieceSvg(type: 'rook' | 'bishop' | 'knight' | 'queen' | 'king' | 
 
 export default function GlobalBackground() {
   return (
-    <>
-      <style>{`
-        .global-animated-bg {
-          --piece: rgba(255, 255, 255, 0.04);
-          --piece-soft: rgba(255, 255, 255, 0.024);
-          position: fixed;
-          inset: 0;
-          overflow: hidden;
-          pointer-events: none;
-          z-index: -10;
-        }
-
-        .global-piece {
-          position: absolute;
-          top: -150px;
-          opacity: 0.72;
-          filter: blur(0.2px);
-          animation-name: global-fall;
-          animation-timing-function: linear;
-          animation-iteration-count: infinite;
-          will-change: transform;
-        }
-
-        .global-piece svg {
-          width: 100%;
-          height: 100%;
-          display: block;
-          fill: var(--piece);
-          stroke: var(--piece-soft);
-          stroke-width: 1.5;
-        }
-
-        @keyframes global-fall {
-          0% {
-            transform: translate3d(0, -25vh, 0) rotate(var(--start-rotate));
-          }
-          50% {
-            transform: translate3d(var(--drift), 55vh, 0) rotate(calc((var(--start-rotate) + var(--end-rotate)) / 2));
-          }
-          100% {
-            transform: translate3d(calc(var(--drift) * 1.4), 125vh, 0) rotate(var(--end-rotate));
-          }
-        }
-
-        @media (max-width: 700px) {
-          .global-piece {
-            width: 70px !important;
-            height: 70px !important;
-          }
-        }
-      `}</style>
-
-      <div className="global-animated-bg" aria-hidden="true">
-        {BACKGROUND_PIECES.map((piece) => (
-          <div
-            key={piece.id}
-            className="global-piece"
-            style={{
-              left: `${piece.left}%`,
-              width: `${piece.size}px`,
-              height: `${piece.size}px`,
-              animationDuration: `${piece.duration}s`,
-              animationDelay: `${piece.delay}s`,
-              opacity: 0.72 * piece.opacity,
-              ['--start-rotate' as any]: `${piece.startRotate}deg`,
-              ['--end-rotate' as any]: `${piece.endRotate}deg`,
-              ['--drift' as any]: `${piece.drift}px`,
-            } as React.CSSProperties}
-          >
-            {renderPieceSvg(piece.type)}
-          </div>
-        ))}
-      </div>
-    </>
+    <div className="global-animated-bg" aria-hidden="true">
+      {BACKGROUND_PIECES.map((piece) => (
+        <div
+          key={piece.id}
+          className={`global-piece${piece.isGold ? ' piece-gold' : ''}`}
+          style={{
+            left: `${piece.left}%`,
+            width: `${piece.size}px`,
+            height: `${piece.size}px`,
+            animationDuration: `${piece.duration}s`,
+            animationDelay: `${piece.delay}s`,
+            opacity: piece.isGold ? 0.45 * piece.opacity : 0.55 * piece.opacity,
+            filter: `blur(${piece.blur}px)`,
+            ['--start-rotate' as any]: `${piece.startRotate}deg`,
+            ['--end-rotate' as any]: `${piece.endRotate}deg`,
+            ['--drift' as any]: `${piece.drift}px`,
+          } as React.CSSProperties}
+        >
+          {renderPieceSvg(piece.type)}
+        </div>
+      ))}
+    </div>
   );
 }

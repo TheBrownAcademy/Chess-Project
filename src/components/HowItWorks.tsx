@@ -1,105 +1,269 @@
 /**
- * HowItWorks.tsx
+ * HowItWorks.tsx — "The Three Moves"
+ *
+ * Premium upgrade: scroll-driven vertical timeline.
+ * Each step reveals progressively as the user scrolls.
+ * Features a vertical connector line that draws from step to step.
+ *
  * ScrollTrigger animations:
- *   - Header: fade-up
- *   - Step cards: sequential stagger (left-to-right, 0.15s between)
+ *   - Header: masked clip + editorial stagger
+ *   - Each step: sequential stagger with left-to-right wipe reveal
+ *   - Vertical timeline line: scaleY draw animation
+ *
+ * Copy upgrade: sharper, more confident editorial tone
  */
 
 import { useRef } from 'react';
 import { Palette, Cpu, Rocket } from 'lucide-react';
-import { useScrollReveal } from '../hooks/useScrollReveal';
+import { useGSAP } from '../hooks/useGSAP';
+import { gsap, dur, ScrollTrigger } from '../utils/gsapConfig';
 
 export default function HowItWorks() {
-  const headerRef = useRef<HTMLDivElement>(null);
-  const stepsRef  = useRef<HTMLDivElement>(null);
+  const sectionRef  = useRef<HTMLElement>(null);
+  const headerRef   = useRef<HTMLDivElement>(null);
+  const stepsRef    = useRef<HTMLDivElement>(null);
+  const lineRef     = useRef<HTMLDivElement>(null);
 
-  // Header fade-up
-  useScrollReveal(headerRef as React.RefObject<Element | null>, { y: 50, duration: 0.8 });
+  useGSAP(
+    () => {
+      // Header reveal
+      gsap.fromTo(
+        headerRef.current,
+        { y: 50, opacity: 0, filter: 'blur(6px)' },
+        {
+          y: 0, opacity: 1, filter: 'blur(0px)',
+          duration: dur(1.0),
+          ease: 'expo.out',
+          scrollTrigger: {
+            trigger: headerRef.current,
+            start: 'top 84%',
+            toggleActions: 'play none none none',
+          },
+        }
+      );
 
-  // Steps stagger reveal
-  useScrollReveal(stepsRef as React.RefObject<Element | null>, {
-    selector: ':scope > div',
-    y: 55,
-    stagger: 0.15,
-    duration: 0.75,
-    start: 'top 85%',
-  });
+      // Steps: stagger entrance with perspective
+      const steps = stepsRef.current?.querySelectorAll('.how-step');
+      if (steps?.length) {
+        gsap.fromTo(
+          steps,
+          {
+            opacity: 0,
+            x: -40,
+            filter: 'blur(6px)',
+          },
+          {
+            opacity: 1,
+            x: 0,
+            filter: 'blur(0px)',
+            duration: dur(0.9),
+            stagger: 0.18,
+            ease: 'expo.out',
+            scrollTrigger: {
+              trigger: stepsRef.current,
+              start: 'top 82%',
+              toggleActions: 'play none none none',
+            },
+          }
+        );
+      }
+
+      // Timeline line draws in
+      if (lineRef.current) {
+        gsap.fromTo(
+          lineRef.current,
+          { scaleY: 0 },
+          {
+            scaleY: 1,
+            duration: dur(1.4),
+            ease: 'expo.out',
+            scrollTrigger: {
+              trigger: stepsRef.current,
+              start: 'top 78%',
+              toggleActions: 'play none none none',
+            },
+          }
+        );
+      }
+
+      return () => {
+        ScrollTrigger.getAll().forEach(t => t.kill());
+      };
+    },
+    sectionRef,
+    []
+  );
 
   const steps = [
     {
       num: '01',
-      icon: <Palette className="w-5 h-5 text-brand-accent" />,
-      title: 'Choose Your Brand',
+      icon: <Palette className="w-4 h-4" style={{ color: 'var(--gold-bright)' }} />,
+      title: 'Define Your Brand',
       description:
-        'Upload your organization logos, configure color palettes matching your academy colors, and connect your custom domain name (e.g. academy.yourname.com).',
+        'Upload your logos, configure your color palette to match your academy\'s identity, and connect your custom domain (e.g., academy.yourname.com). Your brand. Your rules.',
     },
     {
       num: '02',
-      icon: <Cpu className="w-5 h-5 text-brand-accent" />,
-      title: 'Configure Learning Experience',
+      icon: <Cpu className="w-4 h-4" style={{ color: 'var(--gold-bright)' }} />,
+      title: 'Structure the Experience',
       description:
-        'Upload video lectures, create interactive puzzle challenges, compile coordinate practice worksheets, and set up customizable subscriber tier access.',
+        'Upload video lectures, create interactive puzzle sets, build coordinate training worksheets, and configure subscriber access tiers. Design learning the way you believe it should work.',
     },
     {
       num: '03',
-      icon: <Rocket className="w-5 h-5 text-brand-accent" />,
-      title: 'Launch To Audience',
+      icon: <Rocket className="w-4 h-4" style={{ color: 'var(--gold-bright)' }} />,
+      title: 'Launch to Your Audience',
       description:
-        'Embed the signup links directly into your streaming descriptions, email newsletters, or website. Instantly invite students to join your owned ecosystem.',
+        'Embed your sign-up links directly into stream descriptions, email newsletters, or your existing website. Your students arrive in your ecosystem — not a competitor\'s.',
     },
   ];
 
   return (
-    <section id="how-it-works" className="py-20 md:py-28 bg-brand-surface/40 backdrop-blur-[2px]">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <>
+      {/* Section divider */}
+      <div className="section-divider" aria-hidden="true" />
 
-        {/* Section Header */}
+      <section
+        ref={sectionRef}
+        id="how-it-works"
+        className="relative py-28 md:py-40 overflow-hidden"
+      >
+        {/* Ambient */}
         <div
-          ref={headerRef}
-          className="text-center max-w-3xl mx-auto mb-16 md:mb-20 space-y-4"
-          style={{ opacity: 0 }}
-        >
-          <h2 className="font-sans font-extrabold text-3xl sm:text-4xl text-white tracking-tight">
-            How It Works
-          </h2>
-          <p className="font-sans text-brand-secondary text-base leading-relaxed">
-            Going independent does not require code or hosting setups.{' '}
-            Our automated pipeline delivers a production-ready academy portal in three simple steps.
-          </p>
-        </div>
+          className="absolute bottom-0 right-0 w-[500px] h-[500px] rounded-full blur-[160px] pointer-events-none"
+          style={{ background: 'rgba(212, 175, 110, 0.02)' }}
+          aria-hidden="true"
+        />
 
-        {/* Steps Grid */}
-        <div ref={stepsRef} className="grid grid-cols-1 lg:grid-cols-3 gap-12 relative">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
 
-          {/* Connecting line (Desktop only) */}
-          <div className="hidden lg:block absolute top-1/2 left-4 right-4 h-0.5 bg-gradient-to-r from-brand-border via-brand-border to-brand-bg -translate-y-12 z-0" />
-
-          {steps.map((step, index) => (
-            <div
-              key={index}
-              className="relative z-10 flex flex-col items-start text-left space-y-4 p-6 bg-brand-bg rounded-xl border border-brand-border hover:border-brand-accent/20 transition-all duration-300"
-              style={{ opacity: 0 }}
-            >
-              {/* Top Row with Number and Icon */}
-              <div className="flex items-center justify-between w-full">
-                <div className="w-10 h-10 rounded-lg bg-brand-surface border border-brand-border flex items-center justify-center">
-                  {step.icon}
-                </div>
-                <span className="font-mono text-3xl font-extrabold text-brand-secondary/20 tracking-wider">
-                  {step.num}
-                </span>
-              </div>
-
-              {/* Title & Description */}
-              <h3 className="font-sans font-bold text-lg text-white pt-2">{step.title}</h3>
-              <p className="font-sans text-sm text-brand-secondary leading-relaxed">
-                {step.description}
-              </p>
+          {/* Header */}
+          <div
+            ref={headerRef}
+            className="mb-20 md:mb-28 space-y-6 max-w-2xl"
+            style={{ opacity: 0 }}
+          >
+            <div className="section-eyebrow" aria-hidden="true">
+              Getting Started
             </div>
-          ))}
-        </div>
 
-      </div>
-    </section>
+            <h2
+              className="font-display text-5xl sm:text-6xl md:text-7xl tracking-editorial leading-[0.95]"
+              style={{ color: 'var(--text-primary)' }}
+            >
+              Three Moves
+              <span
+                className="block text-gold-gradient font-display"
+                style={{ fontStyle: 'italic', fontWeight: 400 }}
+              >
+                to Independence
+              </span>
+            </h2>
+
+            <p
+              className="font-sans text-base sm:text-[17px] leading-relaxed"
+              style={{ color: 'var(--text-secondary)' }}
+            >
+              No code. No hosting setup. No negotiating with platforms.
+              Our automated pipeline delivers a production-ready academy
+              in three precise moves.
+            </p>
+          </div>
+
+          {/* Steps — vertical timeline layout */}
+          <div
+            ref={stepsRef}
+            className="relative max-w-3xl"
+          >
+            {/* Vertical connector line */}
+            <div
+              ref={lineRef}
+              className="hidden md:block absolute"
+              style={{
+                left: '20px',
+                top: '44px',
+                bottom: '80px',
+                width: '1px',
+                background: 'linear-gradient(180deg, var(--gold-bright) 0%, rgba(212, 175, 110, 0.2) 80%, transparent 100%)',
+                transformOrigin: 'top center',
+                transform: 'scaleY(0)',
+              }}
+              aria-hidden="true"
+            />
+
+            <div className="space-y-12 md:space-y-16">
+              {steps.map((step, index) => (
+                <div
+                  key={index}
+                  className="how-step flex items-start gap-8 md:gap-12 relative z-10"
+                  style={{ opacity: 0 }}
+                >
+                  {/* Timeline dot */}
+                  <div className="hidden md:flex flex-col items-center pt-1 flex-shrink-0">
+                    <div
+                      className="timeline-dot"
+                      style={{
+                        width: '10px',
+                        height: '10px',
+                        borderRadius: '50%',
+                        background: 'var(--gold-bright)',
+                        border: '1px solid rgba(212, 175, 110, 0.4)',
+                        boxShadow: '0 0 12px rgba(212, 175, 110, 0.3)',
+                        flexShrink: 0,
+                        marginTop: '4px',
+                      }}
+                    />
+                  </div>
+
+                  {/* Step content */}
+                  <div className="flex-1">
+                    <div className="luxury-card p-8 relative" style={{ borderRadius: '2px' }}>
+                      {/* Board pattern */}
+                      <div className="card-board-pattern" aria-hidden="true" />
+
+                      {/* Step number — large editorial */}
+                      <span
+                        className="step-number font-display"
+                        aria-hidden="true"
+                        style={{
+                          fontSize: 'clamp(80px, 10vw, 140px)',
+                          right: '-0.05em',
+                          top: '-0.1em',
+                        }}
+                      >
+                        {step.num}
+                      </span>
+
+                      <div className="flex items-start gap-4 relative z-10">
+                        {/* Icon box */}
+                        <div className="feature-icon-box flex-shrink-0" style={{ marginTop: '2px' }}>
+                          {step.icon}
+                        </div>
+
+                        <div className="space-y-3">
+                          <h3
+                            className="font-display text-2xl md:text-3xl font-semibold"
+                            style={{ color: 'var(--text-primary)', letterSpacing: '-0.01em' }}
+                          >
+                            {step.title}
+                          </h3>
+                          <p
+                            className="font-sans text-sm sm:text-base leading-relaxed"
+                            style={{ color: 'var(--text-secondary)', lineHeight: '1.75' }}
+                          >
+                            {step.description}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+        </div>
+      </section>
+    </>
   );
 }

@@ -3,10 +3,11 @@
  * Fixed navigation bar with:
  *   - GSAP fade-down entrance on load
  *   - Scroll-direction hide/show (via useNavbarAnimation)
- *   - CSS underline-grow effect on nav links (.nav-link class)
- *   - CTA button scale + glow via CSS hover utilities
+ *   - Luxury gold underline effect on nav links (.nav-link class)
+ *   - CTA button with pearl-gold gradient
  *   - Logo: full GSAP interpolate() + quickTo() cursor-driven animation
  *     (via useLogoAnimation hook — see hooks/useLogoAnimation.ts)
+ *   - Luxury glassmorphism styling
  */
 
 import { useState, useRef } from 'react';
@@ -29,14 +30,14 @@ export default function Navbar() {
   const ctaGlowRef = useButtonGlow<HTMLAnchorElement>();
 
   const navLinks = [
-    { name: 'Live Demo',      href: '#interactive-demo' },
+    { name: 'Live Demo', href: '#interactive-demo' },
   ];
 
   return (
     <nav
       ref={navRef}
       id="main-navbar"
-      className="fixed top-0 left-0 right-0 z-50 bg-brand-bg/85 backdrop-blur-md border-b border-brand-border"
+      className="fixed top-0 left-0 right-0 z-50 navbar-luxury"
       style={{ opacity: 0 }}
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -46,9 +47,6 @@ export default function Navbar() {
             ── Logo ───────────────────────────────────────────────────────────
             containerRef  → mouse-event target (receives mousemove/enter/leave)
             logoRef       → visual transform target (rotateX/Y, scale, float)
-
-            perspective on the container ensures child 3D rotations render correctly.
-            transformStyle: preserve-3d propagates depth to the img.
           */}
           <div
             ref={containerRef}
@@ -62,7 +60,7 @@ export default function Navbar() {
               ref={logoRef}
               src="/final%20logo.png"
               alt="XLChess logo"
-              className="h-[68px] sm:h-[80px] w-auto object-contain"
+              className="h-[64px] sm:h-[76px] w-auto object-contain"
               style={{
                 willChange: 'transform, filter',
                 transformStyle: 'preserve-3d',
@@ -72,13 +70,14 @@ export default function Navbar() {
             />
           </div>
 
-          {/* Desktop Nav Links — .nav-link enables CSS underline-grow */}
-          <div className="hidden md:flex items-center gap-8">
+          {/* Desktop Nav Links — .nav-link enables CSS gold underline-grow */}
+          <div className="hidden md:flex items-center gap-10">
             {navLinks.map((link) => (
               <a
                 key={link.name}
                 href={link.href}
-                className="nav-link font-sans font-medium text-sm text-brand-secondary hover:text-white transition-colors duration-200"
+                className="nav-link font-sans font-light text-sm tracking-wide text-brand-secondary hover:text-ivory transition-colors duration-300"
+                style={{ letterSpacing: '0.06em' }}
               >
                 {link.name}
               </a>
@@ -86,28 +85,20 @@ export default function Navbar() {
           </div>
 
           {/* Desktop CTA */}
-          <div className="hidden md:flex items-center gap-4">
+          <div className="hidden md:flex items-center gap-6">
             <a
               href="#interactive-demo"
-              className="nav-link font-sans text-sm font-medium text-brand-secondary hover:text-white transition-colors duration-200"
+              className="nav-link font-sans text-sm font-light tracking-wide text-brand-secondary hover:text-ivory transition-colors duration-300"
+              style={{ letterSpacing: '0.06em' }}
             >
-              View Live Demo
+              View Demo
             </a>
-            {/* Primary CTA — scale + glow on hover via Tailwind */}
+            {/* Primary CTA — pearl/gold */}
             <a
               ref={ctaGlowRef}
               href="#partner-cta"
               id="navbar-cta-btn"
-              className="
-                font-sans text-sm font-medium
-                bg-brand-accent hover:bg-brand-accent/90
-                text-white px-4 py-2 rounded-md
-                transition-all duration-200
-                shadow-lg shadow-brand-accent/20
-                hover:scale-[1.03] hover:shadow-brand-accent/40
-                active:scale-[0.97]
-                btn-glow-container btn-glow-accent cta-shine
-              "
+              className="btn-premium-cta btn-glow-container cta-shine px-5 py-2.5 rounded-sm"
             >
               Become a Partner
             </a>
@@ -117,11 +108,14 @@ export default function Navbar() {
           <div className="md:hidden">
             <button
               onClick={() => setIsOpen(!isOpen)}
-              className="text-brand-secondary hover:text-white p-2 transition-colors"
+              className="text-brand-secondary hover:text-ivory p-2 transition-colors"
               aria-label="Toggle menu"
               aria-expanded={isOpen}
             >
-              {isOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+              {isOpen
+                ? <X className="w-5 h-5" />
+                : <Menu className="w-5 h-5" />
+              }
             </button>
           </div>
         </div>
@@ -129,30 +123,39 @@ export default function Navbar() {
 
       {/* Mobile Dropdown */}
       {isOpen && (
-        <div className="md:hidden bg-brand-surface border-b border-brand-border px-4 py-6 space-y-4">
-          <div className="flex flex-col gap-4">
+        <div
+          className="md:hidden border-b px-4 py-6 space-y-4"
+          style={{
+            background: 'rgba(8, 11, 20, 0.97)',
+            borderColor: 'rgba(212, 175, 110, 0.1)',
+            backdropFilter: 'blur(20px)',
+          }}
+        >
+          <div className="flex flex-col gap-5">
             {navLinks.map((link) => (
               <a
                 key={link.name}
                 href={link.href}
                 onClick={() => setIsOpen(false)}
-                className="font-sans font-medium text-base text-brand-secondary hover:text-white transition-colors py-2"
+                className="font-sans font-light text-base text-brand-secondary hover:text-ivory transition-colors py-1"
+                style={{ letterSpacing: '0.04em' }}
               >
                 {link.name}
               </a>
             ))}
-            <hr className="border-brand-border my-2" />
+            <div className="section-divider my-1" />
             <a
               href="#interactive-demo"
               onClick={() => setIsOpen(false)}
-              className="font-sans font-medium text-base text-brand-secondary hover:text-white py-2"
+              className="font-sans font-light text-base text-brand-secondary hover:text-ivory py-1"
+              style={{ letterSpacing: '0.04em' }}
             >
-              View Live Demo
+              View Demo
             </a>
             <a
               href="#partner-cta"
               onClick={() => setIsOpen(false)}
-              className="font-sans font-medium bg-brand-accent hover:bg-brand-accent/90 text-white text-center py-2.5 rounded-md transition-colors"
+              className="btn-premium-cta cta-shine text-center py-3 px-4 rounded-sm block"
             >
               Become a Partner
             </a>
