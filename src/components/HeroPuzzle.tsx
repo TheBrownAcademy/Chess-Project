@@ -35,7 +35,9 @@
 import { useState, useRef, useCallback, useEffect, useLayoutEffect } from 'react';
 import { Chessboard } from 'react-chessboard';
 import { Chess } from 'chess.js';
-import { RotateCcw, Play, Zap, Crown, ChevronLeft, ChevronRight } from 'lucide-react';
+import { parseUciMove } from '../utils/chessHelpers';
+import { useStockfish } from '../hooks/useStockfish';
+import { RotateCcw, Play, Zap, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useConfetti } from '../hooks/useConfetti';
 import { useBoardCursorGlow } from '../hooks/useBoardCursorGlow';
 import { useMoveTrail } from '../hooks/useMoveTrail';
@@ -178,13 +180,22 @@ function processGameMoves(): ProcessedMove[] {
   return processed;
 }
 const PROCESSED_MOVES = processGameMoves();
+
+const historicalWhiteMoves = [
+  PROCESSED_MOVES[40],
+  PROCESSED_MOVES[42],
+  PROCESSED_MOVES[44],
+  PROCESSED_MOVES[46]
+];
+
+const historicalBlackMoves = [
+  PROCESSED_MOVES[41],
+  PROCESSED_MOVES[43],
+  PROCESSED_MOVES[45]
+];
+
 const START_FEN = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
-const FA_CHESS_KING_PATH = "M224 0c17.7 0 32 14.3 32 32V48h16c17.7 0 32 14.3 32 32s-14.3 32-32 32H256v48H408c22.1 0 40 17.9 40 40c0 5.3-1 10.5-3.1 15.4L368 400H80L3.1 215.4C1 210.5 0 205.3 0 200c0-22.1 17.9-40 40-40H192V112H176c-17.7 0-32-14.3-32-32s14.3-32 32-32h16V32c0-17.7 14.3-32 32-32zM38.6 473.4L80 432H368l41.4 41.4c4.2 4.2 6.6 10 6.6 16c0 12.5-10.1 22.6-22.6 22.6H54.6C42.1 512 32 501.9 32 489.4c0-6 2.4-11.8 6.6-16z";
-const ChessKingIcon = ({ className, style }: { className?: string; style?: React.CSSProperties }) => (
-  <svg viewBox="0 0 448 512" className={className} style={style} fill="currentColor" aria-hidden="true">
-    <path d={FA_CHESS_KING_PATH} />
-  </svg>
-);
+const PUZZLE3_FEN = '7k/5p1P/5ppK/6P1/8/8/1q6/BQ6 w - - 4 1';
 const getKingSquares = (fen: string) => {
   const tempGame = new Chess(fen);
   let losingKingSq: string | null = null;
@@ -209,12 +220,12 @@ const getKingSquares = (fen: string) => {
   return { losingKingSq, winningKingSq };
 };
 export default function HeroPuzzle() {
+  const { getEngineMove } = useStockfish();
   const { fireConfetti } = useConfetti();
   const glowRef = useBoardCursorGlow<HTMLDivElement>();
   const { showTrail, clearTrail } = useMoveTrail();
   const { activeAnnotation, triggerAnnotation, clearAnnotation } = useMoveAnnotation();
   // ── Chessboard refs ────────────────────────────────────────────────────────
-  const boardWrapRef = useRef<HTMLDivElement>(null);
   const boardCardRef = useRef<HTMLDivElement>(null);
   const boardInnerRef = useRef<HTMLDivElement>(null);
   const checkmateRef = useRef<HTMLDivElement>(null);
@@ -230,16 +241,11 @@ export default function HeroPuzzle() {
   const [lastMove0, setLastMove0] = useState<{ from: string; to: string } | null>(null);
   const [checkedKingSquare0, setCheckedKingSquare0] = useState<string | null>(null);
   const [isCheckmateGlow0, setIsCheckmateGlow0] = useState<boolean>(false);
-  const [showTryAgain0, setShowTryAgain0] = useState<boolean>(false);
-  const [checkmateBadges0, setCheckmateBadges0] = useState<{
-    losingSquare: string;
-    winningSquare: string;
-    losingX: number;
-    losingY: number;
-    winningX: number;
-    winningY: number;
-    squareSize: number;
-  } | null>(null);
+  const [isStockfishThinking0, setIsStockfishThinking0] = useState<boolean>(false);
+  const [playMode0, setPlayMode0] = useState<'SCRIPTED' | 'STOCKFISH'>('SCRIPTED');
+  const [puzzleMoveIndex0, setPuzzleMoveIndex0] = useState<number>(0);
+  const gameRef0 = useRef<Chess>(new Chess(START_FEN));
+
   // ── Carousel index & animation state ───────────────────────────────────────
   const [activeIndex, setActiveIndex] = useState<number>(0);
   const [interactiveIndex, setInteractiveIndex] = useState<number | null>(0);
@@ -248,25 +254,32 @@ export default function HeroPuzzle() {
   const [gameFen1, setGameFen1] = useState<string>(PUZZLE_ORIGINAL.fen);
   const [phase1, setPhase1] = useState<PuzzlePhaseOriginal>('idle');
   const [movesLeftOriginal, setMovesLeftOriginal] = useState<number>(PUZZLE_ORIGINAL.totalMoves);
-  const [solveStepOriginal, setSolveStepOriginal] = useState<number>(-1);
   const [solveAnnotationOriginal, setSolveAnnotationOriginal] = useState<string>('');
-  const [notationEntriesOriginal, setNotationEntriesOriginal] = useState<string[]>([]);
   const [lastMove1, setLastMove1] = useState<{ from: string; to: string } | null>(null);
   const [checkedKingSquare1, setCheckedKingSquare1] = useState<string | null>(null);
   const [isCheckmateGlow1, setIsCheckmateGlow1] = useState<boolean>(false);
-  const [showTryAgain1, setShowTryAgain1] = useState<boolean>(false);
-  const [checkmateBadges1, setCheckmateBadges1] = useState<{
-    losingSquare: string;
-    winningSquare: string;
-    losingX: number;
-    losingY: number;
-    winningX: number;
-    winningY: number;
-    squareSize: number;
-  } | null>(null);
+
   const hasCelebratedOriginalRef = useRef<boolean>(false);
+  // ── State variables for Puzzle 2 (New Stockfish Puzzle) ─────────────────────
+  const gameRef2 = useRef<Chess>(new Chess('r5k1/6pp/r7/q3N1P1/3Q4/1Pp5/2P5/1K1R3R w - - 0 1'));
+  const [gameFen2, setGameFen2] = useState<string>('r5k1/6pp/r7/q3N1P1/3Q4/1Pp5/2P5/1K1R3R w - - 0 1');
+  const [phase2, setPhase2] = useState<'idle' | 'black_responding' | 'awaiting_move' | 'solved' | 'failed'>('idle');
+  const [lastMove2, setLastMove2] = useState<{ from: string; to: string } | null>(null);
+  const [checkedKingSquare2, setCheckedKingSquare2] = useState<string | null>(null);
+  const [isCheckmateGlow2, setIsCheckmateGlow2] = useState<boolean>(false);
+
+  const hasCelebrated2Ref = useRef<boolean>(false);
   const solveAbortRef = useRef<boolean>(false);
   const solveTimerRef = useRef<number | null>(null);
+  // ── State variables for Puzzle 3 (Winning Move — Stockfish, new FEN) ─────────
+  const gameRef3 = useRef<Chess>(new Chess(PUZZLE3_FEN));
+  const [gameFen3, setGameFen3] = useState<string>(PUZZLE3_FEN);
+  const [phase3, setPhase3] = useState<'idle' | 'black_responding' | 'awaiting_move' | 'solved' | 'failed'>('idle');
+  const [lastMove3, setLastMove3] = useState<{ from: string; to: string } | null>(null);
+  const [checkedKingSquare3, setCheckedKingSquare3] = useState<string | null>(null);
+  const [isCheckmateGlow3, setIsCheckmateGlow3] = useState<boolean>(false);
+
+  const hasCelebrated3Ref = useRef<boolean>(false);
   // ── Safe Timers Ref ────────────────────────────────────────────────────────
   const activeTimeoutsRef = useRef<number[]>([]);
   const safeSetTimeout = useCallback((cb: () => void, delay: number) => {
@@ -281,7 +294,7 @@ export default function HeroPuzzle() {
     activeTimeoutsRef.current.forEach(id => clearTimeout(id));
     activeTimeoutsRef.current = [];
   }, []);
-  const runCheckmateImpact = useCallback((kingSq: string | null): Promise<void> => {
+  const runCheckmateImpact = useCallback((_kingSq: string | null): Promise<void> => {
     return new Promise(resolve => {
       if (prefersReducedMotion()) { resolve(); return; }
       const board = boardInnerRef.current;
@@ -300,18 +313,7 @@ export default function HeroPuzzle() {
           duration: 0.25,
           ease: 'power2.out',
         });
-      // b) King square pulse (red tint)
-      tl.call(() => {
-        if (kingSq) {
-          if (activeIndex === 0) {
-            setCheckedKingSquare0(kingSq);
-            safeSetTimeout(() => setCheckedKingSquare0(null), 1200);
-          } else {
-            setCheckedKingSquare1(kingSq);
-            safeSetTimeout(() => setCheckedKingSquare1(null), 1200);
-          }
-        }
-      }, [], '<0.05');
+
       // c) CHECKMATE text overlay — scale in from 0
       tl.set(overlay, { display: 'flex', opacity: 0, scale: 0.6 })
         .to(overlay, {
@@ -463,7 +465,8 @@ export default function HeroPuzzle() {
       boardInnerRef.current,
       move.isCapture,
       () => {
-        setGameFen0(move.fenAfter);
+        gameRef0.current.move({ from: move.from, to: move.to, promotion: 'q' });
+        setGameFen0(gameRef0.current.fen());
         showTrail(move.from, move.to);
       }
     );
@@ -481,6 +484,11 @@ export default function HeroPuzzle() {
   // ══════════════════════════════════════════════════════════════════════════
   const runAutoplay0 = useCallback(async (startIndex: number) => {
     abortRef.current = false;
+    if (startIndex === 0) {
+      gameRef0.current = new Chess(START_FEN);
+    } else {
+      gameRef0.current = new Chess(PROCESSED_MOVES[startIndex - 1].fenAfter);
+    }
     for (let i = startIndex; i < 40; i++) {
       if (abortRef.current) return;
       setCurrentMoveIndex0(i);
@@ -503,8 +511,25 @@ export default function HeroPuzzle() {
     setPhase0('PUZZLE');
     setCurrentMoveIndex0(40);
     setPuzzleStep0(0);
-    setShowTryAgain0(false);
   }, [playStep0]);
+
+  const handleSkip0 = useCallback(() => {
+    abortRef.current = true;
+    clearAllTimeouts();
+    setActiveMove(null);
+
+    gameRef0.current = new Chess(PROCESSED_MOVES[39].fenAfter);
+    setGameFen0(gameRef0.current.fen());
+    setLastMove0({ from: PROCESSED_MOVES[39].from, to: PROCESSED_MOVES[39].to });
+    showTrail(PROCESSED_MOVES[39].from, PROCESSED_MOVES[39].to);
+
+    setPhase0('PUZZLE');
+    setCurrentMoveIndex0(40);
+    setPuzzleStep0(0);
+    setIsStockfishThinking0(false);
+    setPlayMode0('SCRIPTED');
+    setPuzzleMoveIndex0(0);
+  }, [showTrail, clearAllTimeouts]);
   // ─── Unified Cleanup and Initialization ───
   const cleanupGame = useCallback(() => {
     abortRef.current = true;
@@ -518,7 +543,7 @@ export default function HeroPuzzle() {
       gsap.killTweensOf(checkmateRef.current);
       gsap.set(checkmateRef.current, { display: 'none', opacity: 0, scale: 0.6 });
     }
-    gsap.killTweensOf('.checkmate-badge-inner');
+
     if (boardInnerRef.current) {
       boardInnerRef.current.querySelectorAll('.gsap-moving').forEach((el) => {
         if (el !== boardInnerRef.current) el.remove();
@@ -530,37 +555,57 @@ export default function HeroPuzzle() {
     clearTrail();
     clearAnnotation();
     setActiveMove(null);
+    setIsStockfishThinking0(false);
+    setPlayMode0('SCRIPTED');
+    setPuzzleMoveIndex0(0);
+    gameRef0.current = new Chess(START_FEN);
   }, [clearTrail, clearAnnotation, clearAllTimeouts]);
-  const initGame = useCallback((index: number) => {
+  const initGame = useCallback((index: number, autoStart = true) => {
     abortRef.current = false;
     solveAbortRef.current = false;
     // Reset visual annotations/markers for a fresh game start
     if (index === 0) {
       setLastMove0(null);
       setCheckedKingSquare0(null);
-      setCheckmateBadges0(null);
       setIsCheckmateGlow0(false);
-      setShowTryAgain0(false);
+      gameRef0.current = new Chess(START_FEN);
       setGameFen0(START_FEN);
       setPhase0('AUTOPLAY');
       setCurrentMoveIndex0(-1);
       setPuzzleStep0(0);
+      setIsStockfishThinking0(false);
+      setPlayMode0('SCRIPTED');
+      setPuzzleMoveIndex0(0);
       
-      runAutoplay0(0);
-    } else {
+      if (autoStart) {
+        runAutoplay0(0);
+      }
+    } else if (index === 1) {
       setLastMove1(null);
       setCheckedKingSquare1(null);
-      setCheckmateBadges1(null);
       setIsCheckmateGlow1(false);
-      setShowTryAgain1(false);
       gameRef1.current = new Chess(PUZZLE_ORIGINAL.fen);
       setGameFen1(PUZZLE_ORIGINAL.fen);
       setPhase1('idle');
       setMovesLeftOriginal(PUZZLE_ORIGINAL.totalMoves);
-      setSolveStepOriginal(-1);
       setSolveAnnotationOriginal('');
-      setNotationEntriesOriginal([]);
       hasCelebratedOriginalRef.current = false;
+    } else if (index === 2) {
+      setLastMove2(null);
+      setCheckedKingSquare2(null);
+      setIsCheckmateGlow2(false);
+      gameRef2.current = new Chess('r5k1/6pp/r7/q3N1P1/3Q4/1Pp5/2P5/1K1R3R w - - 0 1');
+      setGameFen2('r5k1/6pp/r7/q3N1P1/3Q4/1Pp5/2P5/1K1R3R w - - 0 1');
+      setPhase2('idle');
+      hasCelebrated2Ref.current = false;
+    } else if (index === 3) {
+      setLastMove3(null);
+      setCheckedKingSquare3(null);
+      setIsCheckmateGlow3(false);
+      gameRef3.current = new Chess(PUZZLE3_FEN);
+      setGameFen3(PUZZLE3_FEN);
+      setPhase3('idle');
+      hasCelebrated3Ref.current = false;
     }
   }, [runAutoplay0]);
   // Synchronize board reset & initialization with active index changes
@@ -571,22 +616,18 @@ export default function HeroPuzzle() {
       prevIndexRef.current = activeIndex;
       setInteractiveIndex(null);
       cleanupGame();
+      initGame(activeIndex, false);
     } else {
       // First mount or StrictMode remount
       initGame(0);
       initGame(1);
+      initGame(2);
+      initGame(3);
     }
     return () => {
       cleanupGame();
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeIndex]);
-  const handleLayoutComplete = useCallback(() => {
-    // Only initialize the board and start logic once layout animation is finished
-    if (interactiveIndex !== activeIndex) {
-      setInteractiveIndex(activeIndex);
-    }
-  }, [activeIndex, interactiveIndex]);
+  }, [activeIndex, initGame]);
   // ══════════════════════════════════════════════════════════════════════════
   // MATE-IN-TWO PUZZLE LOGIC & ANCILLARY PROCEDURES (RESTORED & ADAPTED)
   // ══════════════════════════════════════════════════════════════════════════
@@ -626,74 +667,11 @@ export default function HeroPuzzle() {
     if (hasCelebratedOriginalRef.current) return;
     hasCelebratedOriginalRef.current = true;
     const checkmateFen = gameRef1.current.fen();
-    const { losingKingSq, winningKingSq } = getKingSquares(checkmateFen);
-    const boardEl = boardInnerRef.current;
-    if (boardEl && losingKingSq && winningKingSq) {
-      const rect = boardEl.getBoundingClientRect();
-      const sqW = rect.width / 8;
-      const sqH = rect.height / 8;
-      const getSquarePos = (sq: string) => {
-        const file = sq.charCodeAt(0) - 97;
-        const rank = 8 - parseInt(sq[1], 10);
-        return {
-          x: file * sqW,
-          y: rank * sqH,
-        };
-      };
-      const losingPos = getSquarePos(losingKingSq);
-      const winningPos = getSquarePos(winningKingSq);
-      setCheckmateBadges1({
-        losingSquare: losingKingSq,
-        winningSquare: winningKingSq,
-        losingX: losingPos.x,
-        losingY: losingPos.y,
-        winningX: winningPos.x,
-        winningY: winningPos.y,
-        squareSize: sqW,
-      });
-      setPhase1('solved');
-      setIsCheckmateGlow1(true);
-      safeSetTimeout(() => {
-        const defeatBadge = boardEl.querySelector('.defeat-badge') as HTMLElement | null;
-        const victoryBadge = boardEl.querySelector('.victory-badge') as HTMLElement | null;
-        if (defeatBadge && victoryBadge) {
-          const tlBadges = gsap.timeline();
-          tlBadges.fromTo(defeatBadge,
-            { scale: 0, opacity: 0, x: 0, y: 0, backgroundColor: 'transparent', boxShadow: 'none', rotation: 0 },
-            { scale: 1.5, opacity: 1, backgroundColor: 'rgba(239, 68, 68, 0.6)', duration: 0.4, ease: 'back.out(1.5)' },
-            0.1
-          );
-          tlBadges.fromTo(victoryBadge,
-            { scale: 0, opacity: 0, x: 0, y: 0, backgroundColor: 'transparent', boxShadow: 'none' },
-            { scale: 1.5, opacity: 1, backgroundColor: 'rgba(34, 197, 94, 0.6)', duration: 0.4, ease: 'back.out(1.5)' },
-            0.1
-          );
-          const tx = sqW * 0.35;
-          const ty = -sqW * 0.35;
-          tlBadges.to(defeatBadge, {
-            x: tx,
-            y: ty,
-            scale: 0.45,
-            rotation: 90,
-            opacity: 1,
-            backgroundColor: 'rgba(239, 68, 68, 0.8)',
-            boxShadow: '0 2px 6px rgba(0, 0, 0, 0.35)',
-            duration: 0.6,
-            ease: 'power2.inOut',
-          }, '+=0.4');
-          tlBadges.to(victoryBadge, {
-            x: tx,
-            y: ty,
-            scale: 0.45,
-            opacity: 1,
-            backgroundColor: 'rgba(34, 197, 94, 0.8)',
-            boxShadow: '0 2px 6px rgba(0, 0, 0, 0.35)',
-            duration: 0.6,
-            ease: 'power2.inOut',
-          }, '<');
-        }
-      }, 50);
-    }
+    const { losingKingSq } = getKingSquares(checkmateFen);
+    
+    setPhase1('solved');
+    setIsCheckmateGlow1(true);
+    
     await runCheckmateImpact(losingKingSq);
     await new Promise(r => safeSetTimeout(r as () => void, 900));
     if (solveAbortRef.current) return;
@@ -731,11 +709,10 @@ export default function HeroPuzzle() {
       ).then(() => {
         if (solveAbortRef.current) return;
         const game = gameRef1.current;
-        const history = game.history({ verbose: true });
-        const lastEntry = history[history.length - 1];
-        const displaySan = lastEntry.san.replace('x', '');
+        // const history = game.history({ verbose: true });
+        // const lastEntry = history[history.length - 1];
+        // const displaySan = lastEntry.san.replace('x', '');
         if (phase1 === 'idle') {
-          setNotationEntriesOriginal([`1. ${displaySan}`]);
           if (game.isCheckmate()) {
             setMovesLeftOriginal(0);
             triggerAnnotation(targetSquare, '!!');
@@ -762,8 +739,6 @@ export default function HeroPuzzle() {
                     setGameFen1(gameRef1.current.fen());
                     setLastMove1({ from: moveResult.from, to: moveResult.to });
                     showTrail(moveResult.from, moveResult.to);
-                    const blackSan = moveResult.san.replace('x', '');
-                    setNotationEntriesOriginal(prev => [...prev, `   ...${blackSan}`]);
                   }
                 ).then(() => {
                   setPhase1('awaiting_mate');
@@ -776,7 +751,6 @@ export default function HeroPuzzle() {
             }
           }, 600);
         } else if (phase1 === 'awaiting_mate') {
-          setNotationEntriesOriginal(prev => [...prev, `2. ${displaySan}`]);
           if (game.isCheckmate()) {
             celebrateOriginal();
           } else {
@@ -798,8 +772,6 @@ export default function HeroPuzzle() {
                       setGameFen1(gameRef1.current.fen());
                       setLastMove1({ from: moveResult.from, to: moveResult.to });
                       showTrail(moveResult.from, moveResult.to);
-                      const blackSan = moveResult.san.replace('x', '');
-                      setNotationEntriesOriginal(prev => [...prev, `   ...${blackSan}`]);
                     }
                   ).then(() => {
                     setPhase1('awaiting_mate');
@@ -825,9 +797,7 @@ export default function HeroPuzzle() {
     const step1 = PUZZLE_ORIGINAL.solution[0];
     await new Promise(r => safeSetTimeout(r as () => void, 500));
     if (solveAbortRef.current) return;
-    setSolveStepOriginal(0);
     setSolveAnnotationOriginal(step1.annotation);
-    setNotationEntriesOriginal([`1. ${step1.san}`]);
     await animatePieceMove(step1.from, step1.to, boardInnerRef.current, false, () => {
       applyMoveOriginal(step1.from, step1.to);
     });
@@ -837,9 +807,7 @@ export default function HeroPuzzle() {
     await new Promise(r => safeSetTimeout(r as () => void, 900));
     if (solveAbortRef.current) return;
     const step2 = PUZZLE_ORIGINAL.solution[1];
-    setSolveStepOriginal(1);
     setSolveAnnotationOriginal(step2.annotation);
-    setNotationEntriesOriginal(prev => [...prev, `   ...${step2.san}`]);
     await animatePieceMove(step2.from, step2.to, boardInnerRef.current, true, () => {
       applyMoveOriginal(step2.from, step2.to);
     });
@@ -847,9 +815,7 @@ export default function HeroPuzzle() {
     await new Promise(r => safeSetTimeout(r as () => void, 900));
     if (solveAbortRef.current) return;
     const step3 = PUZZLE_ORIGINAL.solution[2];
-    setSolveStepOriginal(2);
     setSolveAnnotationOriginal(step3.annotation);
-    setNotationEntriesOriginal(prev => [...prev, `2. ${step3.san}`]);
     await animatePieceMove(step3.from, step3.to, boardInnerRef.current, false, () => {
       applyMoveOriginal(step3.from, step3.to);
     });
@@ -860,89 +826,12 @@ export default function HeroPuzzle() {
       celebrateOriginal();
     }
   }, [cleanupGame, animatePieceMove, applyMoveOriginal, triggerAnnotation, celebrateOriginal, safeSetTimeout]);
-  // ─── Verification state alignment helper ───
-  const getExpectedPrevFEN0 = useCallback(() => {
-    if (puzzleStep0 === 0) return PROCESSED_MOVES[39].fenAfter;
-    return PROCESSED_MOVES[40 + puzzleStep0 * 2 - 1].fenAfter;
-  }, [puzzleStep0]);
   // ══════════════════════════════════════════════════════════════════════════
   // CHECKMATE POPUP CELEBRATION (RESTORED PREVIOUS BEHAVIOUR)
   // ══════════════════════════════════════════════════════════════════════════
   const celebrate0 = useCallback(async (kingSq: string | null) => {
-    // 1) Find the final checkmate FEN and king squares
-    const checkmateFen = PROCESSED_MOVES[PROCESSED_MOVES.length - 1].fenAfter;
-    const { losingKingSq, winningKingSq } = getKingSquares(checkmateFen);
-    const boardEl = boardInnerRef.current;
-    if (boardEl && losingKingSq && winningKingSq) {
-      const rect = boardEl.getBoundingClientRect();
-      const sqW = rect.width / 8;
-      const sqH = rect.height / 8;
-      const getSquarePos = (sq: string) => {
-        const file = sq.charCodeAt(0) - 97;
-        const rank = 8 - parseInt(sq[1], 10);
-        return {
-          x: file * sqW,
-          y: rank * sqH,
-        };
-      };
-      const losingPos = getSquarePos(losingKingSq);
-      const winningPos = getSquarePos(winningKingSq);
-      setCheckmateBadges0({
-        losingSquare: losingKingSq,
-        winningSquare: winningKingSq,
-        losingX: losingPos.x,
-        losingY: losingPos.y,
-        winningX: winningPos.x,
-        winningY: winningPos.y,
-        squareSize: sqW,
-      });
-      // Set success phase immediately so board highlights kick in (0.05s)
-      setPhase0('SUCCESS');
-      setIsCheckmateGlow0(true);
-      // Animate checkmate badges after DOM render
-      setTimeout(() => {
-        const defeatBadge = boardEl.querySelector('.defeat-badge') as HTMLElement | null;
-        const victoryBadge = boardEl.querySelector('.victory-badge') as HTMLElement | null;
-        if (defeatBadge && victoryBadge) {
-          const tlBadges = gsap.timeline();
-          // 1) Appear centered and large (t=0.15s offset relative to move end)
-          tlBadges.fromTo(defeatBadge,
-            { scale: 0, opacity: 0, x: 0, y: 0, backgroundColor: 'transparent', boxShadow: 'none', rotation: 0 },
-            { scale: 1.5, opacity: 1, backgroundColor: 'rgba(239, 68, 68, 0.6)', duration: 0.4, ease: 'back.out(1.5)' },
-            0.1
-          );
-          tlBadges.fromTo(victoryBadge,
-            { scale: 0, opacity: 0, x: 0, y: 0, backgroundColor: 'transparent', boxShadow: 'none' },
-            { scale: 1.5, opacity: 1, backgroundColor: 'rgba(34, 197, 94, 0.6)', duration: 0.4, ease: 'back.out(1.5)' },
-            0.1
-          );
-          // 2) Pause briefly, then shrink, slide to top-right corner, and rotate the defeated king (t=0.6s)
-          const tx = sqW * 0.35;
-          const ty = -sqW * 0.35;
-          tlBadges.to(defeatBadge, {
-            x: tx,
-            y: ty,
-            scale: 0.45,
-            rotation: 90, // Defeated king falls over
-            opacity: 1,
-            backgroundColor: 'rgba(239, 68, 68, 0.8)',
-            boxShadow: '0 2px 6px rgba(0, 0, 0, 0.35)',
-            duration: 0.6,
-            ease: 'power2.inOut',
-          }, '+=0.4');
-          tlBadges.to(victoryBadge, {
-            x: tx,
-            y: ty,
-            scale: 0.45,
-            opacity: 1,
-            backgroundColor: 'rgba(34, 197, 94, 0.8)',
-            boxShadow: '0 2px 6px rgba(0, 0, 0, 0.35)',
-            duration: 0.6,
-            ease: 'power2.inOut',
-          }, '<');
-        }
-      }, 50); // small delay to allow React to render the badges in the DOM
-    }
+    setPhase0('SUCCESS');
+    setIsCheckmateGlow0(true);
     // Show CHECKMATE popup
     await runCheckmateImpact(kingSq);
     // Hold the checkmate text for a brief pause before fading it out
@@ -963,71 +852,539 @@ export default function HeroPuzzle() {
       });
     }
   }, [fireConfetti, runCheckmateImpact]);
+
+  const celebrate2 = useCallback(async () => {
+    if (hasCelebrated2Ref.current) return;
+    hasCelebrated2Ref.current = true;
+    const checkmateFen = gameRef2.current.fen();
+    const tempGame = new Chess(checkmateFen);
+
+    if (tempGame.isDraw()) {
+      setPhase2('failed');
+      return;
+    }
+
+    if (!tempGame.isCheckmate()) return;
+
+    const losingColor = tempGame.turn();
+    const whiteWon = losingColor === 'b';
+    const { losingKingSq } = getKingSquares(checkmateFen);
+
+    if (whiteWon) {
+      setPhase2('solved');
+      setIsCheckmateGlow2(true);
+      await runCheckmateImpact(losingKingSq);
+      await new Promise(r => safeSetTimeout(r as () => void, 900));
+      if (solveAbortRef.current) return;
+      fireConfetti();
+    } else {
+      // Black won (White checkmated)
+      setPhase2('failed');
+      await runCheckmateImpact(losingKingSq);
+      await new Promise(r => safeSetTimeout(r as () => void, 900));
+      if (solveAbortRef.current) return;
+    }
+
+    if (checkmateRef.current) {
+      gsap.to(checkmateRef.current, {
+        opacity: 0,
+        scale: 0.8,
+        duration: 0.3,
+        onComplete: () => {
+          if (checkmateRef.current) {
+            checkmateRef.current.style.display = 'none';
+          }
+        }
+      });
+    }
+  }, [fireConfetti, runCheckmateImpact, safeSetTimeout]);
+
+  // ── Celebrate/OnDrop for Puzzle 3 (mirrors Puzzle 2 logic) ─────────────────
+  const celebrate3 = useCallback(async () => {
+    if (hasCelebrated3Ref.current) return;
+    hasCelebrated3Ref.current = true;
+    const checkmateFen = gameRef3.current.fen();
+    const tempGame = new Chess(checkmateFen);
+
+    if (tempGame.isDraw()) {
+      setPhase3('failed');
+      return;
+    }
+
+    if (!tempGame.isCheckmate()) return;
+
+    const losingColor = tempGame.turn();
+    const whiteWon = losingColor === 'b';
+    const { losingKingSq } = getKingSquares(checkmateFen);
+
+    if (whiteWon) {
+      setPhase3('solved');
+      setIsCheckmateGlow3(true);
+      await runCheckmateImpact(losingKingSq);
+      await new Promise(r => safeSetTimeout(r as () => void, 900));
+      if (solveAbortRef.current) return;
+      fireConfetti();
+    } else {
+      setPhase3('failed');
+      await runCheckmateImpact(losingKingSq);
+      await new Promise(r => safeSetTimeout(r as () => void, 900));
+      if (solveAbortRef.current) return;
+    }
+
+    if (checkmateRef.current) {
+      gsap.to(checkmateRef.current, {
+        opacity: 0,
+        scale: 0.8,
+        duration: 0.3,
+        onComplete: () => {
+          if (checkmateRef.current) {
+            checkmateRef.current.style.display = 'none';
+          }
+        }
+      });
+    }
+  }, [fireConfetti, runCheckmateImpact, safeSetTimeout]);
+
+  const onDrop3 = useCallback(
+    (sourceSquare: string, targetSquare: string): boolean => {
+      if (phase3 !== 'idle' && phase3 !== 'awaiting_move') return false;
+      const game = gameRef3.current;
+      if (game.turn() !== 'w') return false;
+
+      const moves = game.moves({ verbose: true });
+      const targetMove = moves.find(m => m.from === sourceSquare && m.to === targetSquare);
+      if (!targetMove) return false;
+
+      const isCapture = !!targetMove.captured;
+      animatePieceMove(
+        sourceSquare,
+        targetSquare,
+        boardInnerRef.current,
+        isCapture,
+        () => {
+          game.move({ from: sourceSquare, to: targetSquare, promotion: 'q' });
+          setGameFen3(game.fen());
+          setLastMove3({ from: sourceSquare, to: targetSquare });
+          showTrail(sourceSquare, targetSquare);
+        }
+      ).then(() => {
+        if (solveAbortRef.current) return;
+        if (game.isGameOver()) {
+          celebrate3();
+          return;
+        }
+
+        setPhase3('black_responding');
+        triggerAnnotation(targetSquare, '!!');
+
+        safeSetTimeout(() => {
+          if (solveAbortRef.current) return;
+          getEngineMove(game.fen(), 5, (bestMoveStr) => {
+            if (solveAbortRef.current) return;
+            const { from, to, promotion } = parseUciMove(bestMoveStr);
+            const legalMoves = game.moves({ verbose: true });
+            const engineMove = legalMoves.find(m => m.from === from && m.to === to);
+            if (engineMove) {
+              animatePieceMove(
+                from,
+                to,
+                boardInnerRef.current,
+                !!engineMove.captured,
+                () => {
+                  game.move({ from, to, promotion: promotion || 'q' });
+                  setGameFen3(game.fen());
+                  setLastMove3({ from, to });
+                  showTrail(from, to);
+                }
+              ).then(() => {
+                if (game.isGameOver()) {
+                  celebrate3();
+                } else {
+                  setPhase3('awaiting_move');
+                }
+              });
+            } else {
+              setPhase3('awaiting_move');
+            }
+          });
+        }, 600);
+      });
+
+      return true;
+    },
+    [phase3, animatePieceMove, getEngineMove, showTrail, triggerAnnotation, safeSetTimeout, celebrate3]
+  );
+
+  const onDrop2 = useCallback(
+    (sourceSquare: string, targetSquare: string): boolean => {
+      if (phase2 !== 'idle' && phase2 !== 'awaiting_move') return false;
+      const game = gameRef2.current;
+      if (game.turn() !== 'w') return false;
+
+      const moves = game.moves({ verbose: true });
+      const targetMove = moves.find(m => m.from === sourceSquare && m.to === targetSquare);
+      if (!targetMove) return false;
+
+      const isCapture = !!targetMove.captured;
+      animatePieceMove(
+        sourceSquare,
+        targetSquare,
+        boardInnerRef.current,
+        isCapture,
+        () => {
+          game.move({ from: sourceSquare, to: targetSquare, promotion: 'q' });
+          setGameFen2(game.fen());
+          setLastMove2({ from: sourceSquare, to: targetSquare });
+          showTrail(sourceSquare, targetSquare);
+        }
+      ).then(() => {
+        if (solveAbortRef.current) return;
+        if (game.isGameOver()) {
+          celebrate2();
+          return;
+        }
+
+        // Trigger Stockfish response for Black
+        setPhase2('black_responding');
+        triggerAnnotation(targetSquare, '!!');
+
+        safeSetTimeout(() => {
+          if (solveAbortRef.current) return;
+          getEngineMove(game.fen(), 5, (bestMoveStr) => {
+            if (solveAbortRef.current) return;
+            const { from, to, promotion } = parseUciMove(bestMoveStr);
+            const legalMoves = game.moves({ verbose: true });
+            const engineMove = legalMoves.find(m => m.from === from && m.to === to);
+            if (engineMove) {
+              animatePieceMove(
+                from,
+                to,
+                boardInnerRef.current,
+                !!engineMove.captured,
+                () => {
+                  game.move({ from, to, promotion: promotion || 'q' });
+                  setGameFen2(game.fen());
+                  setLastMove2({ from, to });
+                  showTrail(from, to);
+                }
+              ).then(() => {
+                if (game.isGameOver()) {
+                  celebrate2();
+                } else {
+                  setPhase2('awaiting_move');
+                }
+              });
+            } else {
+              setPhase2('awaiting_move');
+            }
+          });
+        }, 600);
+      });
+
+      return true;
+    },
+    [phase2, animatePieceMove, getEngineMove, showTrail, triggerAnnotation, safeSetTimeout, celebrate2]
+  );
   // ══════════════════════════════════════════════════════════════════════════
   // INTERACTIVE USER DROP AND SOLUTION VALIDATION
   // ══════════════════════════════════════════════════════════════════════════
   const onDrop = useCallback(
     (sourceSquare: string, targetSquare: string): boolean => {
+      console.log("White move received");
+      if (activeIndex === 3) {
+        return onDrop3(sourceSquare, targetSquare);
+      }
+      if (activeIndex === 2) {
+        return onDrop2(sourceSquare, targetSquare);
+      }
       if (activeIndex === 1) {
         return onDrop1(sourceSquare, targetSquare);
       }
-      if (phase0 !== 'PUZZLE') return false;
-      // Safety check to ensure the board is actually ready for the user move
-      const expectedPrevFen = getExpectedPrevFEN0();
-      if (gameFen0 !== expectedPrevFen) {
+      if (phase0 !== 'PUZZLE') {
+        console.log("onDrop early return: phase0 !== 'PUZZLE'", phase0);
         return false;
       }
-      const expectedWhiteMove = PROCESSED_MOVES[40 + puzzleStep0 * 2];
-      if (!expectedWhiteMove) return false;
-      // Validate White move correctness
-      if (sourceSquare === expectedWhiteMove.from && targetSquare === expectedWhiteMove.to) {
-        setShowTryAgain0(false);
-        // Update to White move position immediately
-        setGameFen0(expectedWhiteMove.fenAfter);
-        setLastMove0({ from: expectedWhiteMove.from, to: expectedWhiteMove.to });
-        showTrail(expectedWhiteMove.from, expectedWhiteMove.to);
-        triggerAnnotation(expectedWhiteMove.to, '!!');
-        if (expectedWhiteMove.isCheck || expectedWhiteMove.isCheckmate) {
-          setCheckedKingSquare0(expectedWhiteMove.kingSquare);
-          safeSetTimeout(() => setCheckedKingSquare0(null), 450);
-        }
-        // Final move solved
-        if (expectedWhiteMove.isCheckmate) {
-          celebrate0(expectedWhiteMove.kingSquare);
+
+      const game = gameRef0.current;
+      const piece = game.get(sourceSquare as any);
+      if (!piece || piece.color !== 'w') {
+        console.log("onDrop early return: not White piece", piece);
+        return false;
+      }
+
+      const legalMoves = game.moves({ verbose: true });
+      const targetMove = legalMoves.find(m => m.from === sourceSquare && m.to === targetSquare);
+      if (!targetMove) {
+        console.log("onDrop early return: illegal move", sourceSquare, targetSquare);
+        return false;
+      }
+
+      const isCapture = !!targetMove.captured;
+      console.log("Play mode:", playMode0);
+
+      if (playMode0 === 'SCRIPTED') {
+        console.log("SCRIPTED branch");
+        const expectedWhiteMove = historicalWhiteMoves[puzzleMoveIndex0];
+        const expectedBlackMove = historicalBlackMoves[puzzleMoveIndex0];
+
+        console.log("Expected move:", expectedWhiteMove);
+        console.log("Player move:", {
+          from: sourceSquare,
+          to: targetSquare
+        });
+
+        if (expectedWhiteMove && sourceSquare === expectedWhiteMove.from && targetSquare === expectedWhiteMove.to) {
+          // Case 1 – White follows the historical Evergreen Game
+          animatePieceMove(
+            sourceSquare,
+            targetSquare,
+            boardInnerRef.current,
+            isCapture,
+            () => {
+              game.move({ from: sourceSquare, to: targetSquare, promotion: 'q' });
+              setGameFen0(game.fen());
+              console.log("Board updated");
+              setLastMove0({ from: sourceSquare, to: targetSquare });
+              showTrail(sourceSquare, targetSquare);
+              triggerAnnotation(expectedWhiteMove.to, '!!');
+            }
+          ).then(() => {
+            if (abortRef.current) {
+              console.log("animatePieceMove then early return: abortRef.current");
+              return;
+            }
+
+            if (game.isGameOver()) {
+              if (game.isCheckmate()) {
+                const { losingKingSq } = getKingSquares(game.fen());
+                celebrate0(losingKingSq);
+              } else {
+                setPhase0('SUCCESS');
+              }
+              return;
+            }
+
+            if (expectedBlackMove) {
+              console.log("Playing scripted black move");
+              safeSetTimeout(async () => {
+                if (abortRef.current) {
+                  console.log("safeSetTimeout early return: abortRef.current");
+                  return;
+                }
+                setLastMove0({ from: expectedBlackMove.from, to: expectedBlackMove.to });
+                await animatePieceMove(
+                  expectedBlackMove.from,
+                  expectedBlackMove.to,
+                  boardInnerRef.current,
+                  expectedBlackMove.isCapture,
+                  () => {
+                    console.log("Applying black move");
+                    game.move({ from: expectedBlackMove.from, to: expectedBlackMove.to, promotion: 'q' });
+                    setGameFen0(game.fen());
+                    console.log("New FEN:", game.fen());
+                    console.log("Board updated");
+                    showTrail(expectedBlackMove.from, expectedBlackMove.to);
+                  }
+                );
+                if (abortRef.current) {
+                  console.log("after animatePieceMove early return: abortRef.current");
+                  return;
+                }
+                setPuzzleMoveIndex0(prev => prev + 1);
+                setPuzzleStep0(prev => prev + 1);
+
+                if (game.isGameOver()) {
+                  if (game.isCheckmate()) {
+                    const { losingKingSq } = getKingSquares(game.fen());
+                    celebrate0(losingKingSq);
+                  } else {
+                    setPhase0('SUCCESS');
+                  }
+                }
+              }, 600);
+            }
+          });
+          return true;
+        } else {
+          // Case 2 – White deviates from historical game (switch to STOCKFISH mode permanently)
+          console.log("White deviated. Switching playMode0 to STOCKFISH");
+          setPlayMode0('STOCKFISH');
+
+          animatePieceMove(
+            sourceSquare,
+            targetSquare,
+            boardInnerRef.current,
+            isCapture,
+            () => {
+              game.move({ from: sourceSquare, to: targetSquare, promotion: 'q' });
+              setGameFen0(game.fen());
+              console.log("Board updated");
+              setLastMove0({ from: sourceSquare, to: targetSquare });
+              showTrail(sourceSquare, targetSquare);
+            }
+          ).then(() => {
+            if (abortRef.current) {
+              console.log("deviated branch then early return: abortRef.current");
+              return;
+            }
+
+            if (game.isGameOver()) {
+              if (game.isCheckmate()) {
+                const { losingKingSq } = getKingSquares(game.fen());
+                celebrate0(losingKingSq);
+              } else {
+                setPhase0('SUCCESS');
+              }
+              return;
+            }
+
+            console.log("Calling Stockfish");
+            setIsStockfishThinking0(true);
+            console.log("Waiting for Stockfish...");
+            safeSetTimeout(() => {
+              if (abortRef.current) {
+                console.log("Stockfish timeout early return: abortRef.current");
+                return;
+              }
+              getEngineMove(game.fen(), 5, (bestMoveStr) => {
+                console.log("Stockfish returned:", bestMoveStr);
+                if (abortRef.current) {
+                  console.log("Stockfish callback early return: abortRef.current");
+                  return;
+                }
+                const { from, to, promotion } = parseUciMove(bestMoveStr);
+                const engineMoves = game.moves({ verbose: true });
+                const engineMove = engineMoves.find(m => m.from === from && m.to === to);
+                if (engineMove) {
+                  animatePieceMove(
+                    from,
+                    to,
+                    boardInnerRef.current,
+                    !!engineMove.captured,
+                    () => {
+                      console.log("Applying black move");
+                      game.move({ from, to, promotion: promotion || 'q' });
+                      setGameFen0(game.fen());
+                      console.log("New FEN:", game.fen());
+                      console.log("Board updated");
+                      setLastMove0({ from, to });
+                      showTrail(from, to);
+                    }
+                  ).then(() => {
+                    setIsStockfishThinking0(false);
+                    setPuzzleMoveIndex0(prev => prev + 1);
+                    setPuzzleStep0(prev => prev + 1);
+
+                    if (game.isGameOver()) {
+                      if (game.isCheckmate()) {
+                        const { losingKingSq } = getKingSquares(game.fen());
+                        celebrate0(losingKingSq);
+                      } else {
+                        setPhase0('SUCCESS');
+                      }
+                    }
+                  });
+                } else {
+                  console.log("Engine move is not legal in persistent game state", bestMoveStr);
+                  setIsStockfishThinking0(false);
+                  setPuzzleMoveIndex0(prev => prev + 1);
+                  setPuzzleStep0(prev => prev + 1);
+                }
+              });
+            }, 600);
+          });
           return true;
         }
-        // Play forced Black reply after a brief pause
-        const expectedBlackMove = PROCESSED_MOVES[40 + puzzleStep0 * 2 + 1];
-        if (expectedBlackMove) {
-          safeSetTimeout(async () => {
-            if (abortRef.current) return;
-            setLastMove0({ from: expectedBlackMove.from, to: expectedBlackMove.to });
-            await animatePieceMove(
-              expectedBlackMove.from,
-              expectedBlackMove.to,
-              boardInnerRef.current,
-              expectedBlackMove.isCapture,
-              () => {
-                setGameFen0(expectedBlackMove.fenAfter);
-                showTrail(expectedBlackMove.from, expectedBlackMove.to);
-              }
-            );
-            if (abortRef.current) return;
-            if (expectedBlackMove.isCheck) {
-              setCheckedKingSquare0(expectedBlackMove.kingSquare);
-              safeSetTimeout(() => setCheckedKingSquare0(null), 450);
-            }
-            setPuzzleStep0(prev => prev + 1);
-          }, 600);
-        }
-        return true;
       } else {
-        // Wrong move - snap back and show try again
-        setShowTryAgain0(true);
-        return false;
+        // STOCKFISH mode (White has already deviated in a previous turn)
+        console.log("STOCKFISH branch");
+        animatePieceMove(
+          sourceSquare,
+          targetSquare,
+          boardInnerRef.current,
+          isCapture,
+          () => {
+            game.move({ from: sourceSquare, to: targetSquare, promotion: 'q' });
+            setGameFen0(game.fen());
+            console.log("Board updated");
+            setLastMove0({ from: sourceSquare, to: targetSquare });
+            showTrail(sourceSquare, targetSquare);
+          }
+        ).then(() => {
+          if (abortRef.current) {
+            console.log("STOCKFISH branch then early return: abortRef.current");
+            return;
+          }
+
+          if (game.isGameOver()) {
+            if (game.isCheckmate()) {
+              const { losingKingSq } = getKingSquares(game.fen());
+              celebrate0(losingKingSq);
+            } else {
+              setPhase0('SUCCESS');
+            }
+            return;
+          }
+
+          console.log("Calling Stockfish");
+          setIsStockfishThinking0(true);
+          console.log("Waiting for Stockfish...");
+          safeSetTimeout(() => {
+            if (abortRef.current) {
+              console.log("Stockfish timeout early return: abortRef.current");
+              return;
+            }
+            getEngineMove(game.fen(), 5, (bestMoveStr) => {
+              console.log("Stockfish returned:", bestMoveStr);
+              if (abortRef.current) {
+                console.log("Stockfish callback early return: abortRef.current");
+                return;
+              }
+              const { from, to, promotion } = parseUciMove(bestMoveStr);
+              const engineMoves = game.moves({ verbose: true });
+              const engineMove = engineMoves.find(m => m.from === from && m.to === to);
+              if (engineMove) {
+                animatePieceMove(
+                  from,
+                  to,
+                  boardInnerRef.current,
+                  !!engineMove.captured,
+                  () => {
+                    console.log("Applying black move");
+                    game.move({ from, to, promotion: promotion || 'q' });
+                    setGameFen0(game.fen());
+                    console.log("New FEN:", game.fen());
+                    console.log("Board updated");
+                    setLastMove0({ from, to });
+                    showTrail(from, to);
+                  }
+                ).then(() => {
+                  setIsStockfishThinking0(false);
+                  setPuzzleMoveIndex0(prev => prev + 1);
+                  setPuzzleStep0(prev => prev + 1);
+
+                  if (game.isGameOver()) {
+                    if (game.isCheckmate()) {
+                      const { losingKingSq } = getKingSquares(game.fen());
+                      celebrate0(losingKingSq);
+                    } else {
+                      setPhase0('SUCCESS');
+                    }
+                  }
+                });
+              } else {
+                console.log("Engine move is not legal in persistent game state", bestMoveStr);
+                setIsStockfishThinking0(false);
+                setPuzzleMoveIndex0(prev => prev + 1);
+                setPuzzleStep0(prev => prev + 1);
+              }
+            });
+          }, 600);
+        });
+        return true;
       }
     },
-    [activeIndex, phase0, puzzleStep0, gameFen0, getExpectedPrevFEN0, showTrail, triggerAnnotation, animatePieceMove, celebrate0, onDrop1, safeSetTimeout]
+    [activeIndex, phase0, playMode0, puzzleMoveIndex0, showTrail, triggerAnnotation, animatePieceMove, celebrate0, onDrop1, onDrop2, onDrop3, safeSetTimeout, getEngineMove]
   );
   // ══════════════════════════════════════════════════════════════════════════
   // REPLAY TIMELINE RESET AND TRIGGER
@@ -1038,23 +1395,15 @@ export default function HeroPuzzle() {
     clearAnnotation();
     setCheckedKingSquare0(null);
     setIsCheckmateGlow0(false);
-    setShowTryAgain0(false);
     setPuzzleStep0(0);
     setLastMove0(null);
+    gameRef0.current = new Chess(START_FEN);
     setGameFen0(START_FEN);
-    setCheckmateBadges0(null);
     setActiveMove(null);
-    if (animResolveRef.current) {
-      animResolveRef.current();
-      animResolveRef.current = null;
-    }
-    // Reset checkmate overlay badge display immediately
-    if (checkmateRef.current) {
-      gsap.killTweensOf(checkmateRef.current);
-      gsap.set(checkmateRef.current, { display: 'none', opacity: 0, scale: 0.6 });
-    }
-    gsap.killTweensOf('.checkmate-badge-inner');
     setPhase0('REPLAY');
+    setIsStockfishThinking0(false);
+    setPlayMode0('SCRIPTED');
+    setPuzzleMoveIndex0(0);
     setTimeout(() => {
       abortRef.current = false;
       setPhase0('AUTOPLAY');
@@ -1067,14 +1416,6 @@ export default function HeroPuzzle() {
   const movesLeft = activeIndex === 0
     ? (phase0 === 'SUCCESS' ? 0 : 4 - puzzleStep0)
     : (phase1 === 'solved' ? 0 : movesLeftOriginal);
-  const isInteractive = activeIndex === 0
-    ? (phase0 === 'PUZZLE' && gameFen0 === getExpectedPrevFEN0())
-    : (phase1 === 'idle' || phase1 === 'awaiting_mate');
-  // Merge outer wrapper and cursor glow refs
-  const mergedWrapRef = useCallback((el: HTMLDivElement | null) => {
-    boardWrapRef.current = el;
-    (glowRef as React.MutableRefObject<HTMLDivElement | null>).current = el;
-  }, [glowRef]);
   // Compute text labels based on phase and active game
   let topTitle = "THE EVERGREEN GAME";
   let descTop = "THE EVERGREEN GAME";
@@ -1090,7 +1431,7 @@ export default function HeroPuzzle() {
       descTop = "RESETTING POSITION...";
       descBottom = "Restarting autoplay...";
     }
-  } else {
+  } else if (activeIndex === 1) {
     topTitle = "MATE IN TWO";
     if (phase1 === 'solving') {
       descTop = "SOLVING MATE-IN-TWO...";
@@ -1102,18 +1443,66 @@ export default function HeroPuzzle() {
       descTop = "MATE IN TWO";
       descBottom = "White to play and checkmate in two.";
     }
+  } else if (activeIndex === 2) {
+    topTitle = "WINNING MOVE";
+    if (phase2 === 'solved') {
+      descTop = "BRILLIANT.";
+      descBottom = "Checkmate! The puzzle is solved.";
+    } else if (phase2 === 'failed') {
+      const game = gameRef2.current;
+      descTop = "GAME OVER";
+      if (game.isCheckmate()) {
+        descBottom = "Checkmate! Black wins.";
+      } else if (game.isDraw()) {
+        descBottom = "Game drawn.";
+      } else {
+        descBottom = "Game over.";
+      }
+    } else {
+      descTop = "WINNING MOVE";
+      descBottom = "Find the winning move for white.";
+    }
+  } else {
+    topTitle = "WINNING MOVE";
+    if (phase3 === 'solved') {
+      descTop = "BRILLIANT.";
+      descBottom = "Checkmate! The puzzle is solved.";
+    } else if (phase3 === 'failed') {
+      const game = gameRef3.current;
+      descTop = "GAME OVER";
+      if (game.isCheckmate()) {
+        descBottom = "Checkmate! Black wins.";
+      } else if (game.isDraw()) {
+        descBottom = "Game drawn.";
+      } else {
+        descBottom = "Game over.";
+      }
+    } else {
+      descTop = "WINNING MOVE";
+      descBottom = "Find the winning move for White.";
+    }
   }
   // ── Carousel definitions ──
   const CAROUSEL_ITEMS = [
     {
-      title: "MATE IN TWO", // We use this for the preview card of index 1
-      subtitle: "White to play and\ncheckmate in two.",
+      title: "THE EVERGREEN GAME",
+      subtitle: "Autoplay and finish\nthe evergreen game.",
       fen: START_FEN,
     },
     {
       title: "MATE IN TWO",
       subtitle: "White to play and\ncheckmate in two.",
       fen: PUZZLE_ORIGINAL.fen,
+    },
+    {
+      title: "WINNING MOVE",
+      subtitle: "Find the winning move\nfor white.",
+      fen: 'r5k1/6pp/r7/q3N1P1/3Q4/1Pp5/2P5/1K1R3R w - - 0 1',
+    },
+    {
+      title: "WINNING MOVE",
+      subtitle: "Find the winning move\nfor White.",
+      fen: PUZZLE3_FEN,
     }
   ];
   const toPrev = () => {
@@ -1146,15 +1535,16 @@ export default function HeroPuzzle() {
           ════════════════════════════════════════════════════════════════════ */}
       {/* Stage: clips the visible area so only the active board + partial previews show */}
       <div
-        className="relative w-full"
-        style={{ overflow: 'visible' }}
+        ref={glowRef}
+        className="relative w-full board-cursor-glow"
+        style={{ overflow: 'hidden' }}
       >
         {/* Outer glow for checkmate state */}
         <div
           className="absolute inset-0 rounded-xl pointer-events-none z-10"
           style={{
             transition: 'box-shadow 0.4s ease',
-            boxShadow: (activeIndex === 0 ? isCheckmateGlow0 : isCheckmateGlow1)
+            boxShadow: (activeIndex === 0 ? isCheckmateGlow0 : activeIndex === 1 ? isCheckmateGlow1 : activeIndex === 2 ? isCheckmateGlow2 : isCheckmateGlow3)
               ? '0 0 50px 10px rgba(99, 102, 241, 0.4), 0 0 20px 5px rgba(139, 92, 246, 0.3)'
               : undefined,
           }}
@@ -1198,21 +1588,20 @@ export default function HeroPuzzle() {
           }}
           style={{ willChange: 'transform' }}
         >
-          {CAROUSEL_ITEMS.map((item, i) => {
+          {CAROUSEL_ITEMS.map((_item, i) => {
             const isActive = i === activeIndex;
-            const offset = i - activeIndex;
-            const rotateY = offset * -50;
-            const rotateX = 0;
-            const rotateZ = offset * 3;
-            const scale = isActive ? 1 : 0.7;
 
-            const boardFen = i === 0 ? gameFen0 : gameFen1;
-            const boardLastMove = i === 0 ? lastMove0 : lastMove1;
-            const boardCheckedKingSquare = i === 0 ? checkedKingSquare0 : checkedKingSquare1;
-            const boardCheckmateBadges = i === 0 ? checkmateBadges0 : checkmateBadges1;
+            const boardFen = i === 0 ? gameFen0 : i === 1 ? gameFen1 : i === 2 ? gameFen2 : gameFen3;
+            const boardLastMove = i === 0 ? lastMove0 : i === 1 ? lastMove1 : i === 2 ? lastMove2 : lastMove3;
+            const boardCheckedKingSquare = i === 0 ? checkedKingSquare0 : i === 1 ? checkedKingSquare1 : i === 2 ? checkedKingSquare2 : checkedKingSquare3;
+            const { losingKingSq, winningKingSq } = getKingSquares(boardFen);
             const boardIsInteractive = i === 0
-              ? (phase0 === 'PUZZLE' && gameFen0 === getExpectedPrevFEN0())
-              : (phase1 === 'idle' || phase1 === 'awaiting_mate');
+              ? (phase0 === 'PUZZLE' && !isStockfishThinking0)
+              : i === 1
+                ? (phase1 === 'idle' || phase1 === 'awaiting_mate')
+                : i === 2
+                  ? (phase2 === 'idle' || phase2 === 'awaiting_move')
+                  : (phase3 === 'idle' || phase3 === 'awaiting_move');
 
             // Construct custom square styles for this specific board
             const boardSquareStyles: Record<string, React.CSSProperties> = {};
@@ -1220,48 +1609,13 @@ export default function HeroPuzzle() {
               boardSquareStyles[boardLastMove.from] = { backgroundColor: 'rgba(255, 214, 10, 0.35)' };
               boardSquareStyles[boardLastMove.to] = { backgroundColor: 'rgba(255, 214, 10, 0.50)' };
             }
-            if (boardCheckedKingSquare) {
+            const isCheckmate = i === 0 ? phase0 === 'SUCCESS' : i === 1 ? phase1 === 'solved' : i === 2 ? phase2 === 'solved' : phase3 === 'solved';
+            if (boardCheckedKingSquare && !isCheckmate) {
               boardSquareStyles[boardCheckedKingSquare] = {
                 backgroundColor: 'rgba(239, 68, 68, 0.55)',
                 boxShadow: 'inset 0 0 20px rgba(239, 68, 68, 0.8)',
                 animation: 'king-pulse 0.4s ease-in-out 3',
               };
-            }
-            // Add checkmate victory/defeat styles if solved
-            if (i === 0) {
-              if (phase0 === 'SUCCESS') {
-                const checkmateFen = PROCESSED_MOVES[PROCESSED_MOVES.length - 1].fenAfter;
-                const { losingKingSq, winningKingSq } = getKingSquares(checkmateFen);
-                if (losingKingSq) {
-                  boardSquareStyles[losingKingSq] = {
-                    backgroundColor: 'rgba(239, 68, 68, 0.3)',
-                    transition: 'background-color 0.3s ease',
-                  };
-                }
-                if (winningKingSq) {
-                  boardSquareStyles[winningKingSq] = {
-                    backgroundColor: 'rgba(34, 197, 94, 0.3)',
-                    transition: 'background-color 0.3s ease',
-                  };
-                }
-              }
-            } else {
-              if (phase1 === 'solved') {
-                const checkmateFen = gameRef1.current.fen();
-                const { losingKingSq, winningKingSq } = getKingSquares(checkmateFen);
-                if (losingKingSq) {
-                  boardSquareStyles[losingKingSq] = {
-                    backgroundColor: 'rgba(239, 68, 68, 0.3)',
-                    transition: 'background-color 0.3s ease',
-                  };
-                }
-                if (winningKingSq) {
-                  boardSquareStyles[winningKingSq] = {
-                    backgroundColor: 'rgba(34, 197, 94, 0.3)',
-                    transition: 'background-color 0.3s ease',
-                  };
-                }
-              }
             }
 
             return (
@@ -1271,46 +1625,27 @@ export default function HeroPuzzle() {
                 style={{
                   width: '100%',
                   marginRight: i < CAROUSEL_ITEMS.length - 1 ? '32px' : '0',
-                  perspective: '1200px',
-                  perspectiveOrigin: isActive ? 'center' : offset < 0 ? 'right center' : 'left center',
                 }}
               >
                 <motion.div
-                  animate={{ rotateY, rotateX, rotateZ, scale, opacity: isActive ? 1 : 0.85 }}
-                  transition={{ type: 'spring', stiffness: 260, damping: 32, mass: 1.1 }}
+                  animate={{ opacity: isActive ? 1 : 0 }}
+                  transition={{ type: 'tween', ease: 'easeInOut', duration: 0.5 }}
                   style={{
-                    transformStyle: 'preserve-3d',
-                    transformOrigin: offset <= 0 ? 'right center' : 'left center',
                     width: '100%',
-                    cursor: isActive ? 'default' : 'pointer',
                   }}
-                  onClick={() => { if (!isActive) toSlide(i); }}
                 >
                   <div
                     ref={isActive ? boardCardRef : null}
-                    className={`relative rounded-xl overflow-hidden transition-all duration-500 flex flex-col ${
-                      isActive
-                        ? 'bg-brand-surface p-0 border-transparent'
-                        : 'bg-[#1A1E2E] border border-brand-border/60 p-4'
-                    }`}
+                    className="relative bg-brand-surface rounded-xl overflow-hidden flex flex-col p-0 border-transparent"
                     style={{
                       willChange: 'transform, opacity, box-shadow',
-                      transformStyle: 'preserve-3d',
-                      transition: 'box-shadow 1.5s ease-in-out, background-color 0.5s ease, border-color 0.5s ease, padding 0.5s ease',
-                      backdropFilter: isActive ? undefined : 'blur(8px)',
-                      boxShadow: isActive
-                        ? undefined
-                        : '0 20px 40px -10px rgba(0,0,0,0.5), 0 0 20px 2px rgba(99, 102, 241, 0.15)',
+                      transition: 'box-shadow 1.5s ease-in-out',
                     }}
                   >
                     {/* Chessboard Container */}
                     <div
                       ref={isActive ? boardInnerRef : null}
-                      className={`aspect-square overflow-hidden relative transition-all duration-500 ${
-                        isActive
-                          ? 'w-full'
-                          : 'w-full pointer-events-none select-none rounded-sm mb-4 border border-black/20'
-                      }`}
+                      className="aspect-square overflow-hidden relative w-full"
                       style={{ willChange: 'filter' }}
                     >
                       {/* GSAP piece movement overlay (only active on active board) */}
@@ -1349,56 +1684,26 @@ export default function HeroPuzzle() {
                           squareStyles: boardSquareStyles,
                           animationDurationInMs: 0,
                           allowDragging: isActive && boardIsInteractive,
+                          squareRenderer: ({ square, piece, children }) => {
+                            const isKing = piece?.pieceType === 'wK' || piece?.pieceType === 'bK';
+                            const isLosingKing = isKing && square === losingKingSq;
+                            const isWinningKing = isKing && square === winningKingSq;
+
+                            let className = 'piece-normal-container';
+                            if (isLosingKing) {
+                              className = 'king-defeated-container';
+                            } else if (isWinningKing) {
+                              className = 'king-winning-container';
+                            }
+
+                            return (
+                              <div className={className}>
+                                {children}
+                              </div>
+                            );
+                          }
                         }}
                       />
-
-                      {/* Victory/Defeat Checkmate Badges */}
-                      {isActive && boardCheckmateBadges && (
-                        <>
-                          <div
-                            className="absolute z-30 pointer-events-none flex items-center justify-center"
-                            style={{
-                              left: boardCheckmateBadges.losingX,
-                              top: boardCheckmateBadges.losingY,
-                              width: boardCheckmateBadges.squareSize,
-                              height: boardCheckmateBadges.squareSize,
-                            }}
-                          >
-                            <div
-                              className="checkmate-badge-inner defeat-badge flex items-center justify-center rounded-full"
-                              style={{
-                                width: boardCheckmateBadges.squareSize * 0.65,
-                                height: boardCheckmateBadges.squareSize * 0.65,
-                                transform: 'scale(0)',
-                                opacity: 0,
-                              }}
-                            >
-                              <ChessKingIcon className="w-2/3 h-2/3 text-neutral-900" />
-                            </div>
-                          </div>
-                          <div
-                            className="absolute z-30 pointer-events-none flex items-center justify-center"
-                            style={{
-                              left: boardCheckmateBadges.winningX,
-                              top: boardCheckmateBadges.winningY,
-                              width: boardCheckmateBadges.squareSize,
-                              height: boardCheckmateBadges.squareSize,
-                            }}
-                          >
-                            <div
-                              className="checkmate-badge-inner victory-badge flex items-center justify-center rounded-full"
-                              style={{
-                                width: boardCheckmateBadges.squareSize * 0.65,
-                                height: boardCheckmateBadges.squareSize * 0.65,
-                                transform: 'scale(0)',
-                                opacity: 0,
-                              }}
-                            >
-                              <Crown className="w-2/3 h-2/3 text-white" />
-                            </div>
-                          </div>
-                        </>
-                      )}
 
                       {/* Move quality annotations */}
                       {isActive && (
@@ -1453,24 +1758,6 @@ export default function HeroPuzzle() {
                         </span>
                       ))}
                     </div>
-
-                    {/* Label strip at the bottom of the card - visible only when inactive */}
-                    <div
-                      className="flex flex-col flex-1 px-1 transition-all duration-500 overflow-hidden"
-                      style={{
-                        height: isActive ? 0 : 'auto',
-                        opacity: isActive ? 0 : 1,
-                        visibility: isActive ? 'hidden' : 'visible',
-                        marginTop: isActive ? 0 : '0.5rem',
-                      }}
-                    >
-                      <p className="text-sm font-sans font-bold text-brand-accent uppercase tracking-widest leading-tight">
-                        {item.title}
-                      </p>
-                      <p className="text-sm font-sans text-brand-secondary mt-1.5 leading-snug whitespace-pre-line">
-                        {item.subtitle}
-                      </p>
-                    </div>
                   </div>
                 </motion.div>
               </div>
@@ -1524,31 +1811,26 @@ export default function HeroPuzzle() {
             <span className="text-[15px] font-sans text-white font-bold leading-tight">
               {descBottom}
             </span>
-            {activeIndex === 0 && phase0 === 'PUZZLE' && showTryAgain0 && (
-              <span className="text-xs font-sans text-red-400 font-medium animate-pulse mt-0.5">
-                Incorrect move. Try again.
-              </span>
-            )}
           </div>
         </div>
-        <div
-          className={`
-            flex flex-col items-center px-4 py-1 rounded-xl border
-            transition-all duration-500
-            ${((activeIndex === 0 && phase0 === 'SUCCESS') || (activeIndex === 1 && phase1 === 'solved'))
-              ? 'bg-brand-accent/20 border-brand-accent/50 text-brand-accent shadow-lg shadow-brand-accent/15'
-              : (activeIndex === 0 && phase0 === 'PUZZLE' && showTryAgain0)
-                ? 'bg-red-500/10 border-red-500/30 text-red-400'
+        {activeIndex !== 2 && activeIndex !== 3 && movesLeft > 0 && (
+          <div
+            className={`
+              flex flex-col items-center px-4 py-1 rounded-xl border
+              transition-all duration-500
+              ${((activeIndex === 0 && phase0 === 'SUCCESS') || (activeIndex === 1 && phase1 === 'solved'))
+                ? 'bg-brand-accent/20 border-brand-accent/50 text-brand-accent shadow-lg shadow-brand-accent/15'
                 : 'bg-brand-surface border-brand-border text-white'}
-          `}
-        >
-          <span className="text-xl font-mono font-bold leading-none">
-            {movesLeft}
-          </span>
-          <span className="text-[9px] font-sans text-brand-secondary uppercase tracking-widest mt-0.5">
-            moves left
-          </span>
-        </div>
+            `}
+          >
+            <span className="text-xl font-mono font-bold leading-none">
+              {movesLeft}
+            </span>
+            <span className="text-[9px] font-sans text-brand-secondary uppercase tracking-widest mt-0.5">
+              moves left
+            </span>
+          </div>
+        )}
       </div>
       {/* Action Buttons */}
       <div className="flex gap-3 mt-1">
@@ -1556,18 +1838,20 @@ export default function HeroPuzzle() {
           <>
             {phase0 === 'AUTOPLAY' && (
               <button
-                disabled
+                onClick={handleSkip0}
                 className="
                   flex-1 flex items-center justify-center gap-2
                   px-4 py-2.5 rounded-lg
                   font-sans text-sm font-semibold
                   bg-brand-surface border border-brand-border
-                  text-brand-secondary opacity-50
+                  text-brand-secondary hover:text-white
+                  hover:border-brand-accent/40 hover:bg-white/5
+                  transition-all duration-200
                   btn-glow-container btn-glow-surface
                 "
               >
                 <Play className="w-4 h-4 text-brand-accent animate-pulse" />
-                Autoplay in Progress...
+                Skip Animation
               </button>
             )}
             {phase0 === 'PUZZLE' && (
@@ -1575,11 +1859,13 @@ export default function HeroPuzzle() {
                 <button
                   onClick={() => {
                     setPuzzleStep0(0);
-                    const afterAutoplayMove = PROCESSED_MOVES[39];
-                    setGameFen0(afterAutoplayMove.fenAfter);
-                    setLastMove0({ from: afterAutoplayMove.from, to: afterAutoplayMove.to });
+                    gameRef0.current = new Chess(PROCESSED_MOVES[39].fenAfter);
+                    setGameFen0(gameRef0.current.fen());
+                    setLastMove0({ from: PROCESSED_MOVES[39].from, to: PROCESSED_MOVES[39].to });
                     setCheckedKingSquare0(null);
-                    setShowTryAgain0(false);
+                    setIsStockfishThinking0(false);
+                    setPlayMode0('SCRIPTED');
+                    setPuzzleMoveIndex0(0);
                   }}
                   className="
                     flex-1 flex items-center justify-center gap-2
@@ -1609,7 +1895,7 @@ export default function HeroPuzzle() {
                   "
                 >
                   <RotateCcw className="w-4 h-4 text-indigo-400" />
-                  Replay Full Game
+                  Replay Game
                 </button>
               </>
             )}
@@ -1632,7 +1918,7 @@ export default function HeroPuzzle() {
               </button>
             )}
           </>
-        ) : (
+        ) : activeIndex === 1 ? (
           <>
             {phase1 === 'solving' && (
               <button
@@ -1692,6 +1978,134 @@ export default function HeroPuzzle() {
             {phase1 === 'solved' && (
               <button
                 onClick={handleReplayOriginal}
+                className="
+                  flex-1 flex items-center justify-center gap-2
+                  px-4 py-2.5 rounded-lg
+                  font-sans text-sm font-semibold
+                  bg-brand-accent hover:bg-brand-accent/95
+                  text-white
+                  transition-all duration-200
+                  btn-glow-container btn-glow-accent
+                  group
+                "
+              >
+                <RotateCcw className="w-4 h-4 group-hover:rotate-[-45deg] transition-transform duration-300" />
+                Replay
+              </button>
+            )}
+          </>
+        ) : activeIndex === 2 ? (
+          /* Slide 2 Action Buttons */
+          <>
+            {phase2 === 'black_responding' && (
+              <button
+                disabled
+                className="
+                  flex-1 flex items-center justify-center gap-2
+                  px-4 py-2.5 rounded-lg
+                  font-sans text-sm font-semibold
+                  bg-brand-surface border border-brand-border
+                  text-brand-secondary opacity-50
+                  btn-glow-container btn-glow-surface
+                "
+              >
+                <Play className="w-4 h-4 text-brand-accent animate-pulse" />
+                Black Responding...
+              </button>
+            )}
+            {(phase2 === 'idle' || phase2 === 'awaiting_move' || phase2 === 'failed') && (
+              <>
+                <button
+                  onClick={() => {
+                    cleanupGame();
+                    initGame(2);
+                  }}
+                  className="
+                    flex-1 flex items-center justify-center gap-2
+                    px-4 py-2.5 rounded-lg
+                    font-sans text-sm font-semibold
+                    bg-brand-surface border border-brand-border
+                    text-brand-secondary hover:text-white
+                    hover:border-brand-accent/40 hover:bg-white/5
+                    transition-all duration-200
+                    btn-glow-container btn-glow-surface
+                  "
+                >
+                  <RotateCcw className="w-4 h-4 text-brand-accent" />
+                  Reset Puzzle
+                </button>
+              </>
+            )}
+            {phase2 === 'solved' && (
+              <button
+                onClick={() => {
+                  cleanupGame();
+                  initGame(2);
+                }}
+                className="
+                  flex-1 flex items-center justify-center gap-2
+                  px-4 py-2.5 rounded-lg
+                  font-sans text-sm font-semibold
+                  bg-brand-accent hover:bg-brand-accent/95
+                  text-white
+                  transition-all duration-200
+                  btn-glow-container btn-glow-accent
+                  group
+                "
+              >
+                <RotateCcw className="w-4 h-4 group-hover:rotate-[-45deg] transition-transform duration-300" />
+                Replay
+              </button>
+            )}
+          </>
+        ) : (
+          /* Slide 3 Action Buttons */
+          <>
+            {phase3 === 'black_responding' && (
+              <button
+                disabled
+                className="
+                  flex-1 flex items-center justify-center gap-2
+                  px-4 py-2.5 rounded-lg
+                  font-sans text-sm font-semibold
+                  bg-brand-surface border border-brand-border
+                  text-brand-secondary opacity-50
+                  btn-glow-container btn-glow-surface
+                "
+              >
+                <Play className="w-4 h-4 text-brand-accent animate-pulse" />
+                Black Responding...
+              </button>
+            )}
+            {(phase3 === 'idle' || phase3 === 'awaiting_move' || phase3 === 'failed') && (
+              <>
+                <button
+                  onClick={() => {
+                    cleanupGame();
+                    initGame(3);
+                  }}
+                  className="
+                    flex-1 flex items-center justify-center gap-2
+                    px-4 py-2.5 rounded-lg
+                    font-sans text-sm font-semibold
+                    bg-brand-surface border border-brand-border
+                    text-brand-secondary hover:text-white
+                    hover:border-brand-accent/40 hover:bg-white/5
+                    transition-all duration-200
+                    btn-glow-container btn-glow-surface
+                  "
+                >
+                  <RotateCcw className="w-4 h-4 text-brand-accent" />
+                  Reset Puzzle
+                </button>
+              </>
+            )}
+            {phase3 === 'solved' && (
+              <button
+                onClick={() => {
+                  cleanupGame();
+                  initGame(3);
+                }}
                 className="
                   flex-1 flex items-center justify-center gap-2
                   px-4 py-2.5 rounded-lg
