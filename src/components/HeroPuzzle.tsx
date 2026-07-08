@@ -529,6 +529,7 @@ export default function HeroPuzzle() {
     setIsStockfishThinking0(false);
     setPlayMode0('SCRIPTED');
     setPuzzleMoveIndex0(0);
+    abortRef.current = false;
   }, [showTrail, clearAllTimeouts]);
   // ─── Unified Cleanup and Initialization ───
   const cleanupGame = useCallback(() => {
@@ -1090,7 +1091,6 @@ export default function HeroPuzzle() {
   // ══════════════════════════════════════════════════════════════════════════
   const onDrop = useCallback(
     (sourceSquare: string, targetSquare: string): boolean => {
-      console.log("White move received");
       if (activeIndex === 3) {
         return onDrop3(sourceSquare, targetSquare);
       }
@@ -1100,38 +1100,21 @@ export default function HeroPuzzle() {
       if (activeIndex === 1) {
         return onDrop1(sourceSquare, targetSquare);
       }
-      if (phase0 !== 'PUZZLE') {
-        console.log("onDrop early return: phase0 !== 'PUZZLE'", phase0);
-        return false;
-      }
+      if (phase0 !== 'PUZZLE') return false;
 
       const game = gameRef0.current;
       const piece = game.get(sourceSquare as any);
-      if (!piece || piece.color !== 'w') {
-        console.log("onDrop early return: not White piece", piece);
-        return false;
-      }
+      if (!piece || piece.color !== 'w') return false;
 
       const legalMoves = game.moves({ verbose: true });
       const targetMove = legalMoves.find(m => m.from === sourceSquare && m.to === targetSquare);
-      if (!targetMove) {
-        console.log("onDrop early return: illegal move", sourceSquare, targetSquare);
-        return false;
-      }
+      if (!targetMove) return false;
 
       const isCapture = !!targetMove.captured;
-      console.log("Play mode:", playMode0);
 
       if (playMode0 === 'SCRIPTED') {
-        console.log("SCRIPTED branch");
         const expectedWhiteMove = historicalWhiteMoves[puzzleMoveIndex0];
         const expectedBlackMove = historicalBlackMoves[puzzleMoveIndex0];
-
-        console.log("Expected move:", expectedWhiteMove);
-        console.log("Player move:", {
-          from: sourceSquare,
-          to: targetSquare
-        });
 
         if (expectedWhiteMove && sourceSquare === expectedWhiteMove.from && targetSquare === expectedWhiteMove.to) {
           // Case 1 – White follows the historical Evergreen Game
@@ -1143,16 +1126,12 @@ export default function HeroPuzzle() {
             () => {
               game.move({ from: sourceSquare, to: targetSquare, promotion: 'q' });
               setGameFen0(game.fen());
-              console.log("Board updated");
               setLastMove0({ from: sourceSquare, to: targetSquare });
               showTrail(sourceSquare, targetSquare);
               triggerAnnotation(expectedWhiteMove.to, '!!');
             }
           ).then(() => {
-            if (abortRef.current) {
-              console.log("animatePieceMove then early return: abortRef.current");
-              return;
-            }
+            if (abortRef.current) return;
 
             if (game.isGameOver()) {
               if (game.isCheckmate()) {
@@ -1165,12 +1144,8 @@ export default function HeroPuzzle() {
             }
 
             if (expectedBlackMove) {
-              console.log("Playing scripted black move");
               safeSetTimeout(async () => {
-                if (abortRef.current) {
-                  console.log("safeSetTimeout early return: abortRef.current");
-                  return;
-                }
+                if (abortRef.current) return;
                 setLastMove0({ from: expectedBlackMove.from, to: expectedBlackMove.to });
                 await animatePieceMove(
                   expectedBlackMove.from,
@@ -1178,18 +1153,12 @@ export default function HeroPuzzle() {
                   boardInnerRef.current,
                   expectedBlackMove.isCapture,
                   () => {
-                    console.log("Applying black move");
                     game.move({ from: expectedBlackMove.from, to: expectedBlackMove.to, promotion: 'q' });
                     setGameFen0(game.fen());
-                    console.log("New FEN:", game.fen());
-                    console.log("Board updated");
                     showTrail(expectedBlackMove.from, expectedBlackMove.to);
                   }
                 );
-                if (abortRef.current) {
-                  console.log("after animatePieceMove early return: abortRef.current");
-                  return;
-                }
+                if (abortRef.current) return;
                 setPuzzleMoveIndex0(prev => prev + 1);
                 setPuzzleStep0(prev => prev + 1);
 
@@ -1207,7 +1176,6 @@ export default function HeroPuzzle() {
           return true;
         } else {
           // Case 2 – White deviates from historical game (switch to STOCKFISH mode permanently)
-          console.log("White deviated. Switching playMode0 to STOCKFISH");
           setPlayMode0('STOCKFISH');
 
           animatePieceMove(
@@ -1218,15 +1186,11 @@ export default function HeroPuzzle() {
             () => {
               game.move({ from: sourceSquare, to: targetSquare, promotion: 'q' });
               setGameFen0(game.fen());
-              console.log("Board updated");
               setLastMove0({ from: sourceSquare, to: targetSquare });
               showTrail(sourceSquare, targetSquare);
             }
           ).then(() => {
-            if (abortRef.current) {
-              console.log("deviated branch then early return: abortRef.current");
-              return;
-            }
+            if (abortRef.current) return;
 
             if (game.isGameOver()) {
               if (game.isCheckmate()) {
@@ -1238,20 +1202,11 @@ export default function HeroPuzzle() {
               return;
             }
 
-            console.log("Calling Stockfish");
             setIsStockfishThinking0(true);
-            console.log("Waiting for Stockfish...");
             safeSetTimeout(() => {
-              if (abortRef.current) {
-                console.log("Stockfish timeout early return: abortRef.current");
-                return;
-              }
+              if (abortRef.current) return;
               getEngineMove(game.fen(), 5, (bestMoveStr) => {
-                console.log("Stockfish returned:", bestMoveStr);
-                if (abortRef.current) {
-                  console.log("Stockfish callback early return: abortRef.current");
-                  return;
-                }
+                if (abortRef.current) return;
                 const { from, to, promotion } = parseUciMove(bestMoveStr);
                 const engineMoves = game.moves({ verbose: true });
                 const engineMove = engineMoves.find(m => m.from === from && m.to === to);
@@ -1262,11 +1217,8 @@ export default function HeroPuzzle() {
                     boardInnerRef.current,
                     !!engineMove.captured,
                     () => {
-                      console.log("Applying black move");
                       game.move({ from, to, promotion: promotion || 'q' });
                       setGameFen0(game.fen());
-                      console.log("New FEN:", game.fen());
-                      console.log("Board updated");
                       setLastMove0({ from, to });
                       showTrail(from, to);
                     }
@@ -1285,7 +1237,6 @@ export default function HeroPuzzle() {
                     }
                   });
                 } else {
-                  console.log("Engine move is not legal in persistent game state", bestMoveStr);
                   setIsStockfishThinking0(false);
                   setPuzzleMoveIndex0(prev => prev + 1);
                   setPuzzleStep0(prev => prev + 1);
@@ -1297,7 +1248,6 @@ export default function HeroPuzzle() {
         }
       } else {
         // STOCKFISH mode (White has already deviated in a previous turn)
-        console.log("STOCKFISH branch");
         animatePieceMove(
           sourceSquare,
           targetSquare,
@@ -1306,15 +1256,11 @@ export default function HeroPuzzle() {
           () => {
             game.move({ from: sourceSquare, to: targetSquare, promotion: 'q' });
             setGameFen0(game.fen());
-            console.log("Board updated");
             setLastMove0({ from: sourceSquare, to: targetSquare });
             showTrail(sourceSquare, targetSquare);
           }
         ).then(() => {
-          if (abortRef.current) {
-            console.log("STOCKFISH branch then early return: abortRef.current");
-            return;
-          }
+          if (abortRef.current) return;
 
           if (game.isGameOver()) {
             if (game.isCheckmate()) {
@@ -1326,20 +1272,11 @@ export default function HeroPuzzle() {
             return;
           }
 
-          console.log("Calling Stockfish");
           setIsStockfishThinking0(true);
-          console.log("Waiting for Stockfish...");
           safeSetTimeout(() => {
-            if (abortRef.current) {
-              console.log("Stockfish timeout early return: abortRef.current");
-              return;
-            }
+            if (abortRef.current) return;
             getEngineMove(game.fen(), 5, (bestMoveStr) => {
-              console.log("Stockfish returned:", bestMoveStr);
-              if (abortRef.current) {
-                console.log("Stockfish callback early return: abortRef.current");
-                return;
-              }
+              if (abortRef.current) return;
               const { from, to, promotion } = parseUciMove(bestMoveStr);
               const engineMoves = game.moves({ verbose: true });
               const engineMove = engineMoves.find(m => m.from === from && m.to === to);
@@ -1350,11 +1287,8 @@ export default function HeroPuzzle() {
                   boardInnerRef.current,
                   !!engineMove.captured,
                   () => {
-                    console.log("Applying black move");
                     game.move({ from, to, promotion: promotion || 'q' });
                     setGameFen0(game.fen());
-                    console.log("New FEN:", game.fen());
-                    console.log("Board updated");
                     setLastMove0({ from, to });
                     showTrail(from, to);
                   }
@@ -1373,7 +1307,6 @@ export default function HeroPuzzle() {
                   }
                 });
               } else {
-                console.log("Engine move is not legal in persistent game state", bestMoveStr);
                 setIsStockfishThinking0(false);
                 setPuzzleMoveIndex0(prev => prev + 1);
                 setPuzzleStep0(prev => prev + 1);
