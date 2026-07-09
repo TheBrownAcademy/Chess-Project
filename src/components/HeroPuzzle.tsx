@@ -237,6 +237,28 @@ export default function HeroPuzzle() {
   useEffect(() => {
     currentMoveIndex0Ref.current = currentMoveIndex0;
   }, [currentMoveIndex0]);
+
+  // Preload piece assets for smooth animations
+  useEffect(() => {
+    const assets = [
+      "https://upload.wikimedia.org/wikipedia/commons/4/42/Chess_klt45.svg",
+      "https://upload.wikimedia.org/wikipedia/commons/1/15/Chess_qlt45.svg",
+      "https://upload.wikimedia.org/wikipedia/commons/7/72/Chess_rlt45.svg",
+      "https://upload.wikimedia.org/wikipedia/commons/b/b1/Chess_blt45.svg",
+      "https://upload.wikimedia.org/wikipedia/commons/7/70/Chess_nlt45.svg",
+      "https://upload.wikimedia.org/wikipedia/commons/4/45/Chess_plt45.svg",
+      "https://upload.wikimedia.org/wikipedia/commons/f/f0/Chess_kdt45.svg",
+      "https://upload.wikimedia.org/wikipedia/commons/4/47/Chess_qdt45.svg",
+      "https://upload.wikimedia.org/wikipedia/commons/f/ff/Chess_rdt45.svg",
+      "https://upload.wikimedia.org/wikipedia/commons/9/98/Chess_bdt45.svg",
+      "https://upload.wikimedia.org/wikipedia/commons/e/ef/Chess_ndt45.svg",
+      "https://upload.wikimedia.org/wikipedia/commons/c/c7/Chess_pdt45.svg"
+    ];
+    assets.forEach((src) => {
+      const img = new Image();
+      img.src = src;
+    });
+  }, []);
   const [puzzleStep0, setPuzzleStep0] = useState<number>(0);
   const [lastMove0, setLastMove0] = useState<{ from: string; to: string } | null>(null);
   const [checkedKingSquare0, setCheckedKingSquare0] = useState<string | null>(null);
@@ -282,6 +304,7 @@ export default function HeroPuzzle() {
   const hasCelebrated3Ref = useRef<boolean>(false);
   // ── Safe Timers Ref ────────────────────────────────────────────────────────
   const activeTimeoutsRef = useRef<number[]>([]);
+  const pendingResolversRef = useRef<(() => void)[]>([]);
   const safeSetTimeout = useCallback((cb: () => void, delay: number) => {
     const id = window.setTimeout(() => {
       activeTimeoutsRef.current = activeTimeoutsRef.current.filter(tId => tId !== id);
@@ -293,7 +316,22 @@ export default function HeroPuzzle() {
   const clearAllTimeouts = useCallback(() => {
     activeTimeoutsRef.current.forEach(id => clearTimeout(id));
     activeTimeoutsRef.current = [];
+    pendingResolversRef.current.forEach(resolve => resolve());
+    pendingResolversRef.current = [];
   }, []);
+  const safeDelay = useCallback((ms: number) => {
+    return new Promise<void>((resolve) => {
+      let resolved = false;
+      const r = () => {
+        if (resolved) return;
+        resolved = true;
+        pendingResolversRef.current = pendingResolversRef.current.filter(x => x !== r);
+        resolve();
+      };
+      pendingResolversRef.current.push(r);
+      safeSetTimeout(r, ms);
+    });
+  }, [safeSetTimeout]);
   const runCheckmateImpact = useCallback((_kingSq: string | null): Promise<void> => {
     return new Promise(resolve => {
       if (prefersReducedMotion()) { resolve(); return; }
@@ -358,6 +396,7 @@ export default function HeroPuzzle() {
     return () => window.removeEventListener('resize', updateSize);
   }, []);
   const abortRef = useRef<boolean>(false);
+  const autoplayInstanceRef = useRef<number>(0);
   // ══════════════════════════════════════════════════════════════════════════
   // BOARD ENTRANCE ANIMATION
   // Runs once on mount.
@@ -455,9 +494,10 @@ export default function HeroPuzzle() {
   // ══════════════════════════════════════════════════════════════════════════
   // MOVE PLAYER AND TIMING COORDINATION
   // ══════════════════════════════════════════════════════════════════════════
-  const playStep0 = useCallback(async (moveIndex: number): Promise<void> => {
+  const playStep0 = useCallback(async (moveIndex: number, instanceId: number): Promise<void> => {
     const move = PROCESSED_MOVES[moveIndex];
     if (!move) return;
+    if (instanceId !== autoplayInstanceRef.current || abortRef.current) return;
     setLastMove0({ from: move.from, to: move.to });
     await animatePieceMove(
       move.from,
@@ -470,30 +510,31 @@ export default function HeroPuzzle() {
         showTrail(move.from, move.to);
       }
     );
-    if (abortRef.current) return;
+    if (instanceId !== autoplayInstanceRef.current || abortRef.current) return;
     // Pulse checked king's square if checked
     if (move.isCheck || move.isCheckmate) {
       setCheckedKingSquare0(move.kingSquare);
-      await new Promise(r => setTimeout(r, 450));
+      await safeDelay(450);
       setCheckedKingSquare0(null);
     }
-  }, [animatePieceMove, showTrail]);
+  }, [animatePieceMove, showTrail, safeDelay]);
   // ══════════════════════════════════════════════════════════════════════════
   // AUTOPLAY TIMELINE LOOP
   // Plays moves 1-20 (Indices 0 to 39), then enters puzzle mode.
   // ══════════════════════════════════════════════════════════════════════════
   const runAutoplay0 = useCallback(async (startIndex: number) => {
     abortRef.current = false;
+    const instanceId = ++autoplayInstanceRef.current;
     if (startIndex === 0) {
       gameRef0.current = new Chess(START_FEN);
     } else {
       gameRef0.current = new Chess(PROCESSED_MOVES[startIndex - 1].fenAfter);
     }
     for (let i = startIndex; i < 40; i++) {
-      if (abortRef.current) return;
+      if (abortRef.current || instanceId !== autoplayInstanceRef.current) return;
       setCurrentMoveIndex0(i);
-      await playStep0(i);
-      if (abortRef.current) return;
+      await playStep0(i, instanceId);
+      if (abortRef.current || instanceId !== autoplayInstanceRef.current) return;
       // Determine pause after the move based on move attributes
       const move = PROCESSED_MOVES[i];
       let pauseTime = TIMING.NORMAL_MOVE_DELAY;
@@ -502,21 +543,48 @@ export default function HeroPuzzle() {
       } else if (move.isCapture) {
         pauseTime = TIMING.CAPTURE_DELAY; // Pause after capture animation
       }
-      await new Promise(r => setTimeout(r, pauseTime));
+      await safeDelay(pauseTime);
     }
-    if (abortRef.current) return;
+    if (abortRef.current || instanceId !== autoplayInstanceRef.current) return;
     // Final pause before transition to puzzle (user-configurable)
-    await new Promise(r => setTimeout(r, TIMING.PUZZLE_START_DELAY));
-    if (abortRef.current) return;
+    await safeDelay(TIMING.PUZZLE_START_DELAY);
+    if (abortRef.current || instanceId !== autoplayInstanceRef.current) return;
     setPhase0('PUZZLE');
     setCurrentMoveIndex0(40);
     setPuzzleStep0(0);
-  }, [playStep0]);
+  }, [playStep0, safeDelay]);
 
   const handleSkip0 = useCallback(() => {
     abortRef.current = true;
+    autoplayInstanceRef.current++;
     clearAllTimeouts();
+
+    if (animResolveRef.current) {
+      animResolveRef.current();
+      animResolveRef.current = null;
+    }
+    animLandRef.current = null;
     setActiveMove(null);
+
+    if (checkmateRef.current) {
+      gsap.killTweensOf(checkmateRef.current);
+      gsap.set(checkmateRef.current, { display: 'none', opacity: 0, scale: 0.6 });
+    }
+    if (boardInnerRef.current) {
+      gsap.killTweensOf(boardInnerRef.current);
+      gsap.set(boardInnerRef.current, { filter: 'brightness(1)' });
+      boardInnerRef.current.querySelectorAll('.gsap-moving').forEach((el) => {
+        if (el !== boardInnerRef.current) el.remove();
+      });
+    }
+    if (boardCardRef.current) {
+      gsap.killTweensOf(boardCardRef.current);
+      boardCardRef.current.style.boxShadow = '';
+    }
+
+    clearTrail();
+    clearAnnotation();
+    setCheckedKingSquare0(null);
 
     gameRef0.current = new Chess(PROCESSED_MOVES[39].fenAfter);
     setGameFen0(gameRef0.current.fen());
@@ -529,8 +597,9 @@ export default function HeroPuzzle() {
     setIsStockfishThinking0(false);
     setPlayMode0('SCRIPTED');
     setPuzzleMoveIndex0(0);
+
     abortRef.current = false;
-  }, [showTrail, clearAllTimeouts]);
+  }, [showTrail, clearAllTimeouts, clearTrail, clearAnnotation]);
   // ─── Unified Cleanup and Initialization ───
   const cleanupGame = useCallback(() => {
     abortRef.current = true;
@@ -674,7 +743,7 @@ export default function HeroPuzzle() {
     setIsCheckmateGlow1(true);
     
     await runCheckmateImpact(losingKingSq);
-    await new Promise(r => safeSetTimeout(r as () => void, 900));
+    await safeDelay(900);
     if (solveAbortRef.current) return;
     fireConfetti();
     if (checkmateRef.current) {
@@ -690,7 +759,7 @@ export default function HeroPuzzle() {
       });
     }
     setMovesLeftOriginal(0);
-  }, [fireConfetti, runCheckmateImpact, safeSetTimeout]);
+  }, [fireConfetti, runCheckmateImpact, safeDelay]);
   const onDrop1 = useCallback(
     (sourceSquare: string, targetSquare: string): boolean => {
       if (phase1 !== 'idle' && phase1 !== 'awaiting_mate') return false;
@@ -796,7 +865,7 @@ export default function HeroPuzzle() {
     solveAbortRef.current = false;
     setPhase1('solving');
     const step1 = PUZZLE_ORIGINAL.solution[0];
-    await new Promise(r => safeSetTimeout(r as () => void, 500));
+    await safeDelay(500);
     if (solveAbortRef.current) return;
     setSolveAnnotationOriginal(step1.annotation);
     await animatePieceMove(step1.from, step1.to, boardInnerRef.current, false, () => {
@@ -805,7 +874,7 @@ export default function HeroPuzzle() {
     if (solveAbortRef.current) return;
     setMovesLeftOriginal(1);
     triggerAnnotation(step1.to, '!!');
-    await new Promise(r => safeSetTimeout(r as () => void, 900));
+    await safeDelay(900);
     if (solveAbortRef.current) return;
     const step2 = PUZZLE_ORIGINAL.solution[1];
     setSolveAnnotationOriginal(step2.annotation);
@@ -813,7 +882,7 @@ export default function HeroPuzzle() {
       applyMoveOriginal(step2.from, step2.to);
     });
     if (solveAbortRef.current) return;
-    await new Promise(r => safeSetTimeout(r as () => void, 900));
+    await safeDelay(900);
     if (solveAbortRef.current) return;
     const step3 = PUZZLE_ORIGINAL.solution[2];
     setSolveAnnotationOriginal(step3.annotation);
@@ -822,11 +891,11 @@ export default function HeroPuzzle() {
     });
     if (solveAbortRef.current) return;
     setMovesLeftOriginal(0);
-    await new Promise(r => safeSetTimeout(r as () => void, 650));
+    await safeDelay(650);
     if (!solveAbortRef.current) {
       celebrateOriginal();
     }
-  }, [cleanupGame, animatePieceMove, applyMoveOriginal, triggerAnnotation, celebrateOriginal, safeSetTimeout]);
+  }, [cleanupGame, animatePieceMove, applyMoveOriginal, triggerAnnotation, celebrateOriginal, safeDelay]);
   // ══════════════════════════════════════════════════════════════════════════
   // CHECKMATE POPUP CELEBRATION (RESTORED PREVIOUS BEHAVIOUR)
   // ══════════════════════════════════════════════════════════════════════════
@@ -836,7 +905,7 @@ export default function HeroPuzzle() {
     // Show CHECKMATE popup
     await runCheckmateImpact(kingSq);
     // Hold the checkmate text for a brief pause before fading it out
-    await new Promise(r => setTimeout(r, 900));
+    await safeDelay(900);
     if (abortRef.current) return;
     fireConfetti();
     // Fade checkmate badge overlay out smoothly
@@ -852,7 +921,7 @@ export default function HeroPuzzle() {
         }
       });
     }
-  }, [fireConfetti, runCheckmateImpact]);
+  }, [fireConfetti, runCheckmateImpact, safeDelay]);
 
   const celebrate2 = useCallback(async () => {
     if (hasCelebrated2Ref.current) return;
@@ -875,14 +944,14 @@ export default function HeroPuzzle() {
       setPhase2('solved');
       setIsCheckmateGlow2(true);
       await runCheckmateImpact(losingKingSq);
-      await new Promise(r => safeSetTimeout(r as () => void, 900));
+      await safeDelay(900);
       if (solveAbortRef.current) return;
       fireConfetti();
     } else {
       // Black won (White checkmated)
       setPhase2('failed');
       await runCheckmateImpact(losingKingSq);
-      await new Promise(r => safeSetTimeout(r as () => void, 900));
+      await safeDelay(900);
       if (solveAbortRef.current) return;
     }
 
@@ -898,7 +967,7 @@ export default function HeroPuzzle() {
         }
       });
     }
-  }, [fireConfetti, runCheckmateImpact, safeSetTimeout]);
+  }, [fireConfetti, runCheckmateImpact, safeDelay]);
 
   // ── Celebrate/OnDrop for Puzzle 3 (mirrors Puzzle 2 logic) ─────────────────
   const celebrate3 = useCallback(async () => {
@@ -922,13 +991,13 @@ export default function HeroPuzzle() {
       setPhase3('solved');
       setIsCheckmateGlow3(true);
       await runCheckmateImpact(losingKingSq);
-      await new Promise(r => safeSetTimeout(r as () => void, 900));
+      await safeDelay(900);
       if (solveAbortRef.current) return;
       fireConfetti();
     } else {
       setPhase3('failed');
       await runCheckmateImpact(losingKingSq);
-      await new Promise(r => safeSetTimeout(r as () => void, 900));
+      await safeDelay(900);
       if (solveAbortRef.current) return;
     }
 
@@ -944,7 +1013,7 @@ export default function HeroPuzzle() {
         }
       });
     }
-  }, [fireConfetti, runCheckmateImpact, safeSetTimeout]);
+  }, [fireConfetti, runCheckmateImpact, safeDelay]);
 
   const onDrop3 = useCallback(
     (sourceSquare: string, targetSquare: string): boolean => {
@@ -1324,6 +1393,8 @@ export default function HeroPuzzle() {
   // ══════════════════════════════════════════════════════════════════════════
   const handleReplay0 = useCallback(() => {
     abortRef.current = true;
+    autoplayInstanceRef.current++;
+    clearAllTimeouts();
     clearTrail();
     clearAnnotation();
     setCheckedKingSquare0(null);
@@ -1337,12 +1408,12 @@ export default function HeroPuzzle() {
     setIsStockfishThinking0(false);
     setPlayMode0('SCRIPTED');
     setPuzzleMoveIndex0(0);
-    setTimeout(() => {
+    safeSetTimeout(() => {
       abortRef.current = false;
       setPhase0('AUTOPLAY');
       runAutoplay0(0);
     }, TIMING.REPLAY_DELAY);
-  }, [runAutoplay0, clearTrail, clearAnnotation]);
+  }, [runAutoplay0, clearTrail, clearAnnotation, clearAllTimeouts, safeSetTimeout]);
   // ══════════════════════════════════════════════════════════════════════════
   // RENDER SETUP & CAROUSEL CONFIG
   // ══════════════════════════════════════════════════════════════════════════
@@ -1578,6 +1649,7 @@ export default function HeroPuzzle() {
                     {/* Chessboard Container */}
                     <div
                       ref={isActive ? boardInnerRef : null}
+                      id={`hero-chessboard-${i}`}
                       className="aspect-square overflow-hidden relative w-full"
                       style={{ willChange: 'filter' }}
                     >
@@ -1594,7 +1666,7 @@ export default function HeroPuzzle() {
                       {/* Hide real piece during GSAP move */}
                       {isActive && activeMove && (
                         <style>{`
-                          [data-square="${activeMove.fromSq}"] [data-piece] {
+                          #hero-chessboard-${i} [data-square="${activeMove.fromSq}"] [data-piece] {
                             opacity: 0 !important;
                             pointer-events: none !important;
                           }
