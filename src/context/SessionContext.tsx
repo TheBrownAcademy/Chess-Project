@@ -1,0 +1,106 @@
+import React, { createContext, useState, useEffect } from "react";
+import type { Session } from "@auth/core";
+
+export type AuthStatus = "authenticated" | "unauthenticated" | "loading";
+
+export interface SessionContextType {
+  session: Session | null;
+  status: AuthStatus;
+  updateSession: () => Promise<Session | null>;
+  signIn: (provider?: string) => void;
+  signOut: () => void;
+}
+
+export const SessionContext = createContext<SessionContextType | undefined>(undefined);
+
+/**
+ * SessionProvider manages client-side authentication state.
+ *
+ * It polls the session API at `/api/auth/session`, exposes the current authenticated
+ * user session, loading state, and helper functions to trigger signIn and signOut.
+ */
+export const SessionProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [session, setSession] = useState<Session | null>(null);
+  const [status, setStatus] = useState<AuthStatus>("loading");
+
+  const fetchSession = async (): Promise<Session | null> => {
+    try {
+      const res = await fetch("/api/auth/session");
+      if (res.ok) {
+        const data = await res.json();
+        // An empty JSON object {} represents an unauthenticated session in Auth.js
+        if (data && Object.keys(data).length > 0) {
+          setSession(data);
+          setStatus("authenticated");
+          return data;
+        }
+      }
+      setSession(null);
+      setStatus("unauthenticated");
+      return null;
+    } catch (error) {
+      console.error("Failed to fetch session:", error);
+      setSession(null);
+      setStatus("unauthenticated");
+      return null;
+    }
+  };
+
+  useEffect(() => {
+    fetchSession();
+  }, []);
+
+  /**
+   * Redirects the user to the provider-specific sign-in endpoint.
+   * By default, it redirects to the Google OAuth flow.
+   */
+  const signIn = (provider: string = "google") => {
+    window.location.href = `/api/auth/signin/${provider}`;
+  };
+
+  /**
+   * Triggers the sign-out process by submitting the CSRF token to Auth.js,
+   * then updates the client-side authentication state and redirects to home.
+   */
+  const signOut = async () => {
+    setStatus("loading");
+    try {
+      // Auth.js endpoints require CSRF verification for destructive POST requests.
+      const csrfRes = await fetch("/api/auth/csrf");
+      const csrfData = await csrfRes.json();
+      const csrfToken = csrfData?.csrfToken;
+
+      const formData = new FormData();
+      if (csrfToken) {
+        formData.append("csrfToken", csrfToken);
+      }
+
+      await fetch("/api/auth/signout", {
+        method: "POST",
+        body: formData,
+      });
+
+      setSession(null);
+      setStatus("unauthenticated");
+      window.location.href = "/";
+    } catch (error) {
+      console.error("Error during sign out:", error);
+      // Fallback redirect if fetch fails
+      window.location.href = "/api/auth/signout";
+    }
+  };
+
+  return (
+    <SessionContext.Provider
+      value={{
+        session,
+        status,
+        updateSession: fetchSession,
+        signIn,
+        signOut,
+      }}
+    >
+      {children}
+    </SessionContext.Provider>
+  );
+};
