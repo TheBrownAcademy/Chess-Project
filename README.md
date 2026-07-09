@@ -102,3 +102,11 @@ Get the project running locally in three commands:
 │       ├── PartnerCTA.tsx    # Form submission pilot signups
 │       └── Footer.tsx        # Signature links
 ```
+
+---
+
+## Development Branch
+
+This section exists only to initialize the development branch and trigger the first Vercel Preview Deployment.
+
+---
