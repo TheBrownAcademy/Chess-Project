@@ -1,6 +1,5 @@
 import { defineConfig, loadEnv } from 'vite';
 import react from '@vitejs/plugin-react';
-import { handleAuthRequest } from './src/auth';
 
 // https://vite.dev/config/
 export default defineConfig(({ mode }) => {
@@ -9,7 +8,8 @@ export default defineConfig(({ mode }) => {
 
   // Populate process.env for @auth/core usage
   process.env.AUTH_SECRET = env.AUTH_SECRET;
-  process.env.AUTH_URL = env.AUTH_URL || 'http://localhost:5173';
+  process.env.AUTH_URL = env.AUTH_URL || 'http://localhost:5173/api/auth';
+  process.env.AUTH_TRUST_HOST = env.AUTH_TRUST_HOST || 'true';
   process.env.AUTH_GOOGLE_ID = env.AUTH_GOOGLE_ID;
   process.env.AUTH_GOOGLE_SECRET = env.AUTH_GOOGLE_SECRET;
   process.env.NODE_ENV = process.env.NODE_ENV || (mode === 'production' ? 'production' : 'development');
@@ -22,7 +22,39 @@ export default defineConfig(({ mode }) => {
         configureServer(server) {
           // Intercept all authentication endpoints
           server.middlewares.use(async (req, res, next) => {
-            if (req.url && (req.url.startsWith('/api/auth/') || req.url === '/api/auth')) {
+            if (!req.url) {
+              return next();
+            }
+
+            const protocol = req.headers['x-forwarded-proto'] || 'http';
+            const host = req.headers.host || 'localhost:5173';
+            const fullUrl = new URL(req.url, `${protocol}://${host}`);
+            const parts = fullUrl.pathname.split('/');
+            const action = parts[3];
+            const validActions = [
+              'providers',
+              'session',
+              'csrf',
+              'signin',
+              'signout',
+              'callback',
+              'verify-request',
+              'error',
+              'webauthn-options',
+            ];
+
+            if (parts[1] === 'api' && parts[2] === 'auth' && validActions.includes(action)) {
+              const method = req.method || 'GET';
+
+              // Redirect GET requests for provider-specific sign-in back to the homepage.
+              // Provider-specific sign-in requires a CSRF POST request; direct GET triggers an error in Auth.js.
+              if (method === 'GET' && action === 'signin' && parts[4]) {
+                res.statusCode = 302;
+                res.setHeader('Location', '/');
+                res.end();
+                return;
+              }
+
               try {
                 // Utility to read request body chunks from the Node stream
                 const readBody = (incomingReq: any): Promise<Buffer> => {
@@ -33,11 +65,6 @@ export default defineConfig(({ mode }) => {
                     incomingReq.on('error', reject);
                   });
                 };
-
-                const protocol = req.headers['x-forwarded-proto'] || 'http';
-                const host = req.headers.host || 'localhost:5173';
-                const fullUrl = new URL(req.url, `${protocol}://${host}`);
-                const method = req.method || 'GET';
 
                 // Read request body if this is a mutating request (e.g. signin/signout form posts)
                 const body = ['GET', 'HEAD'].includes(method) ? undefined : await readBody(req);
@@ -60,6 +87,9 @@ export default defineConfig(({ mode }) => {
                   headers: webHeaders,
                   body: body ? new Uint8Array(body) : undefined,
                 });
+
+                // Dynamically import handleAuthRequest so that process.env credentials are fully loaded
+                const { handleAuthRequest } = await import('./src/auth');
 
                 // Execute the @auth/core request handler
                 const webResponse = await handleAuthRequest(webRequest);

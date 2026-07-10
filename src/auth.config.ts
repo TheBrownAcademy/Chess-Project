@@ -27,6 +27,12 @@ const useSecureCookies = process.env.NODE_ENV === "production";
  * backend middleware/API route handlers.
  */
 export const authConfig: AuthConfig = {
+  // Base path of the authentication API endpoints
+  basePath: "/api/auth",
+
+  // Trust the host header for redirection and callbacks (required by @auth/core in custom environments)
+  trustHost: true,
+
   // Define authentication providers.
   // Additional providers (e.g. GitHub, Discord, Apple) can be easily added to this list.
   providers: [

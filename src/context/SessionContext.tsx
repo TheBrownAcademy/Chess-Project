@@ -52,10 +52,44 @@ export const SessionProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
   /**
    * Redirects the user to the provider-specific sign-in endpoint.
-   * By default, it redirects to the Google OAuth flow.
+   * By default, it redirects to the Google OAuth flow using a POST request.
    */
-  const signIn = (provider: string = "google") => {
-    window.location.href = `/api/auth/signin/${provider}`;
+  const signIn = async (provider: string = "google") => {
+    setStatus("loading");
+    try {
+      // Auth.js endpoints require CSRF verification for sign-in POST requests.
+      const csrfRes = await fetch("/api/auth/csrf");
+      const csrfData = await csrfRes.json();
+      const csrfToken = csrfData?.csrfToken;
+
+      // Create a hidden form and submit it to perform a browser-level POST navigation,
+      // avoiding CORS blocking when Auth.js redirects the browser to the OAuth provider.
+      const form = document.createElement("form");
+      form.method = "POST";
+      form.action = `/api/auth/signin/${provider}`;
+      form.style.display = "none";
+
+      if (csrfToken) {
+        const csrfInput = document.createElement("input");
+        csrfInput.type = "hidden";
+        csrfInput.name = "csrfToken";
+        csrfInput.value = csrfToken;
+        form.appendChild(csrfInput);
+      }
+
+      const callbackInput = document.createElement("input");
+      callbackInput.type = "hidden";
+      callbackInput.name = "callbackUrl";
+      callbackInput.value = window.location.origin;
+      form.appendChild(callbackInput);
+
+      document.body.appendChild(form);
+      form.submit();
+      document.body.removeChild(form);
+    } catch (error) {
+      console.error("Error during sign in:", error);
+      setStatus("unauthenticated");
+    }
   };
 
   /**
