@@ -1,5 +1,5 @@
 import React, { createContext, useState, useEffect } from "react";
-import type { Session } from "@auth/core";
+import type { Session } from "@auth/core/types";
 
 export type AuthStatus = "authenticated" | "unauthenticated" | "loading";
 

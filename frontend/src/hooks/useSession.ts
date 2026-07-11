@@ -1,5 +1,6 @@
 import { useContext } from "react";
-import { SessionContext, SessionContextType } from "../context/SessionContext";
+import { SessionContext } from "../context/SessionContext";
+import type { SessionContextType } from "../context/SessionContext";
 
 /**
  * Custom React hook to retrieve the current session and status.
