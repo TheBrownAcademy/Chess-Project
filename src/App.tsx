@@ -25,7 +25,8 @@ const initParticles = async (engine: any) => {
 };
 
 function App() {
-  const isPuzzlesPage = window.location.pathname === '/puzzles' || window.location.hash === '#/puzzles';
+  const normalizedPath = window.location.pathname.replace(/\/+$/, '') || '/';
+  const isPuzzlesPage = normalizedPath === '/puzzles' || window.location.hash.startsWith('#/puzzles');
 
   return (
     <ParticlesProvider init={initParticles}>
