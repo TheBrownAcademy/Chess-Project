@@ -13,13 +13,6 @@ export default function Footer() {
     }
   };
 
-  const handlePuzzlesClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
-    e.preventDefault();
-    const heroSection = document.getElementById('hero-section');
-    if (heroSection) {
-      heroSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }
-  };
 
   return (
     <footer
@@ -57,8 +50,7 @@ export default function Footer() {
             </a>
             <span>|</span>
             <a
-              href="#hero-section"
-              onClick={handlePuzzlesClick}
+              href="/puzzles"
               className="hover:text-white transition-colors"
             >
               Puzzles

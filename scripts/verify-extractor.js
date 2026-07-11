@@ -9,15 +9,14 @@ import csv from 'csv-parser';
 import { Chess } from 'chess.js';
 
 const tempCsvPath = path.resolve('test_lichess_db_puzzle.csv');
-const tempOutputDir = path.resolve('src/data');
-const tempOutputPath = path.join(tempOutputDir, 'matein1.json');
+const tempOutputPath = path.resolve('test_matein1.json');
 
 // Mock data content for testing
 // 1st row: Valid mateIn1 puzzle (Black king on a8 moves to a7, White queen on b2 mates on b7)
 // 2nd row: mateIn2 puzzle (should be filtered out)
 // 3rd row: Malformed row (missing Moves - should be skipped gracefully)
 const mockCsvContent = `PuzzleId,FEN,Moves,Rating,RatingDeviation,Popularity,NbPlays,Themes,GameUrl,OpeningTags
-00001,k7/8/8/8/8/8/1Q6/4K3 b - - 0 1,a8a7 b2b7,1200,75,95,100,mate mateIn1 endgame,https://lichess.org/g1,
+00001,k7/8/2K5/8/8/8/1Q6/8 b - - 0 1,a8a7 b2b7,1200,75,95,100,mate mateIn1 endgame,https://lichess.org/g1,
 00002,k7/8/8/8/8/5q2/6Q1/4K3 b - - 0 1,f3g2 e1d1 g2f1,1300,75,95,100,mate mateIn2 middlegame,https://lichess.org/g2,
 00003,k7/8/8/8/8/8/1Q6/4K3 b - - 0 1,,1400,75,95,100,mate mateIn1 endgame,https://lichess.org/g3,
 `;
@@ -27,10 +26,6 @@ console.log('--- STARTING VERIFICATION ---');
 // Write the mock CSV file
 console.log(`Writing mock CSV to ${tempCsvPath}...`);
 fs.writeFileSync(tempCsvPath, mockCsvContent, 'utf-8');
-
-if (!fs.existsSync(tempOutputDir)) {
-  fs.mkdirSync(tempOutputDir, { recursive: true });
-}
 
 // Clear any existing output
 if (fs.existsSync(tempOutputPath)) {
@@ -149,6 +144,9 @@ fs.createReadStream(tempCsvPath)
       console.log('Cleaning up temporary test files...');
       if (fs.existsSync(tempCsvPath)) {
         fs.unlinkSync(tempCsvPath);
+      }
+      if (fs.existsSync(tempOutputPath)) {
+        fs.unlinkSync(tempOutputPath);
       }
       console.log('--- VERIFICATION COMPLETE ---');
     }

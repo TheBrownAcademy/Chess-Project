@@ -4,27 +4,33 @@ import { Chess } from 'chess.js';
 import type { ChessPuzzle } from '../utils/PuzzleLoader';
 import { validateMove } from '../utils/PuzzleValidator';
 import { useConfetti } from '../hooks/useConfetti';
-import { AlertCircle, CheckCircle2 } from 'lucide-react';
-import { motion } from 'framer-motion';
 
 const BOARD_DARK = '#769656';
 const BOARD_LIGHT = '#EEEED2';
 
 export interface PuzzleBoardProps {
   puzzle: ChessPuzzle;
+  puzzleNumber?: string | number;
   onSolved?: () => void;
   onFailed?: () => void;
   onNextPuzzle?: () => void;
 }
 
-export function PuzzleBoard({ puzzle, onSolved, onFailed, onNextPuzzle }: PuzzleBoardProps) {
+export function PuzzleBoard({
+  puzzle,
+  puzzleNumber,
+  onSolved,
+  onFailed,
+  onNextPuzzle,
+}: PuzzleBoardProps) {
   const gameRef = useRef<Chess>(new Chess());
   const [gameFen, setGameFen] = useState<string>(puzzle.fen);
   const [puzzleStatus, setPuzzleStatus] = useState<'solving' | 'solved' | 'failed'>('solving');
   const [lastMove, setLastMove] = useState<{ from: string; to: string } | null>(null);
   const [isShaking, setIsShaking] = useState<boolean>(false);
   const [errorSquares, setErrorSquares] = useState<{ from: string; to: string } | null>(null);
-  
+  const [hintSquare, setHintSquare] = useState<string | null>(null);
+
   const { fireConfetti } = useConfetti();
 
   // Reset board and status when the puzzle prop changes
@@ -35,6 +41,7 @@ export function PuzzleBoard({ puzzle, onSolved, onFailed, onNextPuzzle }: Puzzle
     setLastMove(null);
     setIsShaking(false);
     setErrorSquares(null);
+    setHintSquare(null);
   }, [puzzle]);
 
   // Determine player color and board orientation from active color in FEN
@@ -65,6 +72,8 @@ export function PuzzleBoard({ puzzle, onSolved, onFailed, onNextPuzzle }: Puzzle
         });
 
         if (move) {
+          setHintSquare(null);
+
           // 3. Check if the legal move matches the puzzle's solution
           const isCorrect = validateMove(move, puzzle.solution);
 
@@ -73,8 +82,7 @@ export function PuzzleBoard({ puzzle, onSolved, onFailed, onNextPuzzle }: Puzzle
             setGameFen(game.fen());
             setLastMove({ from: sourceSquare, to: targetSquare });
             setPuzzleStatus('solved');
-            
-            // Fire celebration effects
+
             fireConfetti();
             onSolved?.();
             return true;
@@ -83,7 +91,7 @@ export function PuzzleBoard({ puzzle, onSolved, onFailed, onNextPuzzle }: Puzzle
             game.undo();
             setPuzzleStatus('failed');
 
-            // Trigger visual feedback (red border glow + shake animation + red squares highlight)
+            // Trigger visual feedback
             setIsShaking(true);
             setErrorSquares({ from: sourceSquare, to: targetSquare });
 
@@ -94,10 +102,10 @@ export function PuzzleBoard({ puzzle, onSolved, onFailed, onNextPuzzle }: Puzzle
             }, 800);
 
             onFailed?.();
-            return false; // Snaps the piece back visually
+            return false;
           }
         }
-      } catch (err) {
+      } catch {
         // Illegal chess move - snap piece back
       }
 
@@ -106,7 +114,27 @@ export function PuzzleBoard({ puzzle, onSolved, onFailed, onNextPuzzle }: Puzzle
     [puzzle, puzzleStatus, playerColor, onSolved, onFailed, fireConfetti]
   );
 
-  // Custom square highlights (last correct move and wrong move red flashes)
+  const handleHint = useCallback(() => {
+    if (puzzleStatus === 'solved') return;
+    const game = gameRef.current;
+    const legalMoves = game.moves({ verbose: true });
+    const correctMove = legalMoves.find((m) => validateMove(m, puzzle.solution));
+    if (correctMove) {
+      setHintSquare(correctMove.from);
+    }
+  }, [puzzleStatus, puzzle.solution]);
+
+  const handleReset = useCallback(() => {
+    gameRef.current = new Chess(puzzle.fen);
+    setGameFen(puzzle.fen);
+    setPuzzleStatus('solving');
+    setLastMove(null);
+    setIsShaking(false);
+    setErrorSquares(null);
+    setHintSquare(null);
+  }, [puzzle.fen]);
+
+  // Custom square highlights
   const customSquareStyles: Record<string, React.CSSProperties> = {};
   if (lastMove) {
     customSquareStyles[lastMove.from] = { backgroundColor: 'rgba(255, 214, 10, 0.35)' };
@@ -122,24 +150,37 @@ export function PuzzleBoard({ puzzle, onSolved, onFailed, onNextPuzzle }: Puzzle
       boxShadow: 'inset 0 0 0 3px rgba(239, 68, 68, 0.85)',
     };
   }
+  if (hintSquare) {
+    customSquareStyles[hintSquare] = {
+      backgroundColor: 'rgba(255, 214, 10, 0.35)',
+      boxShadow: 'inset 0 0 0 3px rgba(255, 214, 10, 0.85)',
+    };
+  }
 
   return (
-    <div className="flex flex-col items-center gap-4">
-      {/* Board Card Container - Wrapped in motion.div to animate on load/reset */}
-      <motion.div 
-        key={puzzle.id}
-        initial={{ opacity: 0, scale: 0.97, y: 15 }}
-        animate={{ opacity: 1, scale: 1, y: 0 }}
-        transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-        className={`relative w-full max-w-[460px] aspect-square shadow-2xl border rounded-xl overflow-hidden bg-brand-surface transition-all duration-300 ${
-          isShaking 
-            ? 'animate-shake border-rose-500 ring-4 ring-rose-500/25' 
-            : puzzleStatus === 'solved' 
-              ? 'border-emerald-500 ring-4 ring-emerald-500/25' 
-              : 'border-brand-border'
+    <div className="flex flex-col items-center gap-3 sm:gap-3.5 w-full">
+      {/* Top Heading */}
+      <div className="text-center space-y-0.5">
+        <h1 className="font-sans font-extrabold text-3xl sm:text-4xl text-white tracking-tight">
+          Mate in 1
+        </h1>
+        {puzzleNumber !== undefined && (
+          <p className="font-sans text-sm sm:text-base text-brand-secondary font-medium">
+            Puzzle #{puzzleNumber}
+          </p>
+        )}
+      </div>
+
+      {/* Chessboard Container */}
+      <div
+        className={`relative w-full max-w-[520px] sm:max-w-[570px] aspect-square shadow-2xl border rounded-2xl overflow-hidden bg-brand-surface transition-all duration-300 ${
+          isShaking
+            ? 'border-rose-500 ring-4 ring-rose-500/25'
+            : puzzleStatus === 'solved'
+              ? 'border-emerald-500 ring-4 ring-emerald-500/25'
+              : 'border-brand-border/80'
         }`}
       >
-        {/* react-chessboard */}
         <Chessboard
           options={{
             position: gameFen,
@@ -154,52 +195,49 @@ export function PuzzleBoard({ puzzle, onSolved, onFailed, onNextPuzzle }: Puzzle
             allowDragging: puzzleStatus === 'solving',
           }}
         />
+      </div>
 
-        {/* Success Overlay */}
-        {puzzleStatus === 'solved' && (
-          <div className="absolute inset-0 z-30 bg-black/85 backdrop-blur-sm flex flex-col items-center justify-center p-6 text-center animate-puzzle-solved">
-            <div className="w-16 h-16 rounded-full bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center text-emerald-400 mb-4 animate-bounce">
-              <CheckCircle2 className="w-10 h-10" />
-            </div>
-            <h3 className="text-2xl font-bold text-emerald-400 mb-2">
-              ✓ Correct!
-            </h3>
-            <p className="text-brand-secondary text-sm mb-6 max-w-xs">
-              The move <span className="font-mono text-emerald-400 font-bold">{puzzle.solution}</span> delivered checkmate in one.
-            </p>
-            {onNextPuzzle && (
-              <button
-                onClick={onNextPuzzle}
-                className="flex items-center gap-2 px-6 py-3 bg-brand-accent hover:bg-brand-accent/90 text-white rounded-lg text-sm font-semibold transition-all duration-200 shadow-md hover:shadow-lg scale-100 hover:scale-105 active:scale-95 animate-fade-in"
-              >
-                Next Puzzle
-              </button>
-            )}
-          </div>
-        )}
-      </motion.div>
-
-      {/* Under-board Status Bar */}
-      <div className="w-full max-w-[460px] flex items-center justify-center px-4 py-2 bg-brand-surface border border-brand-border rounded-lg text-sm font-semibold shadow-md">
+      {/* Below the board: Status indicator */}
+      <div className="h-7 flex items-center justify-center">
         {puzzleStatus === 'solved' ? (
-          <span className="text-emerald-400 flex items-center gap-1.5 animate-pulse">
-            <CheckCircle2 className="w-4 h-4" />
-            Correct Move! Puzzle Solved.
+          <span className="font-sans font-semibold text-base sm:text-lg text-emerald-400 flex items-center gap-2">
+            <span>✓</span> Correct
           </span>
-        ) : isShaking ? (
-          <span className="text-rose-400 flex items-center gap-1.5 animate-pulse">
-            <AlertCircle className="w-4 h-4" />
-            Wrong Move! Reverting...
+        ) : puzzleStatus === 'failed' || isShaking ? (
+          <span className="font-sans font-semibold text-base sm:text-lg text-rose-400 flex items-center gap-2">
+            Try Again
           </span>
         ) : (
-          <span className="text-brand-text flex items-center gap-2">
-            <span 
-              className={`w-2.5 h-2.5 rounded-full border border-brand-border ${
-                playerColor === 'w' ? 'bg-white' : 'bg-neutral-800'
-              }`}
-            />
-            {playerColor === 'w' ? 'White to Play (Mate in 1)' : 'Black to Play (Mate in 1)'}
+          <span className="font-sans font-semibold text-base sm:text-lg text-white/90 flex items-center gap-2">
+            {playerColor === 'w' ? 'White to Move' : 'Black to Move'}
           </span>
+        )}
+      </div>
+
+      {/* Elegant Controls: Hint, Reset, Next Puzzle */}
+      <div className="flex items-center gap-3 sm:gap-4 pt-1">
+        <button
+          onClick={handleHint}
+          disabled={puzzleStatus === 'solved'}
+          className="px-5 py-2.5 rounded-xl font-sans font-medium text-sm text-brand-secondary hover:text-white bg-brand-surface border border-brand-border hover:border-brand-accent/40 transition-all duration-200 hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+        >
+          Hint
+        </button>
+
+        <button
+          onClick={handleReset}
+          className="px-5 py-2.5 rounded-xl font-sans font-medium text-sm text-brand-secondary hover:text-white bg-brand-surface border border-brand-border hover:border-brand-accent/40 transition-all duration-200 hover:shadow-md cursor-pointer"
+        >
+          Reset
+        </button>
+
+        {onNextPuzzle && (
+          <button
+            onClick={onNextPuzzle}
+            className="px-6 py-2.5 rounded-xl font-sans font-semibold text-sm text-white bg-brand-accent hover:bg-brand-accent/90 transition-all duration-200 shadow-lg shadow-brand-accent/20 hover:scale-[1.02] active:scale-[0.98] btn-glow-container btn-glow-accent cursor-pointer"
+          >
+            Next Puzzle
+          </button>
         )}
       </div>
     </div>
