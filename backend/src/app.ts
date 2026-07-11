@@ -20,8 +20,23 @@ app.use(
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// Log incoming requests for debugging
+app.use((req, res, next) => {
+  console.log(`[HTTP]: ${req.method} ${req.originalUrl}`);
+  next();
+});
+
+// Intercept GET requests for provider-specific sign-in and trailing slashes,
+// redirecting them to prevent Auth.js from throwing UnsupportedAction/UnknownAction errors.
+app.get("/api/auth/signin/:provider", (req, res) => {
+  res.redirect("/");
+});
+app.get("/api/auth/signin/", (req, res) => {
+  res.redirect("/");
+});
+
 // Register modular endpoints
-app.use("/api/auth", authRouter);
+app.use("/api/auth/*", authRouter);
 app.use("/api/users", userRouter);
 
 // Catch-all centralized error handler

@@ -14,7 +14,7 @@
  *   ⑨ Mouse parallax on particles (new)
  */
 
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
 
 import { useGSAP } from '../hooks/useGSAP';
 import { usePerspectiveTilt } from '../hooks/usePerspectiveTilt';
@@ -23,8 +23,21 @@ import { useMagneticButton } from '../hooks/useMagneticButton';
 import { useButtonGlow } from '../hooks/useButtonGlow';
 import { gsap, dur, ease } from '../utils/gsapConfig';
 import HeroPuzzle from './HeroPuzzle';
+import { useSession } from '../hooks/useSession';
+import { AuthModal } from './AuthModal';
+import { AvatarDropdown } from './AvatarDropdown';
 
 export default function Hero() {
+  // Authentication states
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [modalMode, setModalMode] = useState<"login" | "register">("login");
+  const { status } = useSession();
+
+  const openModal = (mode: "login" | "register") => {
+    setModalMode(mode);
+    setIsModalOpen(true);
+  };
+
   // ── Animation refs ────────────────────────────────────────────────────────
   const heroRef = useRef<HTMLElement>(null);
   const heroLogoContainerRef = useRef<HTMLDivElement>(null);
@@ -257,6 +270,30 @@ export default function Hero() {
       className="relative pt-16 pb-16 md:pt-24 md:pb-28 overflow-hidden"
       id="hero-section"
     >
+      {/* Top-Right Absolute Authentication Panel */}
+      <div className="absolute top-4 right-6 sm:top-6 sm:right-8 z-[80]">
+        {status === "loading" ? (
+          <div className="w-5 h-5 rounded-full border-2 border-brand-accent/30 border-t-brand-accent animate-spin" />
+        ) : status === "authenticated" ? (
+          <AvatarDropdown />
+        ) : (
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => openModal("login")}
+              className="font-sans text-sm font-semibold text-brand-secondary hover:text-white transition-colors cursor-pointer focus:outline-none"
+            >
+              Login
+            </button>
+            <span className="text-brand-secondary/30 text-xs select-none">|</span>
+            <button
+              onClick={() => openModal("register")}
+              className="font-sans text-sm font-semibold text-brand-secondary hover:text-brand-accent transition-colors cursor-pointer focus:outline-none"
+            >
+              Get Started
+            </button>
+          </div>
+        )}
+      </div>
       {/* ── Background glow orbs (CSS animated — GPU composited) ─────────── */}
       <div
         className="hero-orb-a absolute top-1/4 left-1/2 w-[500px] h-[500px] bg-brand-accent/5 rounded-full blur-[120px] pointer-events-none"
@@ -437,6 +474,12 @@ export default function Hero() {
 
         </div>
       </div>
+      {/* Reusable Auth Modal */}
+      <AuthModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        initialMode={modalMode}
+      />
     </header>
   );
 }

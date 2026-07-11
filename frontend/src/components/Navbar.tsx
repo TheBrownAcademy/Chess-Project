@@ -1,36 +1,32 @@
-/**
- * Navbar.tsx
- * Fixed navigation bar with:
- *   - GSAP fade-down entrance on load
- *   - Scroll-direction hide/show (via useNavbarAnimation)
- *   - CSS underline-grow effect on nav links (.nav-link class)
- *   - CTA button scale + glow via CSS hover utilities
- *   - Logo: full GSAP interpolate() + quickTo() cursor-driven animation
- *     (via useLogoAnimation hook — see hooks/useLogoAnimation.ts)
- */
-
 import { useState, useRef } from 'react';
-import { Menu, X } from 'lucide-react';
 import { useNavbarAnimation } from '../hooks/useNavbarAnimation';
 import { useLogoAnimation } from '../hooks/useLogoAnimation';
-import { useButtonGlow } from '../hooks/useButtonGlow';
+import { useSession } from '../hooks/useSession';
+import { AuthModal } from './AuthModal';
+import { AvatarDropdown } from './AvatarDropdown';
 
 export default function Navbar() {
-  const [isOpen, setIsOpen] = useState(false);
   const navRef = useRef<HTMLElement>(null);
+  
+  // Authentication states
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [modalMode, setModalMode] = useState<"login" | "register">("login");
+  const { status } = useSession();
+
+  const openModal = (mode: "login" | "register") => {
+    setModeAndOpen(mode);
+  };
+
+  const setModeAndOpen = (mode: "login" | "register") => {
+    setModalMode(mode);
+    setIsModalOpen(true);
+  };
 
   // Navbar entrance + hide/show on scroll
   useNavbarAnimation(navRef as React.RefObject<HTMLElement | null>);
 
   // Full premium logo animation (interpolate + quickTo + float + dance)
   const { containerRef, logoRef } = useLogoAnimation();
-
-  // Button interactive hover glow
-  const ctaGlowRef = useButtonGlow<HTMLAnchorElement>();
-
-  const navLinks = [
-    { name: 'Live Demo',      href: '#interactive-demo' },
-  ];
 
   return (
     <nav
@@ -42,14 +38,7 @@ export default function Navbar() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16 sm:h-20">
 
-          {/*
-            ── Logo ───────────────────────────────────────────────────────────
-            containerRef  → mouse-event target (receives mousemove/enter/leave)
-            logoRef       → visual transform target (rotateX/Y, scale, float)
-
-            perspective on the container ensures child 3D rotations render correctly.
-            transformStyle: preserve-3d propagates depth to the img.
-          */}
+          {/* Logo on the left */}
           <div
             ref={containerRef}
             className="flex items-center gap-2 cursor-pointer select-none"
@@ -72,93 +61,40 @@ export default function Navbar() {
             />
           </div>
 
-          {/* Desktop Nav Links — .nav-link enables CSS underline-grow */}
-          <div className="hidden md:flex items-center gap-8">
-            {navLinks.map((link) => (
-              <a
-                key={link.name}
-                href={link.href}
-                className="nav-link font-sans font-medium text-sm text-brand-secondary hover:text-white transition-colors duration-200"
-              >
-                {link.name}
-              </a>
-            ))}
+          {/* Auth Integration on the right */}
+          <div className="flex items-center gap-4">
+            {status === "loading" ? (
+              <div className="w-6 h-6 rounded-full border-2 border-brand-accent/30 border-t-brand-accent animate-spin" />
+            ) : status === "authenticated" ? (
+              <AvatarDropdown />
+            ) : (
+              <div className="flex items-center gap-4">
+                <button
+                  onClick={() => openModal("login")}
+                  className="font-sans text-lg md:text-xl font-semibold text-brand-secondary hover:text-white transition-colors cursor-pointer"
+                >
+                  Login
+                </button>
+                <span className="text-brand-border/40 text-lg md:text-xl select-none">|</span>
+                <button
+                  onClick={() => openModal("register")}
+                  className="font-sans text-lg md:text-xl font-semibold bg-brand-accent/20 hover:bg-brand-accent/40 text-brand-accent hover:text-white px-5 py-2.5 rounded-lg border border-brand-accent/30 transition-all duration-200 cursor-pointer"
+                >
+                  Get Started
+                </button>
+              </div>
+            )}
           </div>
 
-          {/* Desktop CTA */}
-          <div className="hidden md:flex items-center gap-4">
-            <a
-              href="#interactive-demo"
-              className="nav-link font-sans text-sm font-medium text-brand-secondary hover:text-white transition-colors duration-200"
-            >
-              View Live Demo
-            </a>
-            {/* Primary CTA — scale + glow on hover via Tailwind */}
-            <a
-              ref={ctaGlowRef}
-              href="#partner-cta"
-              id="navbar-cta-btn"
-              className="
-                font-sans text-sm font-medium
-                bg-brand-accent hover:bg-brand-accent/90
-                text-white px-4 py-2 rounded-md
-                transition-all duration-200
-                shadow-lg shadow-brand-accent/20
-                hover:scale-[1.03] hover:shadow-brand-accent/40
-                active:scale-[0.97]
-                btn-glow-container btn-glow-accent cta-shine
-              "
-            >
-              Become a Partner
-            </a>
-          </div>
-
-          {/* Mobile Menu Toggle */}
-          <div className="md:hidden">
-            <button
-              onClick={() => setIsOpen(!isOpen)}
-              className="text-brand-secondary hover:text-white p-2 transition-colors"
-              aria-label="Toggle menu"
-              aria-expanded={isOpen}
-            >
-              {isOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-            </button>
-          </div>
         </div>
       </div>
 
-      {/* Mobile Dropdown */}
-      {isOpen && (
-        <div className="md:hidden bg-brand-surface border-b border-brand-border px-4 py-6 space-y-4">
-          <div className="flex flex-col gap-4">
-            {navLinks.map((link) => (
-              <a
-                key={link.name}
-                href={link.href}
-                onClick={() => setIsOpen(false)}
-                className="font-sans font-medium text-base text-brand-secondary hover:text-white transition-colors py-2"
-              >
-                {link.name}
-              </a>
-            ))}
-            <hr className="border-brand-border my-2" />
-            <a
-              href="#interactive-demo"
-              onClick={() => setIsOpen(false)}
-              className="font-sans font-medium text-base text-brand-secondary hover:text-white py-2"
-            >
-              View Live Demo
-            </a>
-            <a
-              href="#partner-cta"
-              onClick={() => setIsOpen(false)}
-              className="font-sans font-medium bg-brand-accent hover:bg-brand-accent/90 text-white text-center py-2.5 rounded-md transition-colors"
-            >
-              Become a Partner
-            </a>
-          </div>
-        </div>
-      )}
+      {/* Reusable Auth Modal */}
+      <AuthModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        initialMode={modalMode}
+      />
     </nav>
   );
 }

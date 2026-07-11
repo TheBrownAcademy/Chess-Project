@@ -104,14 +104,18 @@ export const SessionProvider: React.FC<{ children: React.ReactNode }> = ({ child
       const csrfData = await csrfRes.json();
       const csrfToken = csrfData?.csrfToken;
 
-      const formData = new FormData();
+      const searchParams = new URLSearchParams();
       if (csrfToken) {
-        formData.append("csrfToken", csrfToken);
+        searchParams.append("csrfToken", csrfToken);
       }
+      searchParams.append("json", "true");
 
       await fetch("/api/auth/signout", {
         method: "POST",
-        body: formData,
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+        body: searchParams.toString(),
       });
 
       setSession(null);

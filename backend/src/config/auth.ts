@@ -8,9 +8,6 @@ export const authConfig: ExpressAuthConfig = {
   // Bind Auth.js to the database via Prisma Adapter
   adapter: PrismaAdapter(prisma as any),
   
-  // Base path of the authentication API endpoints
-  basePath: "/api/auth",
-  
   // Trust the host header (required for custom environments / reverse proxy setups)
   trustHost: env.AUTH_TRUST_HOST === "true",
 
@@ -42,6 +39,15 @@ export const authConfig: ExpressAuthConfig = {
         session.user.id = token.id as string;
       }
       return session;
+    },
+    async redirect({ url }) {
+      const clientOrigin = env.CLIENT_ORIGIN || "http://localhost:5173";
+      // If the redirect URL points to localhost:3000 or is relative, rewrite the origin to the client origin.
+      if (url.includes("localhost:3000") || url.startsWith("/")) {
+        const path = url.replace(/^(https?:\/\/localhost:3000)?/, "");
+        return `${clientOrigin}${path.startsWith("/") ? "" : "/"}${path}`;
+      }
+      return url;
     },
   },
 
