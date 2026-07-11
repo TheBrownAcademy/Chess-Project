@@ -712,4 +712,16 @@ html::-webkit-scrollbar-corner,
   transition: transform 0.8s ease, filter 0.8s ease;
 }
 
+/* ── Puzzle Board Shake Animation ── */
+@keyframes board-shake {
+  0%, 100% { transform: translateX(0); }
+  20%, 60% { transform: translateX(-6px); }
+  40%, 80% { transform: translateX(6px); }
+}
+
+.animate-shake {
+  animation: board-shake 0.4s ease-in-out;
+}
+
+
 

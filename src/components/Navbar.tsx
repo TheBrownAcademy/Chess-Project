@@ -30,6 +30,7 @@ export default function Navbar() {
 
   const navLinks = [
     { name: 'Live Demo',      href: '#interactive-demo' },
+    { name: 'Practice Puzzles', href: '/puzzles' },
   ];
 
   return (
