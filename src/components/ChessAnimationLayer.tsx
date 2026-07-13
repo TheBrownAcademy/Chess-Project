@@ -271,8 +271,17 @@ export default function ChessAnimationLayer({
     }
   }, [squareSize]);
 
+  // Derive ghost state if activeMove is present but ghost is not set yet
+  const currentGhost = ghost || (activeMove ? {
+    x: activeMove.startX,
+    y: activeMove.startY,
+    type: activeMove.pieceType,
+    scale: 1.0,
+    opacity: 1.0
+  } : null);
+
   // Compute outline drop shadow based on current piece lift (scale)
-  const liftPercentage = ghost ? (ghost.scale - 1.0) / 0.1 : 0;
+  const liftPercentage = currentGhost ? (currentGhost.scale - 1.0) / 0.1 : 0;
   const shadowBlur = liftPercentage * 8;
   const shadowOffset = liftPercentage * 6;
   const shadowOpacity = liftPercentage * 0.4;
@@ -283,9 +292,9 @@ export default function ChessAnimationLayer({
   return (
     <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', pointerEvents: 'none', zIndex: 99 }}>
       <canvas ref={canvasRef} style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }} />
-      {ghost && (
+      {currentGhost && (
         <img 
-          src={PIECE_ASSETS[ghost.type]} 
+          src={PIECE_ASSETS[currentGhost.type]} 
           alt="" 
           style={{
             position: 'absolute',
@@ -294,8 +303,8 @@ export default function ChessAnimationLayer({
             width: squareSize,
             height: squareSize,
             willChange: 'transform',
-            transform: `translate3d(${ghost.x}px, ${ghost.y}px, 0) scale(${ghost.scale})`,
-            opacity: ghost.opacity,
+            transform: `translate3d(${currentGhost.x}px, ${currentGhost.y}px, 0) scale(${currentGhost.scale})`,
+            opacity: currentGhost.opacity,
             filter: ghostFilter,
           }} 
         />
