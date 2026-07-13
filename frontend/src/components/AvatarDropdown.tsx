@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { User, LogOut } from "lucide-react";
 import { useSession } from "../hooks/useSession";
+import { navigate } from "../hooks/useRoute";
 
 export const AvatarDropdown: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -57,6 +58,7 @@ export const AvatarDropdown: React.FC = () => {
             alt={user.name || "User Avatar"}
             className="w-full h-full object-cover"
             draggable={false}
+            referrerPolicy="no-referrer"
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center bg-brand-surface text-brand-accent font-sans font-bold text-sm select-none">
@@ -82,10 +84,10 @@ export const AvatarDropdown: React.FC = () => {
             </p>
           </div>
 
-          {/* Profile option (placeholder) */}
+          {/* Profile option */}
           <button
             onClick={() => {
-              alert("Profile dashboard coming soon!");
+              navigate("/profile");
               setIsOpen(false);
             }}
             className="w-full flex items-center gap-3 px-4 py-2 text-sm font-sans text-brand-secondary hover:text-white hover:bg-white/5 text-left transition-colors duration-150 cursor-pointer"

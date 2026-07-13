@@ -14,7 +14,7 @@
  *   ⑨ Mouse parallax on particles (new)
  */
 
-import { useRef, useState } from 'react';
+import { useRef, useState, useEffect } from 'react';
 
 import { useGSAP } from '../hooks/useGSAP';
 import { usePerspectiveTilt } from '../hooks/usePerspectiveTilt';
@@ -32,6 +32,16 @@ export default function Hero() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalMode, setModalMode] = useState<"login" | "register">("login");
   const { status } = useSession();
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("login") === "true") {
+      setModalMode("login");
+      setIsModalOpen(true);
+      const cleanUrl = window.location.pathname;
+      window.history.replaceState({}, "", cleanUrl);
+    }
+  }, []);
 
   const openModal = (mode: "login" | "register") => {
     setModalMode(mode);

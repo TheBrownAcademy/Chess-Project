@@ -15,6 +15,8 @@ import ProductDemo from './components/ProductDemo';
 import PartnerCTA from './components/PartnerCTA';
 import Footer from './components/Footer';
 import GlobalBackground from './components/GlobalBackground';
+import ProfilePage from './components/ProfilePage';
+import { useRoute } from './hooks/useRoute';
 
 import { ParticlesProvider } from '@tsparticles/react';
 import { loadConfettiCannonPreset } from '@tsparticles/preset-confetti-cannon';
@@ -24,6 +26,8 @@ const initParticles = async (engine: any) => {
 };
 
 function App() {
+  const currentPath = useRoute();
+
   return (
     <ParticlesProvider init={initParticles}>
       <GlobalBackground />
@@ -32,27 +36,31 @@ function App() {
       <div id="smooth-wrapper">
         <div id="smooth-content">
 
-        {/* Landing Page Content */}
-        <div className="min-h-screen text-brand-text flex flex-col selection:bg-brand-accent selection:text-white">
-          <main className="flex-1">
+        {currentPath === '/profile' ? (
+          <ProfilePage />
+        ) : (
+          /* Landing Page Content */
+          <div className="min-h-screen text-brand-text flex flex-col selection:bg-brand-accent selection:text-white">
+            <main className="flex-1">
 
-            {/* Section 1: Hero Visual and Brand Statement */}
-            <Hero />
+              {/* Section 1: Hero Visual and Brand Statement */}
+              <Hero />
 
-            {/* Section 2: Build More Than Subscribers */}
-            <BrandSection />
+              {/* Section 2: Build More Than Subscribers */}
+              <BrandSection />
 
-            {/* Section 3: Interactive Product Demo (Chessboard + Stockfish) */}
-            <ProductDemo />
+              {/* Section 3: Interactive Product Demo (Chessboard + Stockfish) */}
+              <ProductDemo />
 
-            {/* Section 4: Partner Call to Action */}
-            <PartnerCTA />
+              {/* Section 4: Partner Call to Action */}
+              <PartnerCTA />
 
-          </main>
+            </main>
 
-          {/* Footer Summary */}
-          <Footer />
-        </div>
+            {/* Footer Summary */}
+            <Footer />
+          </div>
+        )}
 
       </div>
     </div>

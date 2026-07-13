@@ -19,13 +19,13 @@ export const authConfig: ExpressAuthConfig = {
     }),
   ],
 
-  // Secure session handling using JSON Web Tokens (JWT)
+  // Secure session handling using Database Sessions
   session: {
-    strategy: "jwt",
+    strategy: "database",
     maxAge: 30 * 24 * 60 * 60, // 30 days
   },
 
-  // Callbacks to enrich the JWT token and user session details
+  // Callbacks to enrich session details
   callbacks: {
     async jwt({ token, user, account }) {
       if (user && account) {
@@ -34,8 +34,10 @@ export const authConfig: ExpressAuthConfig = {
       }
       return token;
     },
-    async session({ session, token }) {
-      if (token && session.user) {
+    async session({ session, user, token }) {
+      if (user && session.user) {
+        session.user.id = user.id;
+      } else if (token && session.user) {
         session.user.id = token.id as string;
       }
       return session;

@@ -1,5 +1,7 @@
 import express from "express";
 import cors from "cors";
+import helmet from "helmet";
+import { rateLimit } from "express-rate-limit";
 import { env } from "./config/env.js";
 import { authRouter } from "./routes/auth.route.js";
 import { userRouter } from "./routes/user.route.js";
@@ -10,6 +12,25 @@ const app = express();
 // Required when running behind proxies (Vite dev proxy, Cloudflare, Nginx, etc.)
 app.set("trust proxy", true);
 
+// Configure Rate Limiter
+const apiLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  limit: 100, // Limit each IP to 100 requests per window
+  standardHeaders: true,
+  legacyHeaders: false,
+  validate: { trustProxy: false },
+  message: {
+    status: "fail",
+    message: "Too many requests from this IP, please try again after 15 minutes.",
+  },
+});
+
+// Security Headers (Helmet)
+app.use(helmet());
+
+// Apply global rate limiter to all API endpoints
+app.use("/api", apiLimiter);
+
 app.use(
   cors({
     origin: env.CLIENT_ORIGIN,
@@ -17,8 +38,9 @@ app.use(
   })
 );
 
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+// Payload Size Restrictions (prevents memory-exhaustion denial of service attacks)
+app.use(express.json({ limit: "10kb" }));
+app.use(express.urlencoded({ extended: true, limit: "10kb" }));
 
 // Log incoming requests for debugging
 app.use((req, res, next) => {

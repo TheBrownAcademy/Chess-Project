@@ -42,4 +42,13 @@ export class UserService {
       },
     });
   }
+
+  /**
+   * Invalidate and delete all database sessions for the specified user ID.
+   */
+  static async logoutAll(userId: string) {
+    return await prisma.session.deleteMany({
+      where: { userId },
+    });
+  }
 }
