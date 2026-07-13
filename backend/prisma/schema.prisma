@@ -8,14 +8,20 @@ generator client {
 }
 
 model User {
-  id            String    @id @default(cuid())
-  name          String?
-  email         String    @unique
-  emailVerified DateTime?
-  image         String?
-  accounts      Account[]
-  sessions      Session[]
-  createdAt     DateTime  @default(now())
+  id                String          @id @default(cuid())
+  name              String?
+  email             String          @unique
+  emailVerified     DateTime?
+  image             String?
+  accounts          Account[]
+  sessions          Session[]
+  createdAt         DateTime        @default(now())
+  
+  // Payment integration fields
+  gatewayCustomerId String?         @unique // Provider-agnostic payment gateway customer ID
+  subscriptions     Subscription[]
+  payments          Payment[]
+  billingProfile    BillingProfile?
 }
 
 model Account {
@@ -51,4 +57,126 @@ model VerificationToken {
   expires    DateTime
 
   @@unique([identifier, token])
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  TRIALING
+  PAST_DUE
+  CANCELED
+  UNPAID
+  INCOMPLETE
+  INCOMPLETE_EXPIRED
+}
+
+enum PaymentStatus {
+  PENDING
+  SUCCEEDED
+  FAILED
+  REFUNDED
+}
+
+model Subscription {
+  id                    String             @id @default(cuid())
+  userId                String
+  user                  User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  productId             String             // References the database Product plan
+  product               Product            @relation(fields: [productId], references: [id])
+  status                SubscriptionStatus
+  gatewaySubscriptionId String?            @unique // Subscription ID from Stripe/PayPal
+  currentPeriodStart    DateTime
+  currentPeriodEnd      DateTime
+  cancelAtPeriodEnd     Boolean            @default(false)
+  canceledAt            DateTime?
+  endedAt               DateTime?
+  trialStart            DateTime?
+  trialEnd              DateTime?
+  createdAt             DateTime           @default(now())
+  updatedAt             DateTime           @updatedAt
+  payments              Payment[]
+}
+
+model Payment {
+  id                     String        @id @default(cuid())
+  userId                 String
+  user                   User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  subscriptionId         String?
+  subscription           Subscription? @relation(fields: [subscriptionId], references: [id], onDelete: SetNull)
+  amount                 Int           // Amount in cents / smallest currency unit
+  currency               String        @default("usd")
+  status                 PaymentStatus
+  paymentMethod          String?       // e.g., card, paypal
+  gatewayPaymentIntentId String?       @unique // Intent or transaction reference
+  gatewayInvoiceId       String?       // Invoice reference from gateway
+  receiptUrl             String?
+  errorMessage           String?
+  
+  // Auditing, support & refund debugging fields
+  provider               String        @default("stripe") // e.g. stripe, paypal, razorpay
+  failureCode            String?       // Gateway specific failure code (e.g. card_declined)
+  gatewayCustomerId      String?       // Customer ID on gateway for secondary verification
+  refundedAmount         Int?          @default(0) // Refunded amount in cents
+  gatewayMetadata        Json?         // JSON block mapping gateway details (card brand, user ip etc.)
+
+  createdAt              DateTime      @default(now())
+  updatedAt              DateTime      @updatedAt
+}
+
+model BillingProfile {
+  id           String   @id @default(cuid())
+  userId       String   @unique
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  billingEmail String?
+  billingName  String?
+  
+  // Future invoicing & tax configurations (address lines etc. left as stubs)
+  addressLine1 String?
+  addressLine2 String?
+  city         String?
+  state        String?
+  postalCode   String?
+  country      String?
+  vatId        String?
+  
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model Product {
+  id              String           @id @default(cuid())
+  identifier      String           @unique // e.g. pro_monthly, pro_yearly
+  name            String
+  description     String?
+  priceAmount     Int              // Price in smallest unit (e.g. 999 for $9.99)
+  currency        String           @default("usd")
+  billingInterval String           // month, year, or one-time
+  gatewayPriceId  String           @unique // Price ID on provider (e.g., Stripe Price ID)
+  isActive        Boolean          @default(true)
+  displayOrder    Int              @default(0)
+  features        ProductFeature[]
+  subscriptions   Subscription[]
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+}
+
+model ProductFeature {
+  id           String   @id @default(cuid())
+  productId    String
+  product      Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  featureKey   String   // e.g. unlimited_puzzles, advanced_analysis
+  featureValue String   @default("true") // true/false or limit strings e.g. "100"
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@unique([productId, featureKey])
+}
+
+model WebhookEvent {
+  id             String   @id @default(cuid())
+  gatewayEventId String   @unique // External event ID (e.g. Stripe evt_...)
+  provider       String   // e.g. stripe, paypal
+  eventType      String   // e.g. invoice.payment_succeeded
+  processed      Boolean  @default(true)
+  payload        Json?    // Full audit log payload
+  createdAt      DateTime @default(now())
 }

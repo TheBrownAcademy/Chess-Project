@@ -13,6 +13,17 @@ export class UserService {
             provider: true,
           },
         },
+        subscriptions: {
+          orderBy: { createdAt: "desc" },
+          take: 1,
+          include: {
+            product: {
+              include: {
+                features: true,
+              },
+            },
+          },
+        },
       },
     });
   }
