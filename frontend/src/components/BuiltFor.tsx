@@ -3,6 +3,8 @@
  * ScrollTrigger animations:
  *   - Header: fade-up
  *   - Target cards: staggered reveal (0.12s between)
+ *
+ * Design: Black & Gold premium
  */
 
 import { useRef } from 'react';
@@ -25,7 +27,7 @@ export default function BuiltFor() {
 
   const targets = [
     {
-      icon: <UserCheck className="w-6 h-6 text-brand-accent" />,
+      icon: <UserCheck className="w-5 h-5" style={{ color: 'var(--gold-bright)' }} />,
       title: 'Chess Coaches',
       description:
         'Upgrade from Google Drive folders and messy chat logs. Keep students accountable with structured learning modules.',
@@ -34,9 +36,10 @@ export default function BuiltFor() {
         "Analyze students' games using built-in engine logs",
         'Direct billing and subscription management',
       ],
+      coordinate: 'c1 · c8',
     },
     {
-      icon: <Video className="w-6 h-6 text-brand-accent" />,
+      icon: <Video className="w-5 h-5" style={{ color: 'var(--gold-bright)' }} />,
       title: 'Chess YouTubers',
       description:
         'Stop sending your hard-earned traffic to massive platforms that monetize your audience. Retain community value.',
@@ -45,9 +48,10 @@ export default function BuiltFor() {
         'Host community tournaments and live streams',
         'Launch branded educational digital products',
       ],
+      coordinate: 'f1 · f8',
     },
     {
-      icon: <School className="w-6 h-6 text-brand-accent" />,
+      icon: <School className="w-5 h-5" style={{ color: 'var(--gold-bright)' }} />,
       title: 'Chess Academies',
       description:
         'Standardize operations and curriculum across multiple coaches. Maintain oversight on player progression.',
@@ -56,12 +60,15 @@ export default function BuiltFor() {
         'Standardized opening databases and training syllabus',
         'Multi-coach calendar booking and scheduling tools',
       ],
+      coordinate: 'g1 · g8',
     },
   ];
 
   return (
-    <section id="built-for" className="py-20 md:py-28 bg-brand-bg">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <section id="built-for" className="py-20 md:py-28 relative overflow-hidden" style={{ background: 'rgba(8, 11, 20, 0.7)' }}>
+      <div className="section-divider absolute top-0 left-0 right-0" aria-hidden="true" />
+      
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
 
         {/* Section Header */}
         <div
@@ -69,12 +76,15 @@ export default function BuiltFor() {
           className="text-center max-w-3xl mx-auto mb-16 md:mb-20 space-y-4"
           style={{ opacity: 0 }}
         >
-          <h2 className="font-sans font-extrabold text-3xl sm:text-4xl text-white tracking-tight">
-            Built For Independent Creators
+          <div className="section-eyebrow justify-center">
+            Target Audience
+          </div>
+          <h2 className="font-display font-semibold text-4xl sm:text-5xl md:text-6xl text-white tracking-tight leading-tight">
+            Built For Independent <span className="text-gold-gradient" style={{ fontStyle: 'italic', fontWeight: 400 }}>Creators</span>
           </h2>
-          <p className="font-sans text-brand-secondary text-base leading-relaxed">
+          <p className="font-sans text-base leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
             Whether you are coaching a handful of private students or managing an audience of hundreds of
-            thousands, ChessCraft equips you with enterprise-grade technology.
+            thousands, XLChess equips you with enterprise-grade technology.
           </p>
         </div>
 
@@ -83,23 +93,31 @@ export default function BuiltFor() {
           {targets.map((target, index) => (
             <div
               key={index}
-              className="p-8 rounded-xl bg-brand-surface border border-brand-border flex flex-col justify-between text-left space-y-6 hover:border-brand-accent/20 transition-all duration-300"
-              style={{ opacity: 0 }}
+              className="luxury-card p-8 flex flex-col justify-between text-left space-y-6"
+              style={{ opacity: 0, borderRadius: '2px' }}
             >
-              <div className="space-y-4">
-                <div className="w-12 h-12 rounded-lg bg-brand-bg border border-brand-border flex items-center justify-center">
+              {/* Chess board micropattern */}
+              <div className="card-board-pattern" aria-hidden="true" />
+
+              {/* Coordinate accent */}
+              <div className="card-coordinate" aria-hidden="true">{target.coordinate}</div>
+
+              <div className="space-y-4 relative z-10">
+                <div className="feature-icon-box">
                   {target.icon}
                 </div>
-                <h3 className="font-sans font-bold text-xl text-white">{target.title}</h3>
-                <p className="font-sans text-sm text-brand-secondary leading-relaxed">
+                <h3 className="font-display font-semibold text-xl text-white" style={{ letterSpacing: '-0.01em' }}>
+                  {target.title}
+                </h3>
+                <p className="font-sans text-sm leading-relaxed" style={{ color: 'var(--text-secondary)', lineHeight: '1.7' }}>
                   {target.description}
                 </p>
               </div>
 
-              <ul className="space-y-3 pt-4 border-t border-brand-border/60">
+              <ul className="space-y-3 pt-4 border-t relative z-10" style={{ borderColor: 'rgba(212, 175, 110, 0.12)' }}>
                 {target.bullets.map((bullet, idx) => (
-                  <li key={idx} className="flex items-start gap-2.5 text-xs text-brand-secondary leading-normal">
-                    <CheckCircle2 className="w-4 h-4 text-brand-accent shrink-0 mt-0.5" />
+                  <li key={idx} className="flex items-start gap-2.5 text-xs leading-normal" style={{ color: 'var(--text-secondary)' }}>
+                    <CheckCircle2 className="w-4 h-4 shrink-0 mt-0.5" style={{ color: 'var(--gold-bright)' }} />
                     <span>{bullet}</span>
                   </li>
                 ))}
@@ -109,6 +127,7 @@ export default function BuiltFor() {
         </div>
 
       </div>
+      <div className="section-divider absolute bottom-0 left-0 right-0" aria-hidden="true" />
     </section>
   );
 }

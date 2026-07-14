@@ -3,9 +3,11 @@
  * Mirrored hero-style section placed directly below the Hero.
  * Image on right, text on left (desktop).
  * GSAP ScrollTrigger animations: image slides from right, text slides from left.
+ *
+ * Design: Black & Gold premium — Cormorant Garamond headlines, gold CTA.
  */
 
-import { useRef } from 'react';
+import { useRef, useEffect, useCallback } from 'react';
 import { useGSAP } from '../hooks/useGSAP';
 import { gsap, dur } from '../utils/gsapConfig';
 import { ArrowRight } from 'lucide-react';
@@ -14,6 +16,49 @@ export default function BrandSection() {
   const sectionRef = useRef<HTMLElement>(null);
   const textRef = useRef<HTMLDivElement>(null);
   const imageRef = useRef<HTMLDivElement>(null);
+  const artworkRef = useRef<HTMLDivElement>(null);
+
+  // Perspective tilt hover on artwork image (same as Features card)
+  const handleArtworkMouseMove = useCallback((e: MouseEvent) => {
+    const el = artworkRef.current;
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    const cx = rect.left + rect.width / 2;
+    const cy = rect.top + rect.height / 2;
+    const dx = (e.clientX - cx) / (rect.width / 2);
+    const dy = (e.clientY - cy) / (rect.height / 2);
+    gsap.to(el, {
+      rotateX: -dy * 5,
+      rotateY: dx * 5,
+      scale: 1.12,
+      duration: 0.4,
+      ease: 'power2.out',
+    });
+  }, []);
+
+  const handleArtworkMouseLeave = useCallback(() => {
+    const el = artworkRef.current;
+    if (!el) return;
+    gsap.to(el, {
+      rotateX: 0,
+      rotateY: 0,
+      scale: 1.1,
+      duration: 0.7,
+      ease: 'elastic.out(1, 0.5)',
+    });
+  }, []);
+
+  useEffect(() => {
+    const el = artworkRef.current;
+    if (!el) return;
+    if (!window.matchMedia('(hover: hover)').matches) return;
+    el.addEventListener('mousemove', handleArtworkMouseMove as EventListener);
+    el.addEventListener('mouseleave', handleArtworkMouseLeave);
+    return () => {
+      el.removeEventListener('mousemove', handleArtworkMouseMove as EventListener);
+      el.removeEventListener('mouseleave', handleArtworkMouseLeave);
+    };
+  }, [handleArtworkMouseMove, handleArtworkMouseLeave]);
 
   useGSAP(
     () => {
@@ -53,7 +98,6 @@ export default function BrandSection() {
           },
         }
       );
-
     },
     sectionRef,
     []
@@ -65,52 +109,62 @@ export default function BrandSection() {
       id="brand-section"
       className="relative py-20 md:py-32 overflow-hidden"
     >
-      {/* Soft blue ambient glow */}
+      {/* Gold ambient glow */}
       <div
         className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full blur-[140px] pointer-events-none"
-        style={{ background: 'rgba(99, 102, 241, 0.04)' }}
+        style={{ background: 'rgba(212, 175, 110, 0.04)' }}
         aria-hidden="true"
       />
 
+      {/* Subtle section divider at top */}
+      <div className="absolute top-0 left-0 right-0">
+        <div className="section-divider" />
+      </div>
+
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-        
+
         {/* Top Banner Area */}
         <div className="flex flex-col lg:flex-row items-center gap-12 lg:gap-16">
-          
+
           {/* Left — Text Content */}
           <div
             ref={textRef}
             className="w-full lg:w-[55%] space-y-8 text-left"
             style={{ opacity: 0 }}
           >
+            {/* Eyebrow label */}
+            <div className="section-eyebrow">
+              Brand Growth
+            </div>
 
             <div className="space-y-4 max-w-xl">
-              <h2 className="font-sans font-extrabold text-4xl sm:text-5xl md:text-6xl text-white tracking-tight leading-[1.05]">
-                <span className="block">Build More Than</span>
-                <span className="block text-transparent bg-clip-text bg-gradient-to-r from-brand-accent via-indigo-400 to-violet-400 drop-shadow-[0_0_24px_rgba(99,102,241,0.2)]">
+              <h2 className="font-display font-semibold text-4xl sm:text-5xl md:text-6xl text-white tracking-tight leading-[1.05]">
+                <span className="block" style={{ color: 'var(--text-primary)' }}>Build More Than</span>
+                <span className="block text-gold-gradient">
                   Subscribers
                 </span>
               </h2>
             </div>
 
             <div className="space-y-4 max-w-lg">
-              <p className="font-sans text-base sm:text-[19px] text-brand-secondary/90 leading-relaxed font-medium">
+              <p className="font-sans text-base sm:text-[19px] leading-relaxed font-light" style={{ color: 'var(--text-secondary)' }}>
                 You've already done the hard part: building an audience.
               </p>
-              <p className="font-sans text-base sm:text-[19px] text-brand-secondary/90 leading-relaxed font-medium">
+              <p className="font-sans text-base sm:text-[19px] leading-relaxed font-light" style={{ color: 'var(--text-secondary)' }}>
                 Now build a platform around your brand that grows with you.
               </p>
             </div>
-            
+
             <div className="pt-4">
-              <button 
+              <button
                 onClick={() => {
                   document.getElementById('contact-us')?.scrollIntoView({ behavior: 'smooth' });
                 }}
-                className="inline-flex items-center justify-center gap-3 font-sans font-semibold text-[17px] bg-gradient-to-r from-[#6e63f6] via-[#7268f8] to-[#7b6dff] hover:brightness-110 text-white rounded-xl transition-all duration-300 shadow-[0_0_34px_rgba(110,99,246,0.35),0_12px_42px_rgba(0,0,0,0.35),inset_0_1px_0_rgba(255,255,255,0.25)] hover:shadow-[0_0_46px_rgba(110,99,246,0.55),0_16px_48px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.28)] hover:-translate-y-1 btn-glow-container btn-glow-accent cta-shine px-8 py-4 group"
+                className="inline-flex items-center justify-center gap-3 font-sans font-medium text-[15px] btn-premium-cta btn-glow-container cta-shine px-8 py-4 rounded-sm group transition-all duration-300"
+                style={{ fontSize: '13px' }}
               >
                 Build Your Platform
-                <ArrowRight className="w-5 h-5 transition-transform duration-300 group-hover:translate-x-1" />
+                <ArrowRight className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-1" />
               </button>
             </div>
           </div>
@@ -119,14 +173,28 @@ export default function BrandSection() {
           <div
             ref={imageRef}
             className="w-full lg:w-[45%] flex justify-center lg:justify-end"
-            style={{ opacity: 0 }}
+            style={{ opacity: 0, perspective: '1000px' }}
           >
-            <div className="w-full max-w-[600px] relative scale-[1.1] origin-right">
-              <div className="absolute inset-0 bg-brand-accent/20 blur-[80px] rounded-full mix-blend-screen pointer-events-none" />
+            <div
+              ref={artworkRef}
+              className="luxury-card w-full max-w-[600px] relative scale-[1.1] origin-right p-4 md:p-6 pb-8"
+              style={{ transformStyle: 'preserve-3d', willChange: 'transform' }}
+            >
+              {/* Chess board micropattern */}
+              <div className="card-board-pattern" aria-hidden="true" />
+
+              {/* Coordinate accent */}
+              <div className="card-coordinate" aria-hidden="true">b1 · b8</div>
+
+              {/* Gold ambient glow behind image */}
+              <div
+                className="absolute inset-0 rounded-full blur-[80px] mix-blend-screen pointer-events-none"
+                style={{ background: 'rgba(212, 175, 110, 0.08)' }}
+              />
               <img
                 src="/final%20banner.png"
                 alt="Build More Than Subscribers Design"
-                className="w-full h-auto object-contain relative z-10 drop-shadow-[0_20px_40px_rgba(0,0,0,0.4)] transition-transform duration-700 hover:scale-[1.02]"
+                className="w-full h-auto object-contain relative z-10 drop-shadow-[0_20px_40px_rgba(0,0,0,0.4)]"
                 draggable={false}
               />
             </div>
@@ -134,8 +202,11 @@ export default function BrandSection() {
 
         </div>
 
+      </div>
 
-
+      {/* Subtle section divider at bottom */}
+      <div className="absolute bottom-0 left-0 right-0">
+        <div className="section-divider" />
       </div>
     </section>
   );

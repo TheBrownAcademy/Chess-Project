@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { X } from "lucide-react";
 import { useSession } from "../hooks/useSession";
 
@@ -67,7 +68,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMo
     signIn("google");
   };
 
-  return (
+  return createPortal(
     <div
       className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-brand-bg/60 backdrop-blur-sm transition-opacity duration-300"
       onClick={handleBackdropClick}
@@ -150,6 +151,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMo
           )}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };

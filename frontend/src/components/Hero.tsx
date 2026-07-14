@@ -1,24 +1,12 @@
 /**
  * Hero.tsx
  * Landing hero section with premium GSAP animations and chess puzzle.
- *
- * Animations:
- *   ① Logo — fade-down entrance
- *   ② Headline lines — staggered fade-up (y:40→0, opacity:0→1, 0.8s each, 0.15s stagger)
- *   ③ Subtitle + CTA buttons — fade-up after headline (back.out spring)
- *   ④ Chessboard container — slide from right (x:80→0) + fade, 1.2s, slight rotation correction
- *   ⑤ Chessboard float — mobile only: infinite y:-8px yoyo (handled by usePerspectiveTilt)
- *   ⑥ Background orbs — CSS keyframe float (no GSAP, pure composited GPU layer)
- *   ⑦ Perspective tilt — desktop: cursor-driven 3D tilt via usePerspectiveTilt hook
- *   ⑧ Ambient board glow + floating particles (new)
- *   ⑨ Mouse parallax on particles (new)
+ * Redesigned to match the assignment directory exactly.
  */
 
 import { useRef, useState, useEffect } from 'react';
-
 import { useGSAP } from '../hooks/useGSAP';
 import { usePerspectiveTilt } from '../hooks/usePerspectiveTilt';
-
 import { useMagneticButton } from '../hooks/useMagneticButton';
 import { useButtonGlow } from '../hooks/useButtonGlow';
 import { gsap, dur, ease } from '../utils/gsapConfig';
@@ -56,11 +44,17 @@ export default function Hero() {
   const playTextRef = useRef<HTMLSpanElement>(null);
   const line1Ref = useRef<HTMLSpanElement>(null);
   const line2Ref = useRef<HTMLSpanElement>(null);
-  const subtitleRef = useRef<HTMLParagraphElement>(null);
+  const eyebrowRef = useRef<HTMLDivElement>(null);
+  const ruleRef = useRef<HTMLDivElement>(null);
+  const subtitleRef = useRef<HTMLDivElement>(null);
   const subPara1Ref = useRef<HTMLParagraphElement>(null);
   const subPara2Ref = useRef<HTMLParagraphElement>(null);
   const ctaRef = useRef<HTMLDivElement>(null);
   const boardColRef = useRef<HTMLDivElement>(null);
+  const boardCardRef = useRef<HTMLDivElement>(null);
+
+  const beam1Ref = useRef<HTMLDivElement>(null);
+  const beam2Ref = useRef<HTMLDivElement>(null);
 
   // ── Perspective tilt hook (manages its own ref) ────────────────────────────
   const tiltRef = usePerspectiveTilt<HTMLDivElement>({
@@ -73,7 +67,6 @@ export default function Hero() {
   });
 
   const primaryGlowRef = useButtonGlow<HTMLAnchorElement>();
-
   const ctaAnchorRef = useRef<HTMLAnchorElement>(null);
 
   // Merge glow ref onto the anchor element
@@ -91,38 +84,30 @@ export default function Hero() {
 
       const tl = gsap.timeline({ defaults: { ease: ease.out } });
 
-      // ① Logo — fade-down
+      // ① Logo — cinematic fade-down
       tl.fromTo(
         heroLogoRef.current,
-        { opacity: 0, y: -20 },
-        { opacity: 1, y: 0, duration: 0.8, ease: 'power2.out' },
+        { opacity: 0, y: -28, filter: 'blur(6px)' },
+        { opacity: 1, y: 0, filter: 'blur(0px)', duration: 1.0, ease: 'expo.out' },
         0
       );
 
-      // Make containers visible immediately (spans will be opacity 0 initially)
+      // Make containers visible
       if (line1Ref.current) line1Ref.current.style.opacity = '1';
-      // Do NOT set line2Ref opacity to 1 here because we will animate the container itself
       if (subtitleRef.current) subtitleRef.current.style.opacity = '1';
 
       // ── Custom SplitText Utility ─────────────────────────────────────────
       const splitText = (element: HTMLElement | null, type: 'char' | 'word') => {
         if (!element) return { spans: [] };
-        
-        // Use textContent for reliability during React mount
         const text = element.textContent?.trim() || '';
-        
-        // Preserve accessibility by setting aria-label on the parent container
-        // and hiding the split spans from screen readers.
         element.setAttribute('aria-label', text);
         element.innerHTML = '';
-        
         const chunks = type === 'char' ? text.split('') : text.split(' ');
         const spans: HTMLSpanElement[] = [];
-        
         chunks.forEach((chunk, index) => {
           if (type === 'char' && chunk === ' ') {
-             element.appendChild(document.createTextNode(' '));
-             return;
+            element.appendChild(document.createTextNode(' '));
+            return;
           }
           const span = document.createElement('span');
           span.style.display = 'inline-block';
@@ -132,104 +117,130 @@ export default function Hero() {
           span.textContent = chunk;
           element.appendChild(span);
           spans.push(span);
-
-          // Correctly insert spaces as separate text nodes for 'word' splitting
           if (type === 'word' && index < chunks.length - 1) {
             element.appendChild(document.createTextNode(' '));
           }
         });
-        
         return { spans };
       };
 
       const splitL1 = splitText(line1Ref.current, 'word');
-      // Do NOT split line2Ref to preserve its bg-clip-text gradient rendering
       const splitS1 = splitText(subPara1Ref.current, 'word');
       const splitS2 = splitText(subPara2Ref.current, 'word');
 
-      // ② Headline lines — staggered fade-up by word (avoiding filter to protect Safari gradient)
+      // Eyebrow label reveal
+      tl.fromTo(
+        eyebrowRef.current,
+        { opacity: 0, x: -20 },
+        { opacity: 1, x: 0, duration: 0.7, ease: 'expo.out' },
+        0.2
+      );
+
+      // ② Headline — cinematic stagger
       tl.fromTo(
         [...splitL1.spans, line2Ref.current],
-        { opacity: 0, y: 24 },
-        { opacity: 1, y: 0, duration: 0.8, stagger: 0.08, ease: 'expo.out' },
-        0.1
+        { opacity: 0, y: 30, rotationX: 25 },
+        {
+          opacity: 1,
+          y: 0,
+          rotationX: 0,
+          duration: 0.9,
+          stagger: 0.07,
+          ease: 'expo.out',
+          transformOrigin: '50% 100%',
+        },
+        0.35
       );
 
-      // ③ Subtitle → fade up by word
+      // Rule reveal
+      tl.fromTo(
+        ruleRef.current,
+        { width: 0, opacity: 0 },
+        { width: '40px', opacity: 1, duration: 0.8, ease: 'expo.out' },
+        '-=0.2'
+      );
+
+      // ③ Subtitle — word-by-word blur dissolve
       tl.fromTo(
         [...splitS1.spans, ...splitS2.spans],
-        { opacity: 0, y: 20, filter: 'blur(4px)' },
-        { opacity: 1, y: 0, filter: 'blur(0px)', duration: 0.8, stagger: 0.02, ease: 'expo.out' },
-        '-=0.4'
+        { opacity: 0, y: 16, filter: 'blur(5px)' },
+        {
+          opacity: 1,
+          y: 0,
+          filter: 'blur(0px)',
+          duration: 0.85,
+          stagger: 0.018,
+          ease: 'expo.out',
+        },
+        '-=0.5'
       );
 
+      // ④ CTA — spring entrance
       tl.fromTo(
         ctaRef.current,
-        { opacity: 0, y: 20, scale: 0.96 },
-        { opacity: 1, y: 0, scale: 1, duration: dur(0.5), ease: ease.spring },
-        '-=0.3'
+        { opacity: 0, y: 20, scale: 0.95 },
+        { opacity: 1, y: 0, scale: 1, duration: dur(0.6), ease: ease.spring },
+        '-=0.35'
       );
 
-      // ④ Chessboard column — slide from right + rotation correction
+      // ⑤ Board column — cinematic entrance
       tl.fromTo(
         boardColRef.current,
-        { opacity: 0, x: 80, rotation: -3 },
-        { opacity: 1, x: 0, rotation: 0, duration: dur(1.2), ease: 'power2.out' },
-        0.2  // starts 0.2s after timeline start (parallel with headline)
+        { opacity: 0, x: 90, rotation: -4 },
+        { opacity: 1, x: 0, rotation: 0, duration: dur(1.3), ease: 'power2.out' },
+        0.25
       );
+
+      // ── Ambient light beams ────────────────────────────────────────────
+      if (beam1Ref.current) {
+        gsap.to(beam1Ref.current, {
+          x: '+=30', opacity: 0.04, duration: 12,
+          ease: 'sine.inOut', repeat: -1, yoyo: true,
+        });
+      }
+      if (beam2Ref.current) {
+        gsap.to(beam2Ref.current, {
+          x: '-=20', opacity: 0.03, duration: 15,
+          ease: 'sine.inOut', repeat: -1, yoyo: true, delay: 3,
+        });
+      }
 
       // ── Background orbs drift ──────────────────────────────────────────
       const orbA = heroRef.current.querySelector('.hero-orb-a');
       const orbB = heroRef.current.querySelector('.hero-orb-b');
       if (orbA) {
         gsap.to(orbA, {
-          x: '+=60',
-          y: '-=40',
-          scale: 1.15,
-          duration: 16,
-          ease: 'sine.inOut',
-          repeat: -1,
-          yoyo: true,
+          x: '+=60', y: '-=40', scale: 1.15, duration: 18,
+          ease: 'sine.inOut', repeat: -1, yoyo: true,
         });
       }
       if (orbB) {
         gsap.to(orbB, {
-          x: '-=40',
-          y: '+=60',
-          scale: 0.9,
-          duration: 20,
-          ease: 'sine.inOut',
-          repeat: -1,
-          yoyo: true,
+          x: '-=40', y: '+=60', scale: 0.9, duration: 22,
+          ease: 'sine.inOut', repeat: -1, yoyo: true,
         });
       }
 
-      // ── Third ambient orb (new — soft gold behind board) ──────────────
       const orbC = heroRef.current.querySelector('.hero-orb-c');
       if (orbC) {
         gsap.to(orbC, {
-          x: '+=30',
-          y: '-=20',
-          scale: 1.1,
-          duration: 12,
-          ease: 'sine.inOut',
-          repeat: -1,
-          yoyo: true,
+          x: '+=30', y: '-=20', scale: 1.1, duration: 14,
+          ease: 'sine.inOut', repeat: -1, yoyo: true,
         });
       }
 
-      // ── Glow pulses (preserved) ──────────────────────────────────────────
+      // ── Play icon glow pulse ───────────────────────────────────────────
       if (playIconRef.current) {
         gsap.to(playIconRef.current, {
-          filter: 'drop-shadow(0 0 10px rgba(99, 102, 241, 0.55))',
-          duration: 2,
+          filter: 'drop-shadow(0 0 10px rgba(212, 175, 110, 0.5))',
+          duration: 2.5,
           repeat: -1,
           yoyo: true,
           ease: 'sine.inOut',
         });
       }
 
-      // ── Play text: split-char hover animation ───────────────────────────
+      // ── CTA text char animation on hover ───────────────────────────────
       const ctaEl = ctaAnchorRef.current;
       const textEl = playTextRef.current;
       if (ctaEl && textEl) {
@@ -237,26 +248,17 @@ export default function Hero() {
 
         const onMouseEnter = () => {
           gsap.to(chars, {
-            y: -18,
-            opacity: 0,
-            duration: 0.22,
-            stagger: 0.028,
-            ease: 'power2.in',
-            overwrite: true,
+            y: -18, opacity: 0, duration: 0.22,
+            stagger: 0.028, ease: 'power2.in', overwrite: true,
           });
         };
 
         const onMouseLeave = () => {
-          gsap.fromTo(
-            chars,
+          gsap.fromTo(chars,
             { y: 16, opacity: 0 },
             {
-              y: 0,
-              opacity: 1,
-              duration: 0.38,
-              stagger: 0.045,
-              ease: 'back.out(1.6)',
-              overwrite: true,
+              y: 0, opacity: 1, duration: 0.38,
+              stagger: 0.045, ease: 'back.out(1.6)', overwrite: true,
             }
           );
         };
@@ -277,53 +279,54 @@ export default function Hero() {
   return (
     <header
       ref={heroRef}
-      className="relative pt-16 pb-16 md:pt-24 md:pb-28 overflow-hidden"
+      className="relative pt-28 pb-20 md:pt-36 md:pb-32 overflow-hidden"
       id="hero-section"
     >
-      {/* Top-Right Absolute Authentication Panel */}
-      <div className="absolute top-4 right-6 sm:top-6 sm:right-8 z-[80]">
-        {status === "loading" ? (
-          <div className="w-5 h-5 rounded-full border-2 border-brand-accent/30 border-t-brand-accent animate-spin" />
-        ) : status === "authenticated" ? (
-          <AvatarDropdown />
-        ) : (
-          <div className="flex items-center gap-3">
-            <button
-              onClick={() => openModal("login")}
-              className="font-sans text-sm font-semibold text-brand-secondary hover:text-white transition-colors cursor-pointer focus:outline-none"
-            >
-              Login
-            </button>
-            <span className="text-brand-secondary/30 text-xs select-none">|</span>
-            <button
-              onClick={() => openModal("register")}
-              className="font-sans text-sm font-semibold text-brand-secondary hover:text-brand-accent transition-colors cursor-pointer focus:outline-none"
-            >
-              Get Started
-            </button>
-          </div>
-        )}
-      </div>
-      {/* ── Background glow orbs (CSS animated — GPU composited) ─────────── */}
+      {/* ── Ambient light beams ──────────────────────────────────────────── */}
       <div
-        className="hero-orb-a absolute top-1/4 left-1/2 w-[500px] h-[500px] bg-brand-accent/5 rounded-full blur-[120px] pointer-events-none"
+        ref={beam1Ref}
+        className="hero-beam"
+        style={{
+          left: '22%',
+          opacity: 0.025,
+          animationDelay: '0s',
+        }}
         aria-hidden="true"
       />
       <div
-        className="hero-orb-b absolute top-10 right-10 w-[300px] h-[300px] bg-indigo-500/5 rounded-full blur-[90px] pointer-events-none"
+        ref={beam2Ref}
+        className="hero-beam"
+        style={{
+          left: '58%',
+          opacity: 0.018,
+          animationDelay: '-4s',
+          animationDuration: '11s',
+        }}
         aria-hidden="true"
       />
-      {/* ── New: soft amber/gold ambient glow behind board area ────────────── */}
+
+      {/* ── Background glow orbs ─────────────────────────────────────────── */}
       <div
-        className="hero-orb-c absolute bottom-0 right-1/4 w-[400px] h-[400px] bg-violet-500/4 rounded-full blur-[100px] pointer-events-none"
+        className="hero-orb-a absolute top-1/4 left-1/3 w-[600px] h-[600px] rounded-full blur-[140px] pointer-events-none"
+        style={{ background: 'rgba(212, 175, 110, 0.04)' }}
+        aria-hidden="true"
+      />
+      <div
+        className="hero-orb-b absolute top-0 right-10 w-[400px] h-[400px] rounded-full blur-[120px] pointer-events-none"
+        style={{ background: 'rgba(212, 175, 110, 0.03)' }}
+        aria-hidden="true"
+      />
+      <div
+        className="hero-orb-c absolute bottom-0 right-1/4 w-[500px] h-[500px] rounded-full blur-[120px] pointer-events-none"
+        style={{ background: 'rgba(180, 147, 74, 0.02)' }}
         aria-hidden="true"
       />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:items-center items-center">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16 lg:items-center">
 
           {/* ── Text Column ────────────────────────────────────────────────── */}
-          <div className="lg:col-span-6 space-y-6 md:space-y-8 text-left">
+          <div className="lg:col-span-6 space-y-8 md:space-y-10 text-left">
 
             {/* Logo above heading */}
             <div
@@ -336,7 +339,7 @@ export default function Hero() {
                 alt="XLChess logo"
                 className="object-contain"
                 style={{
-                  height: '160px',
+                  height: '150px',
                   width: 'auto',
                   maxWidth: 'none',
                   willChange: 'transform, filter',
@@ -346,34 +349,68 @@ export default function Hero() {
               />
             </div>
 
-            <h1 className="font-sans font-extrabold text-4xl sm:text-5xl md:text-6xl text-white tracking-tight leading-[1.1] md:leading-[1.05]">
-              {/* Each span is a separate animation target */}
-              <span ref={line1Ref} className="block" style={{ opacity: 0 }}>
+            {/* Section eyebrow */}
+            <div
+              ref={eyebrowRef}
+              className="section-eyebrow"
+              style={{ opacity: 0 }}
+              aria-hidden="true"
+            >
+              Chess Platform
+            </div>
+
+            {/* Editorial headline */}
+            <h1
+              className="font-display text-5xl sm:text-6xl md:text-7xl lg:text-7xl tracking-editorial leading-[0.95]"
+              style={{ color: 'var(--text-primary)' }}
+            >
+              <span
+                ref={line1Ref}
+                className="block"
+                style={{ opacity: 0 }}
+              >
                 Build the Future of
               </span>
               <span
                 ref={line2Ref}
-                className="block text-transparent bg-clip-text bg-gradient-to-r from-brand-accent via-indigo-400 to-violet-400"
-                style={{ opacity: 0 }}
+                className="block text-gold-gradient font-display"
+                style={{ opacity: 0, fontStyle: 'italic', fontWeight: 400 }}
               >
                 Online Chess
               </span>
             </h1>
 
+            {/* Gold rule */}
+            <div
+              ref={ruleRef}
+              className="hero-rule"
+              style={{ width: 0, opacity: 0 }}
+              aria-hidden="true"
+            />
+
+            {/* Subtitle */}
             <div
               ref={subtitleRef}
-              className="font-sans max-w-xl leading-relaxed space-y-3"
+              className="space-y-4 max-w-xl"
               style={{ opacity: 0 }}
             >
-              <p className="text-xl sm:text-2xl font-medium text-white/90">
-                Making the Best Move on the Way to the Top
+              <p
+                ref={subPara1Ref}
+                className="font-sans text-xl sm:text-2xl font-light text-white leading-relaxed"
+                style={{ letterSpacing: '0.01em' }}
+              >
+                Making the decisive move toward the top.
               </p>
-              <p ref={subPara2Ref} className="text-base sm:text-lg text-brand-secondary">
+              <p
+                ref={subPara2Ref}
+                className="font-sans text-base sm:text-[17px] leading-relaxed"
+                style={{ color: 'var(--text-secondary)' }}
+              >
                 A complete chess platform to play, learn, compete, and grow—built to become the world's #1 destination for chess.
               </p>
             </div>
 
-            {/* CTA — Play Demo only */}
+            {/* CTA */}
             <div
               ref={ctaRef}
               className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4"
@@ -385,20 +422,18 @@ export default function Hero() {
                 id="hero-cta-primary"
                 className="
                   inline-flex items-center justify-center
-                  font-sans font-semibold text-[17px]
-                  bg-brand-accent hover:bg-brand-accent/95 text-white
-                  rounded-lg
-                  transition-colors duration-200
-                  shadow-xl shadow-brand-accent/20
-                  btn-glow-container btn-glow-accent cta-shine
+                  font-sans font-semibold text-[16px]
+                  rounded-sm
+                  btn-premium-cta btn-glow-container btn-glow-accent cta-shine
                   group
                 "
                 style={{
                   transformStyle: 'preserve-3d',
                   willChange: 'transform',
                   width: '140px',
-                  height: '64px',
+                  height: '60px',
                   padding: '0 10px',
+                  fontSize: '13px',
                 }}
               >
                 <img
@@ -406,8 +441,8 @@ export default function Hero() {
                   src="/play icon.png"
                   alt="Play"
                   style={{
-                    width: '62px',
-                    height: '62px',
+                    width: '58px',
+                    height: '58px',
                     objectFit: 'contain',
                     willChange: 'transform, filter',
                     transformOrigin: 'center center',
@@ -417,7 +452,7 @@ export default function Hero() {
                 />
                 <span
                   ref={playTextRef}
-                  className="ml-2 font-sans font-semibold text-[17px] flex overflow-hidden"
+                  className="ml-2 font-sans font-semibold text-[16px] flex overflow-hidden"
                   style={{ lineHeight: 1 }}
                 >
                   {'Play'.split('').map((char, i) => (
@@ -431,28 +466,27 @@ export default function Hero() {
                   ))}
                 </span>
               </a>
+
+              {/* Secondary link */}
+              <a
+                href="#contact-us"
+                className="nav-link font-sans text-sm font-light text-[#8E8B82] hover:text-[#F5F0E8] transition-colors duration-300 sm:pl-2"
+                style={{ letterSpacing: '0.04em' }}
+              >
+                Partner with us →
+              </a>
             </div>
           </div>
 
           {/* ── Chessboard / Puzzle Column ──────────────────────────────────── */}
-          {/*
-            perspective is set on the PARENT so 3D child transforms render correctly.
-            transformStyle: preserve-3d propagates depth through nested elements.
-          */}
           <div
             ref={boardColRef}
-            className="lg:col-span-6 flex justify-center lg:justify-center"
+            className="lg:col-span-6 flex justify-center"
             style={{
               opacity: 0,
               perspective: '1000px',
             }}
           >
-            {/*
-              tiltRef is attached here — usePerspectiveTilt owns:
-                Desktop: rotateX/Y + scale + dynamic shadow via mousemove
-                Mobile:  translateY yoyo float
-              CSS transition removed from this wrapper (GSAP handles everything).
-            */}
             <div
               ref={tiltRef}
               className="w-full max-w-[440px] md:max-w-[480px]"
@@ -461,23 +495,40 @@ export default function Hero() {
                 willChange: 'transform, filter',
               }}
             >
-              {/*
-                Board card — wraps HeroPuzzle, which owns:
-                - puzzle board + state machine
-                - move counter
-                - notation panel
-                - Solve + Reset buttons
-                - confetti trigger
-                - board glow animation
-              */}
+              {/* Board card — luxury obsidian + gold hairline */}
               <div
-                className="bg-brand-surface border border-brand-border rounded-2xl shadow-2xl hero-board-card"
-                style={{ transformStyle: 'preserve-3d' }}
+                ref={boardCardRef}
+                className="shadow-deep overflow-hidden hero-board-card"
+                style={{ transformStyle: 'preserve-3d', borderRadius: '2px' }}
               >
+                {/* Engraved coordinate decoration — top right corner */}
+                <div
+                  className="card-coordinate"
+                  style={{ top: '12px', right: '14px', bottom: 'auto' }}
+                  aria-hidden="true"
+                >
+                  e4 · d5
+                </div>
+
                 {/* Board Area */}
-                <div className="p-4 bg-brand-surface">
+                <div
+                  className="p-4 board-cursor-glow"
+                  style={{ background: 'rgba(8, 11, 20, 0.95)' }}
+                >
                   <HeroPuzzle />
                 </div>
+              </div>
+
+              {/* Floating micro-particles around board */}
+              <div className="hero-particles" aria-hidden="true">
+                {['e4', 'Nf3', '♔', 'd5', 'O-O', '♖', 'c4', '♗'].map((glyph, i) => (
+                  <span
+                    key={i}
+                    className={`hero-particle hero-particle-${i + 1}`}
+                  >
+                    {glyph}
+                  </span>
+                ))}
               </div>
             </div>
           </div>
