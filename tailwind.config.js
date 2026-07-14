@@ -8,16 +8,17 @@ export default {
     extend: {
       colors: {
         brand: {
-          bg: '#061631',
-          surface: '#0F1D4D',
-          accent: '#6366F1',
-          text: '#F8FAFC',
-          secondary: '#94A3B8',
-          border: 'rgba(255, 255, 255, 0.08)',
+          bg: '#04060d',         // Deepest navy-black
+          surface: '#0b0e1a',    // Graphite navy card surface
+          accent: '#4f46e5',     // Subtle indigo accent
+          text: '#f8fafc',       // Soft ivory text
+          secondary: '#8e9bb0',  // Muted platinum text
+          border: 'rgba(255, 255, 255, 0.06)', // Ultra-thin border
         }
       },
       fontFamily: {
-        sans: ['Inter', 'system-ui', 'sans-serif'],
+        display: ['Instrument Serif', 'Georgia', 'serif'],
+        sans: ['DM Sans', 'system-ui', 'sans-serif'],
       }
     },
   },

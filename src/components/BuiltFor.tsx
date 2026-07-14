@@ -69,10 +69,10 @@ export default function BuiltFor() {
           className="text-center max-w-3xl mx-auto mb-16 md:mb-20 space-y-4"
           style={{ opacity: 0 }}
         >
-          <h2 className="font-sans font-extrabold text-3xl sm:text-4xl text-white tracking-tight">
+          <h2 className="font-display font-normal text-3xl sm:text-4xl text-white tracking-[-0.02em] leading-[1.1]">
             Built For Independent Creators
           </h2>
-          <p className="font-sans text-brand-secondary text-base leading-relaxed">
+          <p className="font-sans text-brand-secondary text-base leading-[1.75] tracking-[0.005em]">
             Whether you are coaching a handful of private students or managing an audience of hundreds of
             thousands, ChessCraft equips you with enterprise-grade technology.
           </p>
@@ -90,8 +90,8 @@ export default function BuiltFor() {
                 <div className="w-12 h-12 rounded-lg bg-brand-bg border border-brand-border flex items-center justify-center">
                   {target.icon}
                 </div>
-                <h3 className="font-sans font-bold text-xl text-white">{target.title}</h3>
-                <p className="font-sans text-sm text-brand-secondary leading-relaxed">
+                <h3 className="font-sans font-semibold text-xl text-white tracking-[-0.01em]">{target.title}</h3>
+                <p className="font-sans text-sm text-brand-secondary leading-[1.75] tracking-[0.005em]">
                   {target.description}
                 </p>
               </div>

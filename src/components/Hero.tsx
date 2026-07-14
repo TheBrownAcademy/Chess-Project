@@ -299,14 +299,14 @@ export default function Hero() {
               />
             </div>
 
-            <h1 className="font-sans font-extrabold text-4xl sm:text-5xl md:text-6xl text-white tracking-tight leading-[1.1] md:leading-[1.05]">
+            <h1 className="font-display font-normal text-[2.65rem] sm:text-[3.4rem] md:text-[4.1rem] text-white tracking-[-0.02em] leading-[1.06]">
               {/* Each span is a separate animation target */}
               <span ref={line1Ref} className="block" style={{ opacity: 0 }}>
                 Build the Future of
               </span>
               <span
                 ref={line2Ref}
-                className="block text-transparent bg-clip-text bg-gradient-to-r from-brand-accent via-indigo-400 to-violet-400"
+                className="block text-brand-accent"
                 style={{ opacity: 0 }}
               >
                 Online Chess
@@ -315,13 +315,13 @@ export default function Hero() {
 
             <div
               ref={subtitleRef}
-              className="font-sans max-w-xl leading-relaxed space-y-3"
+              className="font-sans max-w-xl space-y-4"
               style={{ opacity: 0 }}
             >
-              <p className="text-xl sm:text-2xl font-medium text-white/90">
+              <p className="text-xl sm:text-2xl font-normal text-white/85 tracking-[-0.01em]">
                 Making the Best Move on the Way to the Top
               </p>
-              <p ref={subPara2Ref} className="text-base sm:text-lg text-brand-secondary">
+              <p ref={subPara2Ref} className="text-base sm:text-[17px] font-normal text-brand-secondary leading-[1.78] tracking-[0.005em]">
                 A complete chess platform to play, learn, compete, and grow—built to become the world's #1 destination for chess.
               </p>
             </div>
@@ -338,11 +338,11 @@ export default function Hero() {
                 id="hero-cta-primary"
                 className="
                   inline-flex items-center justify-center
-                  font-sans font-semibold text-[17px]
+                  font-sans font-semibold text-[16px]
                   bg-brand-accent hover:bg-brand-accent/95 text-white
                   rounded-lg
                   transition-colors duration-200
-                  shadow-xl shadow-brand-accent/20
+                  shadow-md shadow-brand-accent/10
                   btn-glow-container btn-glow-accent cta-shine
                   group
                 "

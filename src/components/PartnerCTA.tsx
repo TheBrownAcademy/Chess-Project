@@ -174,10 +174,11 @@ export default function ContactSection() {
         .contact-h2 {
           margin: 0 0 58px;
           text-align: center;
-          font-size: clamp(42px, 5vw, 58px);
-          line-height: 1;
-          letter-spacing: -0.06em;
-          text-shadow: 0 0 28px rgba(137,194,255,0.18);
+          font-family: 'Instrument Serif', Georgia, serif;
+          font-weight: 400;
+          font-size: clamp(36px, 4.5vw, 52px);
+          line-height: 1.08;
+          letter-spacing: -0.025em;
           color: #ffffff;
         }
 
@@ -187,10 +188,12 @@ export default function ContactSection() {
 
         .contact-label {
           display: block;
-          margin-bottom: 14px;
+          margin-bottom: 10px;
           color: var(--muted);
-          font-size: 18px;
-          font-weight: 700;
+          font-size: 13px;
+          font-weight: 500;
+          letter-spacing: 0.06em;
+          text-transform: uppercase;
         }
 
         .contact-label span {
@@ -201,13 +204,15 @@ export default function ContactSection() {
         .contact-input,
         .contact-textarea {
           width: 100%;
-          border: 1px solid rgba(137,194,255,0.15);
+          border: 1px solid rgba(137,194,255,0.12);
           background: var(--input-bg);
           color: #fff;
-          border-radius: 12px;
-          padding: 20px 24px;
+          border-radius: 10px;
+          padding: 16px 20px;
           font: inherit;
-          font-size: 22px;
+          font-size: 16px;
+          font-weight: 400;
+          letter-spacing: 0.01em;
           outline: none;
           box-shadow:
             inset 0 0 28px rgba(0,0,0,0.3),
@@ -245,18 +250,19 @@ export default function ContactSection() {
           width: 100%;
           margin-top: 16px;
           border: 0;
-          border-radius: 12px;
-          padding: 24px 30px;
+          border-radius: 10px;
+          padding: 20px 30px;
           color: #1a1a2e;
-          font-size: 22px;
-          font-weight: 800;
+          font-size: 16px;
+          font-weight: 700;
+          letter-spacing: 0.02em;
           cursor: pointer;
           overflow: hidden;
-          background: linear-gradient(90deg, #cfcfd6 0%, #b8b8c2 50%, #9e9ea8 100%);
+          background: linear-gradient(90deg, #d4d4db 0%, #bcbcc6 50%, #a3a3ae 100%);
           box-shadow:
-            0 0 34px rgba(207,207,214,0.15),
-            0 12px 42px rgba(0,0,0,0.35),
-            inset 0 1px 0 rgba(255,255,255,0.6);
+            0 0 20px rgba(207,207,214,0.08),
+            0 8px 28px rgba(0,0,0,0.3),
+            inset 0 1px 0 rgba(255,255,255,0.55);
           transition: transform 180ms ease, box-shadow 180ms ease;
         }
 
@@ -294,12 +300,12 @@ export default function ContactSection() {
 
         @media (max-width: 760px) {
           .contact-card {
-            padding: 54px 24px 42px;
+            padding: 48px 20px 36px;
           }
           .contact-input,
           .contact-textarea,
           .contact-btn {
-            font-size: 18px;
+            font-size: 15px;
           }
         }
       `}</style>

@@ -32,9 +32,11 @@
  * - Mobile-safe: cursor effects skip on touch devices
  * - Reduced-motion: all imperative animations check prefersReducedMotion()
  */
-import { useState, useRef, useCallback, useEffect, useLayoutEffect } from 'react';
+import { useState, useRef, useCallback, useEffect, useLayoutEffect, useImperativeHandle, forwardRef } from 'react';
 import { Chessboard } from 'react-chessboard';
 import { Chess } from 'chess.js';
+import type { ChessPuzzle } from '../utils/PuzzleLoader';
+import { validateMove } from '../utils/PuzzleValidator';
 import { parseUciMove } from '../utils/chessHelpers';
 import { useStockfish } from '../hooks/useStockfish';
 import { RotateCcw, Play, Zap, ChevronLeft, ChevronRight } from 'lucide-react';
@@ -219,7 +221,17 @@ const getKingSquares = (fen: string) => {
   }
   return { losingKingSq, winningKingSq };
 };
-export default function HeroPuzzle() {
+export interface HeroPuzzleRef {
+  triggerHint: () => void;
+  resetBoard: () => void;
+}
+
+const HeroPuzzle = forwardRef<HeroPuzzleRef, {
+  puzzle?: ChessPuzzle;
+  onSolved?: () => void;
+  onFailed?: () => void;
+  isTransitioning?: boolean;
+}>(function HeroPuzzle({ puzzle, onSolved, onFailed, isTransitioning = false }, ref) {
   const { getEngineMove } = useStockfish();
   const { fireConfetti } = useConfetti();
   const glowRef = useBoardCursorGlow<HTMLDivElement>();
@@ -229,6 +241,59 @@ export default function HeroPuzzle() {
   const boardCardRef = useRef<HTMLDivElement>(null);
   const boardInnerRef = useRef<HTMLDivElement>(null);
   const checkmateRef = useRef<HTMLDivElement>(null);
+
+  // ── State variables for Puzzle Mode when loaded as a prop ─────────────────
+  const [puzzleGameFen, setPuzzleGameFen] = useState<string>(puzzle?.fen || '');
+  const [puzzleStatus, setPuzzleStatus] = useState<'solving' | 'solved' | 'failed'>('solving');
+  const [puzzleLastMove, setPuzzleLastMove] = useState<{ from: string; to: string } | null>(null);
+  const [puzzleCheckedKingSquare, setPuzzleCheckedKingSquare] = useState<string | null>(null);
+  const [puzzleIsCheckmateGlow, setPuzzleIsCheckmateGlow] = useState<boolean>(false);
+  const [puzzleIsShaking, setPuzzleIsShaking] = useState<boolean>(false);
+  const [puzzleErrorSquares, setPuzzleErrorSquares] = useState<{ from: string; to: string } | null>(null);
+  const [puzzleHintSquare, setPuzzleHintSquare] = useState<string | null>(null);
+  const [puzzleSolvedFlash, setPuzzleSolvedFlash] = useState<boolean>(false);
+  const puzzleGameRef = useRef<Chess>(new Chess());
+
+  useEffect(() => {
+    if (!puzzle) return;
+    puzzleGameRef.current = new Chess(puzzle.fen);
+    setPuzzleGameFen(puzzle.fen);
+    setPuzzleStatus('solving');
+    setPuzzleLastMove(null);
+    setPuzzleCheckedKingSquare(null);
+    setPuzzleIsCheckmateGlow(false);
+    setPuzzleIsShaking(false);
+    setPuzzleErrorSquares(null);
+    setPuzzleHintSquare(null);
+    setPuzzleSolvedFlash(false);
+    clearTrail();
+    clearAnnotation();
+  }, [puzzle]);
+
+  useImperativeHandle(ref, () => ({
+    triggerHint: () => {
+      if (!puzzle || puzzleStatus !== 'solving') return;
+      const game = puzzleGameRef.current;
+      const legalMoves = game.moves({ verbose: true });
+      const correctMove = legalMoves.find((m) => validateMove(m, puzzle.solution));
+      if (correctMove) setPuzzleHintSquare(correctMove.from);
+    },
+    resetBoard: () => {
+      if (!puzzle) return;
+      puzzleGameRef.current = new Chess(puzzle.fen);
+      setPuzzleGameFen(puzzle.fen);
+      setPuzzleStatus('solving');
+      setPuzzleLastMove(null);
+      setPuzzleCheckedKingSquare(null);
+      setPuzzleIsCheckmateGlow(false);
+      setPuzzleIsShaking(false);
+      setPuzzleErrorSquares(null);
+      setPuzzleHintSquare(null);
+      setPuzzleSolvedFlash(false);
+      clearTrail();
+      clearAnnotation();
+    }
+  }), [puzzle, puzzleStatus, clearTrail, clearAnnotation]);
   // ── State variables for Puzzle 0 (Evergreen Game Autoplay & Puzzle) ────────
   const [phase0, setPhase0] = useState<'AUTOPLAY' | 'PUZZLE' | 'SUCCESS' | 'REPLAY'>('AUTOPLAY');
   const [gameFen0, setGameFen0] = useState<string>(START_FEN);
@@ -491,6 +556,79 @@ export default function HeroPuzzle() {
       animResolveRef.current = null;
     }
   }, []);
+
+  const puzzlePlayerColor = puzzle ? puzzleGameRef.current.turn() : 'w';
+  const puzzleBoardOrientation = puzzlePlayerColor === 'w' ? 'white' : 'black';
+
+  const onDropPuzzle = useCallback(
+    (sourceSquare: string, targetSquare: string): boolean => {
+      if (puzzleStatus !== 'solving' || !puzzle) return false;
+      const game = puzzleGameRef.current;
+
+      // Enforce active side
+      const piece = game.get(sourceSquare as any);
+      if (!piece || piece.color !== puzzlePlayerColor) return false;
+
+      const moves = game.moves({ verbose: true });
+      const targetMove = moves.find(m => m.from === sourceSquare && m.to === targetSquare);
+      if (!targetMove) return false;
+
+      const isCapture = !!targetMove.captured;
+
+      animatePieceMove(
+        sourceSquare,
+        targetSquare,
+        boardInnerRef.current,
+        isCapture,
+        () => {
+          game.move({ from: sourceSquare, to: targetSquare, promotion: 'q' });
+          setPuzzleGameFen(game.fen());
+          setPuzzleLastMove({ from: sourceSquare, to: targetSquare });
+          showTrail(sourceSquare, targetSquare);
+        }
+      ).then(() => {
+        if (solveAbortRef.current) return;
+        
+        // Validate user's move against puzzle.solution
+        const isCorrect = validateMove(targetMove, puzzle.solution);
+        
+        if (isCorrect) {
+          // Success!
+          setPuzzleStatus('solved');
+          setPuzzleSolvedFlash(true);
+          setPuzzleIsCheckmateGlow(true);
+          
+          fireConfetti();
+          
+          const { losingKingSq } = getKingSquares(game.fen());
+          runCheckmateImpact(losingKingSq).then(() => {
+            setPuzzleSolvedFlash(false);
+            onSolved?.();
+          });
+        } else {
+          // Wrong move!
+          setPuzzleStatus('failed');
+          setPuzzleIsShaking(true);
+          setPuzzleErrorSquares({ from: sourceSquare, to: targetSquare });
+          
+          setTimeout(() => {
+            game.undo();
+            setPuzzleGameFen(game.fen());
+            setPuzzleLastMove(null);
+            setPuzzleIsShaking(false);
+            setPuzzleErrorSquares(null);
+            setPuzzleStatus('solving');
+            clearTrail();
+            onFailed?.();
+          }, 900);
+        }
+      });
+
+      return true;
+    },
+    [puzzle, puzzleStatus, puzzlePlayerColor, animatePieceMove, showTrail, fireConfetti, runCheckmateImpact, onSolved, onFailed]
+  );
+
   // ══════════════════════════════════════════════════════════════════════════
   // MOVE PLAYER AND TIMING COORDINATION
   // ══════════════════════════════════════════════════════════════════════════
@@ -1522,6 +1660,215 @@ export default function HeroPuzzle() {
     cleanupGame();
     initGame(1);
   }, [cleanupGame, initGame]);
+
+  if (puzzle) {
+    const { losingKingSq, winningKingSq } = getKingSquares(puzzleGameFen);
+
+    const boardSquareStyles: Record<string, React.CSSProperties> = {};
+    if (puzzleLastMove) {
+      boardSquareStyles[puzzleLastMove.from] = { backgroundColor: 'rgba(255, 214, 10, 0.35)' };
+      boardSquareStyles[puzzleLastMove.to] = { backgroundColor: 'rgba(255, 214, 10, 0.50)' };
+    }
+    if (puzzleCheckedKingSquare && puzzleStatus !== 'solved') {
+      boardSquareStyles[puzzleCheckedKingSquare] = {
+        backgroundColor: 'rgba(239, 68, 68, 0.55)',
+        boxShadow: 'inset 0 0 20px rgba(239, 68, 68, 0.8)',
+        animation: 'king-pulse 0.4s ease-in-out 3',
+      };
+    }
+    if (puzzleErrorSquares) {
+      boardSquareStyles[puzzleErrorSquares.from] = {
+        backgroundColor: 'rgba(239, 68, 68, 0.35)',
+        boxShadow: 'inset 0 0 0 3px rgba(239, 68, 68, 0.80)',
+      };
+      boardSquareStyles[puzzleErrorSquares.to] = {
+        backgroundColor: 'rgba(239, 68, 68, 0.50)',
+        boxShadow: 'inset 0 0 0 3px rgba(239, 68, 68, 0.85)',
+      };
+    }
+    if (puzzleHintSquare) {
+      boardSquareStyles[puzzleHintSquare] = {
+        backgroundColor: 'rgba(255, 214, 10, 0.40)',
+        boxShadow: 'inset 0 0 0 3px rgba(255, 214, 10, 0.85)',
+      };
+    }
+
+    const boardRingClass = puzzleIsShaking
+      ? 'border-rose-500/70 ring-4 ring-rose-500/25 animate-shake'
+      : puzzleStatus === 'solved'
+        ? 'border-emerald-500/70 ring-4 ring-emerald-500/30'
+        : 'border-brand-border/60';
+
+    return (
+      <div
+        className="w-full max-w-[360px] sm:max-w-[400px] flex justify-center"
+        style={{
+          opacity: isTransitioning ? 0 : 1,
+          transition: 'opacity 0.35s ease',
+        }}
+      >
+        <div
+          ref={boardCardRef}
+          className={`relative bg-brand-surface border border-brand-border rounded-2xl shadow-2xl hero-board-card overflow-hidden flex flex-col p-4 transition-all duration-300 ${boardRingClass}`}
+          style={{
+            willChange: 'transform, opacity, box-shadow',
+            transition: 'box-shadow 1.5s ease-in-out',
+            width: '100%',
+            transformStyle: 'preserve-3d',
+          }}
+        >
+          {/* Chessboard Container */}
+          <div
+            ref={boardInnerRef}
+            id="puzzle-hero-chessboard"
+            className={`aspect-square overflow-hidden relative w-full ${puzzleSolvedFlash ? 'board-checkmate-flash' : ''}`}
+            style={{ willChange: 'filter' }}
+          >
+            {/* CORRECT solved overlay */}
+            {puzzleStatus === 'solved' && (
+              <div className="absolute inset-0 z-40 flex flex-col items-center justify-center bg-black/45 backdrop-blur-sm rounded-xl pointer-events-none animate-fade-in">
+                <div className="flex flex-col items-center bg-brand-surface/95 border border-emerald-500/40 rounded-2xl p-5 shadow-2xl text-center animate-puzzle-solved">
+                  <span className="text-3xl text-emerald-400 font-extrabold mb-1">✓ Correct!</span>
+                  <span className="text-sm text-brand-secondary font-semibold">Mate in 1 solved.</span>
+                </div>
+              </div>
+            )}
+
+            {/* GSAP piece movement overlay */}
+            {activeMove && (
+              <ChessAnimationLayer
+                activeMove={activeMove}
+                squareSize={squareSize}
+                onLand={handleAnimationLand}
+                onComplete={handleAnimationComplete}
+              />
+            )}
+            
+            {/* Hide real piece during GSAP move */}
+            {activeMove && (
+              <style>{`
+                #puzzle-hero-chessboard [data-square="${activeMove.fromSq}"] [data-piece] {
+                  opacity: 0 !important;
+                  pointer-events: none !important;
+                }
+              `}</style>
+            )}
+
+            {/* The Chessboard */}
+            <Chessboard
+              options={{
+                position: puzzleGameFen,
+                onPieceDrop: ({ sourceSquare, targetSquare }) =>
+                  onDropPuzzle(sourceSquare, targetSquare ?? ''),
+                boardOrientation: puzzleBoardOrientation,
+                darkSquareStyle: { backgroundColor: BOARD_DARK },
+                lightSquareStyle: { backgroundColor: BOARD_LIGHT },
+                boardStyle: {
+                  borderRadius: '0px',
+                  boxShadow: '0 8px 24px rgba(0, 0, 0, 0.6)',
+                },
+                showNotation: false,
+                squareStyles: boardSquareStyles,
+                animationDurationInMs: 0,
+                allowDragging: puzzleStatus === 'solving',
+                squareRenderer: ({ square, piece, children }) => {
+                  const isKing = piece?.pieceType === 'wK' || piece?.pieceType === 'bK';
+                  const isLosingKing = isKing && square === losingKingSq;
+                  const isWinningKing = isKing && square === winningKingSq;
+
+                  let className = 'piece-normal-container';
+                  if (isLosingKing) {
+                    className = 'king-defeated-container';
+                  } else if (isWinningKing) {
+                    className = 'king-winning-container';
+                  }
+
+                  return (
+                    <div className={className}>
+                      {children}
+                    </div>
+                  );
+                }
+              }}
+            />
+
+            {/* CHECKMATE impact overlay */}
+            <div
+              ref={checkmateRef}
+              className="absolute inset-0 z-40 items-center justify-center pointer-events-none rounded-xl"
+              style={{ display: 'none' }}
+            >
+              <div className="checkmate-overlay-badge">
+                 <Zap className="w-6 h-6 text-yellow-300 mb-1" />
+                 <span className="checkmate-text">CHECKMATE</span>
+              </div>
+            </div>
+
+            {/* Floating background particles */}
+            <div className="hero-particles absolute inset-0 pointer-events-none" aria-hidden="true">
+              {['\u265e', '\u265d', '\u265c', '\u265f', '\u265e', '\u265d', '\u265c', '\u265f'].map((symbol, i) => (
+                <span key={i} className={`hero-particle hero-particle-${i + 1}`}>
+                  {symbol}
+                </span>
+              ))}
+            </div>
+
+            {/* Move quality annotations */}
+            <MoveAnnotation activeAnnotation={activeAnnotation} />
+
+            {/* Board coordinate letters & numbers */}
+            {['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'].map((file, fi) => (
+              <span
+                key={`file-${file}`}
+                aria-hidden="true"
+                style={{
+                  position: 'absolute',
+                  bottom: '2px',
+                  left: `calc(${fi * 12.5}% + 2px)`,
+                  fontFamily: 'Inter, system-ui, sans-serif',
+                  fontSize: '15px',
+                  fontWeight: 700,
+                  color: fi % 2 === 0 ? '#5e7a44' : '#c8c8a6',
+                  textShadow: '0px -1px 1px rgba(0,0,0,0.35), 0px 1px 1px rgba(255,255,255,0.4)',
+                  opacity: 0.92,
+                  pointerEvents: 'none',
+                  userSelect: 'none',
+                  zIndex: 25,
+                  lineHeight: 1,
+                }}
+              >
+                {file}
+              </span>
+            ))}
+            {['8', '7', '6', '5', '4', '3', '2', '1'].map((rank, ri) => (
+              <span
+                key={`rank-${rank}`}
+                aria-hidden="true"
+                style={{
+                  position: 'absolute',
+                  top: `calc(${ri * 12.5}% + 2px)`,
+                  left: '2px',
+                  fontFamily: 'Inter, system-ui, sans-serif',
+                  fontSize: '15px',
+                  fontWeight: 700,
+                  color: ri % 2 === 0 ? '#c8c8a6' : '#5e7a44',
+                  textShadow: '0px -1px 1px rgba(0,0,0,0.35), 0px 1px 1px rgba(255,255,255,0.4)',
+                  opacity: 0.92,
+                  pointerEvents: 'none',
+                  userSelect: 'none',
+                  zIndex: 25,
+                  lineHeight: 1,
+                }}
+              >
+                {rank}
+              </span>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col gap-0.5">
       {/* Top Title fixed above the board inside the panel */}
@@ -2131,4 +2478,6 @@ export default function HeroPuzzle() {
       </div>
     </div>
   );
-}
+});
+
+export default HeroPuzzle;

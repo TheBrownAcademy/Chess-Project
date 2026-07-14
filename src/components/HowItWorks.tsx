@@ -59,10 +59,10 @@ export default function HowItWorks() {
           className="text-center max-w-3xl mx-auto mb-16 md:mb-20 space-y-4"
           style={{ opacity: 0 }}
         >
-          <h2 className="font-sans font-extrabold text-3xl sm:text-4xl text-white tracking-tight">
+          <h2 className="font-display font-normal text-3xl sm:text-4xl text-white tracking-[-0.02em] leading-[1.1]">
             How It Works
           </h2>
-          <p className="font-sans text-brand-secondary text-base leading-relaxed">
+          <p className="font-sans text-brand-secondary text-base leading-[1.75] tracking-[0.005em]">
             Going independent does not require code or hosting setups.{' '}
             Our automated pipeline delivers a production-ready academy portal in three simple steps.
           </p>
@@ -91,8 +91,8 @@ export default function HowItWorks() {
               </div>
 
               {/* Title & Description */}
-              <h3 className="font-sans font-bold text-lg text-white pt-2">{step.title}</h3>
-              <p className="font-sans text-sm text-brand-secondary leading-relaxed">
+              <h3 className="font-sans font-semibold text-lg text-white tracking-[-0.01em] pt-2">{step.title}</h3>
+              <p className="font-sans text-sm text-brand-secondary leading-[1.75] tracking-[0.005em]">
                 {step.description}
               </p>
             </div>

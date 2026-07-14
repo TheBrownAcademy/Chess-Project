@@ -61,10 +61,10 @@ export default function Features() {
           className="text-center max-w-3xl mx-auto mb-16 space-y-4"
           style={{ opacity: 0 }}
         >
-          <h2 className="font-sans font-extrabold text-3xl sm:text-4xl text-white tracking-tight">
+          <h2 className="font-display font-normal text-3xl sm:text-4xl text-white tracking-[-0.02em] leading-[1.1]">
             Why Ownership Matters
           </h2>
-          <p className="font-sans text-brand-secondary text-base leading-relaxed">
+          <p className="font-sans text-brand-secondary text-base leading-[1.75] tracking-[0.005em]">
             Leading chess educators and creators are moving away from closed ecosystems.{' '}
             ChessCraft provides the infrastructure to build, brand, and scale your digital assets independently.
           </p>
@@ -81,8 +81,8 @@ export default function Features() {
               <div className="w-12 h-12 rounded-lg bg-brand-surface border border-brand-border flex items-center justify-center group-hover:bg-brand-accent/10 group-hover:border-brand-accent/20 transition-all duration-300">
                 {card.icon}
               </div>
-              <h3 className="font-sans font-bold text-lg text-white">{card.title}</h3>
-              <p className="font-sans text-sm text-brand-secondary leading-relaxed">
+              <h3 className="font-sans font-semibold text-lg text-white tracking-[-0.01em]">{card.title}</h3>
+              <p className="font-sans text-sm text-brand-secondary leading-[1.75] tracking-[0.005em]">
                 {card.description}
               </p>
             </div>

@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+/* Fonts are loaded via <link> in index.html for better preconnect performance */
 
 @tailwind base;
 @tailwind components;
@@ -16,12 +16,13 @@
 */
 html {
   background:
-    radial-gradient(circle at 18% 20%, rgba(123, 109, 255, 0.22), transparent 28%),
-    radial-gradient(circle at 80% 15%, rgba(137, 194, 255, 0.12), transparent 24%),
-    radial-gradient(circle at 50% 80%, rgba(110, 99, 246, 0.18), transparent 32%),
-    #0a0f24;
-  color: #F8FAFC;
-  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    radial-gradient(circle at 50% 30%, rgba(79, 70, 229, 0.05), transparent 60%),
+    #04060d;
+  color: #f8fafc;
+  font-family: 'DM Sans', system-ui, -apple-system, sans-serif;
+  font-size: 16px;
+  line-height: 1.7;
+  letter-spacing: 0.01em;
   margin: 0;
   padding: 0;
   overflow-x: hidden;
@@ -31,18 +32,15 @@ html {
 
 body {
   background-color: transparent;
-  color: #F8FAFC;
-  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  color: #f8fafc;
+  font-family: 'DM Sans', system-ui, -apple-system, sans-serif;
+  line-height: 1.7;
   margin: 0;
   padding: 0;
   min-height: 100vh;
-  /* No overflow set on body — prevents spec-forced double scroll context */
 }
 
 /* ─── ScrollSmoother Wrapper ─────────────────────────────────────────────── */
-/* Prepared for GSAP Club ScrollSmoother. Currently uses native browser scroll. */
-/* When upgrading to Club, add: overflow: hidden + position: fixed to #smooth-wrapper */
-/* and ScrollSmoother.create({ smooth: 2, effects: true, smoothTouch: 0.1 }); */
 #smooth-wrapper {
   width: 100%;
   min-height: 100vh;
@@ -58,70 +56,63 @@ body {
 /* Firefox */
 html, .overflow-y-auto {
   scrollbar-width: thin;
-  scrollbar-color: #6366F1 #0f1629;
+  scrollbar-color: #1e293b #0b0e1a;
 }
 
 /* Webkit (Chrome, Edge, Safari) */
 html::-webkit-scrollbar,
 .overflow-y-auto::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
 }
 
 html::-webkit-scrollbar-track,
 .overflow-y-auto::-webkit-scrollbar-track {
-  background: #081532;
-  border-radius: 10px;
+  background: #0b0e1a;
 }
 
 html::-webkit-scrollbar-thumb,
 .overflow-y-auto::-webkit-scrollbar-thumb {
-  background: linear-gradient(180deg, #6366F1 0%, #818CF8 50%, #6366F1 100%);
-  border-radius: 10px;
-  border: 2px solid #050B1D; /* creates a gap between thumb and track */
-  box-shadow: 0 0 6px rgba(99, 102, 241, 0.40);
-  transition: box-shadow 0.2s ease;
+  background: #1e293b;
+  border-radius: 3px;
+  transition: background 0.2s ease;
 }
 
 html::-webkit-scrollbar-thumb:hover,
 .overflow-y-auto::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(180deg, #818CF8 0%, #a5b4fc 50%, #818CF8 100%);
-  box-shadow: 0 0 12px rgba(129, 140, 248, 0.65), 0 0 4px rgba(99, 102, 241, 0.90);
+  background: #334155;
 }
 
 html::-webkit-scrollbar-corner,
 .overflow-y-auto::-webkit-scrollbar-corner {
-  background: #081532;
+  background: #0b0e1a;
 }
 
-/* ─── Move History Scrollbar — High-Contrast ─────────────────── */
+/* ─── Move History Scrollbar ─────────────────────────────────── */
 /* Firefox */
 .move-history-scroll {
-  scrollbar-width: auto;
-  scrollbar-color: #818CF8 #0a0f1f;
+  scrollbar-width: thin;
+  scrollbar-color: #1e293b #0b0e1a;
 }
 
 /* Webkit */
 .move-history-scroll::-webkit-scrollbar {
-  width: 7px;
+  width: 5px;
 }
 
 .move-history-scroll::-webkit-scrollbar-track {
-  background: #081532;
-  border-radius: 4px;
+  background: #0b0e1a;
+  border-radius: 2px;
 }
 
 .move-history-scroll::-webkit-scrollbar-thumb {
-  background: linear-gradient(180deg, #6366F1 0%, #818CF8 60%, #6366F1 100%);
-  border-radius: 4px;
-  /* No border gap — full-width thumb for maximum visibility */
-  box-shadow: 0 0 8px rgba(99, 102, 241, 0.55);
-  min-height: 40px;
+  background: #1e293b;
+  border-radius: 2px;
+  transition: background 0.2s ease;
 }
 
 .move-history-scroll::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(180deg, #818CF8 0%, #a5b4fc 60%, #818CF8 100%);
-  box-shadow: 0 0 14px rgba(129, 140, 248, 0.80);
+  background: #334155;
 }
 
 .move-history-scroll::-webkit-scrollbar-corner {
@@ -196,13 +187,13 @@ html::-webkit-scrollbar-corner,
   animation: orb-float-b 13s ease-in-out infinite;
 }
 
-/* CTA Button glow pulse */
+/* CTA Button glow pulse — dampened for premium engineered feel */
 @keyframes glow-pulse {
-  0%, 100% { box-shadow: 0 0 20px 0px rgba(99, 102, 241, 0.3); }
-  50%       { box-shadow: 0 0 32px 4px rgba(99, 102, 241, 0.5); }
+  0%, 100% { box-shadow: 0 4px 18px 0px rgba(79, 70, 229, 0.12); }
+  50%       { box-shadow: 0 4px 24px 2px rgba(79, 70, 229, 0.20); }
 }
 .btn-glow {
-  animation: glow-pulse 2.5s ease-in-out infinite;
+  animation: glow-pulse 3s ease-in-out infinite;
 }
 
 /* Chessboard float — driven by CSS for perf, overridden by GSAP on mount */
@@ -295,22 +286,11 @@ html::-webkit-scrollbar-corner,
 .hero-board-card::before {
   content: '';
   position: absolute;
-  inset: -1px;
-  border-radius: 13px;
-  background: linear-gradient(
-    135deg,
-    rgba(99, 102, 241, 0.2) 0%,
-    rgba(139, 92, 246, 0.1) 50%,
-    rgba(99, 102, 241, 0.05) 100%
-  );
+  inset: 0;
+  border-radius: inherit;
+  border: 1px solid rgba(255, 255, 255, 0.05);
   pointer-events: none;
   z-index: 0;
-  animation: board-ring-pulse 4s ease-in-out infinite;
-}
-
-@keyframes board-ring-pulse {
-  0%, 100% { opacity: 0.6; }
-  50%       { opacity: 1;   }
 }
 
 /* ── Floating micro-particles behind the board ───────────────────────────── */
@@ -325,8 +305,7 @@ html::-webkit-scrollbar-corner,
 .hero-particle {
   position: absolute;
   font-family: serif;
-  color: rgba(99, 102, 241, 0.35);
-  text-shadow: 0 0 8px rgba(99, 102, 241, 0.2);
+  color: rgba(255, 255, 255, 0.04);
   user-select: none;
   pointer-events: none;
   animation: particle-float linear infinite;
@@ -482,25 +461,18 @@ html::-webkit-scrollbar-corner,
   justify-content: center;
   padding: 16px 32px;
   border-radius: 16px;
-  background: rgba(55, 55, 55, 0.45);
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  box-shadow:
-    0 0 0 1px rgba(139, 92, 246, 0.3),
-    0 8px 40px rgba(99, 102, 241, 0.5),
-    0 0 80px rgba(99, 102, 241, 0.2);
-  backdrop-filter: blur(8px);
+  background: rgba(11, 14, 26, 0.95);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(12px);
 }
 
 .checkmate-text {
-  font-family: 'Inter', system-ui, sans-serif;
-  font-weight: 900;
-  font-size: clamp(1.4rem, 4vw, 2rem);
-  letter-spacing: 0.18em;
-  color: transparent;
-  background: linear-gradient(135deg, #a5b4fc 0%, #818CF8 40%, #FFD700 100%);
-  -webkit-background-clip: text;
-  background-clip: text;
-  text-shadow: none;
+  font-family: 'DM Sans', system-ui, sans-serif;
+  font-weight: 700;
+  font-size: clamp(1.3rem, 4vw, 1.85rem);
+  letter-spacing: 0.12em;
+  color: #f8fafc;
   line-height: 1;
 }
 
@@ -724,4 +696,64 @@ html::-webkit-scrollbar-corner,
 }
 
 
+
+/* ═══════════════════════════════════════════════════════════════════════════ */
+/* ── PUZZLE PAGE PREMIUM ADDITIONS                                        ── */
+/* ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ── Active nav link: force underline to full width + white text ─────────── */
+/* Applied via JS class: nav-link-active */
+.nav-link-active::after {
+  width: 100% !important;
+  background-color: #6366F1;
+}
+
+/* ── Puzzle page ambient orb animations ─────────────────────────────────── */
+/* Mirror of hero-orb-a / hero-orb-b but scoped to puzzle page orbs */
+@keyframes puzzle-orb-a {
+  0%, 100% { transform: translate(-50%, -50%) scale(1);    opacity: 0.7; }
+  50%       { transform: translate(-50%, -56%) scale(1.12); opacity: 1;   }
+}
+@keyframes puzzle-orb-b {
+  0%, 100% { transform: translate(0, 0) scale(1);      opacity: 0.6; }
+  50%       { transform: translate(-10px, -14px) scale(1.1); opacity: 0.9; }
+}
+@keyframes puzzle-orb-c {
+  0%, 100% { transform: translate(0, 0) scale(1);     opacity: 0.5; }
+  50%       { transform: translate(8px, -10px) scale(1.08); opacity: 0.8; }
+}
+
+.puzzle-orb-a { animation: puzzle-orb-a 12s ease-in-out infinite; }
+.puzzle-orb-b { animation: puzzle-orb-b 16s ease-in-out infinite; }
+.puzzle-orb-c { animation: puzzle-orb-c 20s ease-in-out infinite; }
+
+/* ── Skeleton board inner glow pulse ─────────────────────────────────────── */
+@keyframes skeleton-pulse {
+  0%, 100% { opacity: 0.5; }
+  50%       { opacity: 1; }
+}
+
+.puzzle-glass-card {
+  position: relative;
+}
+
+.puzzle-glass-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  pointer-events: none;
+  z-index: -1;
+}
+
+/* ── Reduce motion: disable puzzle page animations ───────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  .puzzle-orb-a,
+  .puzzle-orb-b,
+  .puzzle-orb-c,
+  .puzzle-glass-card::before {
+    animation: none !important;
+  }
+}
 

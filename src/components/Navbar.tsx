@@ -19,6 +19,12 @@ export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
   const navRef = useRef<HTMLElement>(null);
 
+  // Detect if currently on the /puzzles page for active state
+  const isPuzzlesPage =
+    typeof window !== 'undefined' &&
+    (window.location.pathname.replace(/\/+$/, '') === '/puzzles' ||
+      window.location.hash.startsWith('#/puzzles'));
+
   // Navbar entrance + hide/show on scroll
   useNavbarAnimation(navRef as React.RefObject<HTMLElement | null>);
 
@@ -29,8 +35,8 @@ export default function Navbar() {
   const ctaGlowRef = useButtonGlow<HTMLAnchorElement>();
 
   const navLinks = [
-    { name: 'Live Demo',      href: '#interactive-demo' },
-    { name: 'Practice Puzzles', href: '/puzzles' },
+    { name: 'Live Demo', href: '#interactive-demo' },
+    { name: 'Puzzles',   href: '/puzzles' },
   ];
 
   return (
@@ -75,15 +81,24 @@ export default function Navbar() {
 
           {/* Desktop Nav Links — .nav-link enables CSS underline-grow */}
           <div className="hidden md:flex items-center gap-8">
-            {navLinks.map((link) => (
-              <a
-                key={link.name}
-                href={link.href}
-                className="nav-link font-sans font-medium text-sm text-brand-secondary hover:text-white transition-colors duration-200"
-              >
-                {link.name}
-              </a>
-            ))}
+            {navLinks.map((link) => {
+              const isActive =
+                (link.href === '/puzzles' && isPuzzlesPage) ||
+                (link.href === '#interactive-demo' && !isPuzzlesPage);
+              return (
+                <a
+                  key={link.name}
+                  href={link.href}
+                  className={`nav-link font-sans font-medium text-sm transition-colors duration-200 ${
+                    isActive
+                      ? 'text-white nav-link-active'
+                      : 'text-brand-secondary hover:text-white'
+                  }`}
+                >
+                  {link.name}
+                </a>
+              );
+            })}
           </div>
 
           {/* Desktop CTA */}
@@ -104,8 +119,8 @@ export default function Navbar() {
                 bg-brand-accent hover:bg-brand-accent/90
                 text-white px-4 py-2 rounded-md
                 transition-all duration-200
-                shadow-lg shadow-brand-accent/20
-                hover:scale-[1.03] hover:shadow-brand-accent/40
+                shadow-sm shadow-brand-accent/15
+                hover:scale-[1.02] hover:shadow-brand-accent/20
                 active:scale-[0.97]
                 btn-glow-container btn-glow-accent cta-shine
               "
@@ -132,16 +147,25 @@ export default function Navbar() {
       {isOpen && (
         <div className="md:hidden bg-brand-surface border-b border-brand-border px-4 py-6 space-y-4">
           <div className="flex flex-col gap-4">
-            {navLinks.map((link) => (
-              <a
-                key={link.name}
-                href={link.href}
-                onClick={() => setIsOpen(false)}
-                className="font-sans font-medium text-base text-brand-secondary hover:text-white transition-colors py-2"
-              >
-                {link.name}
-              </a>
-            ))}
+            {navLinks.map((link) => {
+              const isActive =
+                (link.href === '/puzzles' && isPuzzlesPage) ||
+                (link.href === '#interactive-demo' && !isPuzzlesPage);
+              return (
+                <a
+                  key={link.name}
+                  href={link.href}
+                  onClick={() => setIsOpen(false)}
+                  className={`font-sans font-medium text-base transition-colors py-2 ${
+                    isActive
+                      ? 'text-white'
+                      : 'text-brand-secondary hover:text-white'
+                  }`}
+                >
+                  {link.name}
+                </a>
+              );
+            })}
             <hr className="border-brand-border my-2" />
             <a
               href="#interactive-demo"

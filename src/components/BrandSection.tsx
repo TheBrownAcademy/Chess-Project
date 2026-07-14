@@ -85,19 +85,19 @@ export default function BrandSection() {
           >
 
             <div className="space-y-4 max-w-xl">
-              <h2 className="font-sans font-extrabold text-4xl sm:text-5xl md:text-6xl text-white tracking-tight leading-[1.05]">
+              <h2 className="font-display font-normal text-[2.6rem] sm:text-[3.3rem] md:text-[3.9rem] text-white tracking-[-0.02em] leading-[1.06]">
                 <span className="block">Build More Than</span>
-                <span className="block text-transparent bg-clip-text bg-gradient-to-r from-brand-accent via-indigo-400 to-violet-400 drop-shadow-[0_0_24px_rgba(99,102,241,0.2)]">
+                <span className="block text-brand-accent">
                   Subscribers
                 </span>
               </h2>
             </div>
 
             <div className="space-y-4 max-w-lg">
-              <p className="font-sans text-base sm:text-[19px] text-brand-secondary/90 leading-relaxed font-medium">
+              <p className="font-sans text-base sm:text-[18px] font-normal text-brand-secondary/85 leading-[1.75]">
                 You've already done the hard part: building an audience.
               </p>
-              <p className="font-sans text-base sm:text-[19px] text-brand-secondary/90 leading-relaxed font-medium">
+              <p className="font-sans text-base sm:text-[18px] font-normal text-brand-secondary/85 leading-[1.75]">
                 Now build a platform around your brand that grows with you.
               </p>
             </div>
@@ -107,7 +107,15 @@ export default function BrandSection() {
                 onClick={() => {
                   document.getElementById('contact-us')?.scrollIntoView({ behavior: 'smooth' });
                 }}
-                className="inline-flex items-center justify-center gap-3 font-sans font-semibold text-[17px] bg-gradient-to-r from-[#6e63f6] via-[#7268f8] to-[#7b6dff] hover:brightness-110 text-white rounded-xl transition-all duration-300 shadow-[0_0_34px_rgba(110,99,246,0.35),0_12px_42px_rgba(0,0,0,0.35),inset_0_1px_0_rgba(255,255,255,0.25)] hover:shadow-[0_0_46px_rgba(110,99,246,0.55),0_16px_48px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.28)] hover:-translate-y-1 btn-glow-container btn-glow-accent cta-shine px-8 py-4 group"
+                className="
+                  inline-flex items-center justify-center gap-3
+                  font-sans font-semibold text-[16px] text-white
+                  bg-brand-accent hover:bg-brand-accent/95
+                  rounded-lg transition-all duration-300
+                  shadow-md shadow-brand-accent/10 hover:shadow-brand-accent/20
+                  hover:-translate-y-[2px] active:translate-y-0
+                  px-8 py-4 group cursor-pointer
+                "
               >
                 Build Your Platform
                 <ArrowRight className="w-5 h-5 transition-transform duration-300 group-hover:translate-x-1" />
