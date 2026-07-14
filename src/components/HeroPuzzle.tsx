@@ -1792,6 +1792,17 @@ const HeroPuzzle = forwardRef<HeroPuzzleRef, {
               }}
             />
 
+            {/* Checkmate glow overlay */}
+            <div
+              className="absolute inset-0 rounded-xl pointer-events-none z-10"
+              style={{
+                transition: 'box-shadow 0.4s ease',
+                boxShadow: puzzleIsCheckmateGlow
+                  ? '0 0 50px 10px rgba(99, 102, 241, 0.4), 0 0 20px 5px rgba(139, 92, 246, 0.3)'
+                  : undefined,
+              }}
+            />
+
             {/* CHECKMATE impact overlay */}
             <div
               ref={checkmateRef}
