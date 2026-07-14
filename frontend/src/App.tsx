@@ -23,8 +23,8 @@ import Footer from './components/Footer';
 import GlobalBackground from './components/GlobalBackground';
 import Navbar from './components/Navbar';
 import PremiumLoader from './components/PremiumLoader';
-import PuzzlePage from './components/PuzzlePage';
-import ProfilePage from './components/ProfilePage';
+import PuzzlePage from './pages/PuzzlePage';
+import ProfilePage from './pages/ProfilePage';
 import { useRoute } from './hooks/useRoute';
 
 import { ParticlesProvider } from '@tsparticles/react';

@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { getRandomPuzzle, getRandomPuzzleExcluding } from '../utils/PuzzleLoader';
 import type { ChessPuzzle } from '../utils/PuzzleLoader';
-import { PuzzleBoard } from './PuzzleBoard';
+import { PuzzleBoard } from '../components/PuzzleBoard';
 import { ArrowLeft } from 'lucide-react';
 import { Chess } from 'chess.js';
 

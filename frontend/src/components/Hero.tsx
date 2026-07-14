@@ -11,15 +11,12 @@ import { useMagneticButton } from '../hooks/useMagneticButton';
 import { useButtonGlow } from '../hooks/useButtonGlow';
 import { gsap, dur, ease } from '../utils/gsapConfig';
 import HeroPuzzle from './HeroPuzzle';
-import { useSession } from '../hooks/useSession';
 import { AuthModal } from './AuthModal';
-import { AvatarDropdown } from './AvatarDropdown';
 
 export default function Hero() {
   // Authentication states
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalMode, setModalMode] = useState<"login" | "register">("login");
-  const { status } = useSession();
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -30,11 +27,6 @@ export default function Hero() {
       window.history.replaceState({}, "", cleanUrl);
     }
   }, []);
-
-  const openModal = (mode: "login" | "register") => {
-    setModalMode(mode);
-    setIsModalOpen(true);
-  };
 
   // ── Animation refs ────────────────────────────────────────────────────────
   const heroRef = useRef<HTMLElement>(null);
