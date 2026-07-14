@@ -48,10 +48,10 @@ app.use(express.json({ limit: "10kb" }));
 app.use(express.urlencoded({ extended: true, limit: "10kb" }));
 
 // Log incoming requests for debugging
-app.use((req, res, next) => {
-  console.log(`[HTTP]: ${req.method} ${req.originalUrl}`);
-  next();
-});
+// app.use((req, res, next) => {
+//   console.log(`[HTTP]: ${req.method} ${req.originalUrl}`);
+//   next();
+// });
 
 // Intercept GET requests for provider-specific sign-in and trailing slashes,
 // redirecting them to prevent Auth.js from throwing UnsupportedAction/UnknownAction errors.
