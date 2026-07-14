@@ -4,10 +4,16 @@
  * GSAP plugins are registered here via gsapConfig (runs once at module level).
  * The smooth-wrapper / smooth-content divs prepare for ScrollSmoother (Club)
  * and currently drive native CSS smooth scroll.
+ *
+ * Premium additions:
+ *   - PremiumLoader: cinematic rook loader that dissolves into the page
+ *   - Navbar: luxury glassmorphism gold navigation
  */
 
 // ── GSAP: register plugins immediately (before any component renders) ──────
 import './utils/gsapConfig';
+
+import { useState } from 'react';
 
 import Hero from './components/Hero';
 import BrandSection from './components/BrandSection';
@@ -15,6 +21,8 @@ import ProductDemo from './components/ProductDemo';
 import PartnerCTA from './components/PartnerCTA';
 import Footer from './components/Footer';
 import GlobalBackground from './components/GlobalBackground';
+import Navbar from './components/Navbar';
+import PremiumLoader from './components/PremiumLoader';
 import PuzzlePage from './components/PuzzlePage';
 
 import { ParticlesProvider } from '@tsparticles/react';
@@ -25,45 +33,73 @@ const initParticles = async (engine: any) => {
 };
 
 function App() {
+  // ── Loader: show only once per browser session (persists across client-side navigation) ──
+  const [loaderDone, setLoaderDone] = useState(() => {
+    try {
+      return sessionStorage.getItem('xlchess_loader_shown') === 'true';
+    } catch {
+      return false;
+    }
+  });
+
+  const handleLoaderComplete = () => {
+    try {
+      sessionStorage.setItem('xlchess_loader_shown', 'true');
+    } catch {
+      // Ignore storage errors (private browsing, etc.)
+    }
+    setLoaderDone(true);
+  };
+
   const normalizedPath = window.location.pathname.replace(/\/+$/, '') || '/';
   const isPuzzlesPage = normalizedPath === '/puzzles' || window.location.hash.startsWith('#/puzzles');
 
   return (
     <ParticlesProvider init={initParticles}>
+
+      {/* ── Premium Loader — shown until page is ready (once per session) ── */}
+      {!loaderDone && (
+        <PremiumLoader onComplete={handleLoaderComplete} />
+      )}
+
+      {/* ── Ambient background chess pieces ─────────────────────────────── */}
       <GlobalBackground />
-      {/* smooth-wrapper + smooth-content: ScrollSmoother-ready DOM structure.
-         ScrollTrigger uses #smooth-content as the scroller when Club is enabled. */}
+
+      {/* smooth-wrapper + smooth-content: ScrollSmoother-ready DOM structure. */}
       <div id="smooth-wrapper">
         <div id="smooth-content">
 
-        {isPuzzlesPage ? (
-          <PuzzlePage />
-        ) : (
-          /* Landing Page Content */
-          <div className="min-h-screen text-brand-text flex flex-col selection:bg-brand-accent selection:text-white">
-            <main className="flex-1">
+          {isPuzzlesPage ? (
+            <PuzzlePage />
+          ) : (
+            /* Landing Page Content */
+            <div className="min-h-screen text-brand-text flex flex-col">
+              {/* Premium Navigation */}
+              <Navbar />
 
-              {/* Section 1: Hero Visual and Brand Statement */}
-              <Hero />
+              <main className="flex-1">
 
-              {/* Section 2: Build More Than Subscribers */}
-              <BrandSection />
+                {/* Section 1: Hero Visual and Brand Statement */}
+                <Hero />
 
-              {/* Section 3: Interactive Product Demo (Chessboard + Stockfish) */}
-              <ProductDemo />
+                {/* Section 2: Build More Than Subscribers */}
+                <BrandSection />
 
-              {/* Section 4: Partner Call to Action */}
-              <PartnerCTA />
+                {/* Section 3: Interactive Product Demo (Chessboard + Stockfish) */}
+                <ProductDemo />
 
-            </main>
+                {/* Section 4: Partner Call to Action */}
+                <PartnerCTA />
 
-            {/* Footer Summary */}
-            <Footer />
-          </div>
-        )}
+              </main>
 
+              {/* Footer Summary */}
+              <Footer />
+            </div>
+          )}
+
+        </div>
       </div>
-    </div>
     </ParticlesProvider>
   );
 }

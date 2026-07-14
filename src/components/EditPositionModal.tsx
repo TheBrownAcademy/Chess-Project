@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+﻿import { useEffect, useMemo, useRef, useState } from 'react';
 import { defaultPieces } from 'react-chessboard';
 import { ArrowLeftRight, Eraser, Home, Shuffle, Trash2, X } from 'lucide-react';
 import {
@@ -182,7 +182,7 @@ export function EditPositionModal({
   const isEraserActive = selectedTool === 'erase';
 
   return (
-    <div className="fixed inset-0 z-40 overflow-hidden bg-brand-bg/85 px-3 py-3 backdrop-blur-sm">
+    <div className="fixed inset-0 z-40 overflow-hidden bg-[#080B14]/85 px-3 py-3 backdrop-blur-sm">
       <div
         className="mx-auto flex w-full h-[calc(100dvh-1.5rem)] lg:h-[calc(100vh-1.5rem)] max-h-[calc(100dvh-1.5rem)] lg:max-h-[calc(100vh-1.5rem)] max-w-[1460px] items-stretch"
         style={{
@@ -190,10 +190,10 @@ export function EditPositionModal({
           maxHeight: !isDesktopLayout && visualViewportHeight ? `${visualViewportHeight - 24}px` : undefined,
         }}
       >
-        <div className={`relative flex h-full w-full overflow-hidden rounded-2xl border border-brand-border bg-brand-surface shadow-2xl ${isEraserActive ? 'eraser-mode-active' : ''}`}>
+        <div className={`relative flex h-full w-full overflow-hidden rounded-sm border border-[rgba(212,175,110,0.12)] bg-[#0C1020] shadow-2xl ${isEraserActive ? 'eraser-mode-active' : ''}`}>
           <button
             onClick={onCancel}
-            className="absolute right-4 top-2.5 z-20 rounded-md border border-brand-border bg-brand-bg/80 p-2 text-brand-secondary transition-colors hover:bg-white/10 hover:text-white"
+            className="absolute right-4 top-2.5 z-20 rounded-md border border-[rgba(212,175,110,0.12)] bg-[#080B14]/80 p-2 text-[#8E8B82] transition-colors hover:bg-white/10 hover:text-white"
             aria-label="Close editor"
             title="Close"
           >
@@ -201,7 +201,7 @@ export function EditPositionModal({
           </button>
 
           <div className="flex flex-col lg:grid min-h-0 flex-1 w-full max-w-full overflow-hidden lg:grid-cols-[auto_minmax(0,1fr)_minmax(340px,420px)] lg:gap-0">
-            <div className="flex-shrink-0 flex min-h-0 w-full lg:w-auto items-center lg:items-stretch border-b border-brand-border bg-brand-bg/35 px-3 py-3 pt-14 lg:pt-3 lg:border-b-0 lg:border-r lg:border-brand-border/80">
+            <div className="flex-shrink-0 flex min-h-0 w-full lg:w-auto items-center lg:items-stretch border-b border-[rgba(212,175,110,0.12)] bg-[#080B14]/35 px-3 py-3 pt-14 lg:pt-3 lg:border-b-0 lg:border-r lg:border-brand-border/80">
               <EvaluationBar evaluation={evaluation} isDesktop={isDesktopLayout} boardHeight={boardSize} />
             </div>
 
@@ -224,7 +224,7 @@ export function EditPositionModal({
                   {PIECE_ROWS.map((row, rowIndex) => (
                     <div
                       key={rowIndex}
-                      className="grid grid-cols-6 gap-1.5 rounded-xl border border-brand-border bg-brand-bg/50 p-1.5"
+                      className="grid grid-cols-6 gap-1.5 rounded-xl border border-[rgba(212,175,110,0.12)] bg-[#080B14]/50 p-1.5"
                     >
                       {row.map((pieceCode) => {
                         const PieceSvg = defaultPieces[pieceCode];
@@ -235,8 +235,8 @@ export function EditPositionModal({
                             key={pieceCode}
                             onClick={() => selectTool(pieceCode)}
                             className={`flex aspect-square items-center justify-center rounded-lg border transition-all ${isSelected
-                              ? 'border-purple-400 bg-purple-400/15 text-white shadow-[0_0_0_1px_rgba(192,132,252,0.45),0_0_24px_rgba(192,132,252,0.22)] scale-105'
-                              : 'border-brand-border bg-slate-700/50 text-brand-secondary hover:bg-white/5 hover:text-white'
+                              ? 'border-[#D4AF6E] bg-[#D4AF6E]/15 text-white shadow-[0_0_0_1px_rgba(212,175,110,0.45),0_0_24px_rgba(212,175,110,0.22)] scale-105'
+                              : 'border-[rgba(212,175,110,0.12)] bg-[#080B14]/50 text-[#8E8B82] hover:bg-white/5 hover:text-white'
                               }`}
                             title={pieceCode}
                           >
@@ -253,8 +253,8 @@ export function EditPositionModal({
                 <button
                   onClick={() => selectTool('erase')}
                   className={`flex-shrink-0 flex items-center justify-center gap-3 rounded-lg border px-4 py-2.5 transition-all duration-150 ${selectedTool === 'erase'
-                    ? 'border-purple-400 bg-purple-400/15 text-white shadow-[0_0_0_1px_rgba(192,132,252,0.45),0_0_24px_rgba(192,132,252,0.22)] scale-[1.02]'
-                    : 'border-brand-border bg-brand-bg text-brand-secondary hover:bg-white/5 hover:text-white'
+                    ? 'border-[#D4AF6E] bg-[#D4AF6E]/15 text-white shadow-[0_0_0_1px_rgba(212,175,110,0.45),0_0_24px_rgba(212,175,110,0.22)] scale-[1.02]'
+                    : 'border-[rgba(212,175,110,0.12)] bg-[#080B14] text-[#8E8B82] hover:bg-white/5 hover:text-white'
                     }`}
                   role="checkbox"
                   aria-checked={selectedTool === 'erase'}
@@ -263,8 +263,8 @@ export function EditPositionModal({
                   {/* Custom Checkbox UI */}
                   <div
                     className={`relative flex items-center justify-center w-5 h-5 rounded-md border transition-all duration-200 ${selectedTool === 'erase'
-                      ? 'border-purple-400 bg-purple-500 text-white scale-100 shadow-[0_0_12px_rgba(192,132,252,0.45)]'
-                      : 'border-brand-secondary/40 bg-brand-bg text-transparent'
+                      ? 'border-[#D4AF6E] bg-[#D4AF6E] text-[#080B14] scale-100 shadow-[0_0_12px_rgba(212,175,110,0.45)]'
+                      : 'border-[#8E8B82]/40 bg-[#080B14] text-transparent'
                       }`}
                   >
                     <svg
@@ -287,7 +287,7 @@ export function EditPositionModal({
                 </button>
 
                 <section className="flex flex-col min-h-0 lg:flex-1 lg:overflow-y-auto pr-1.5 lg:pr-1.5 gap-2 scrollbar-thin lg:scrollbar-thin">
-                  <div className="rounded-xl border border-brand-border bg-brand-bg/50 p-2.5">
+                  <div className="rounded-xl border border-[rgba(212,175,110,0.12)] bg-[#080B14]/50 p-2.5">
                     <div className="grid grid-cols-2 gap-1.5">
                       {(['w', 'b'] as const).map((color) => (
                         <button
@@ -297,8 +297,8 @@ export function EditPositionModal({
                             setLoadErrorMessage(null);
                           }}
                           className={`rounded-lg border px-3 py-1.5 text-sm font-medium transition-all ${editorState.activeColor === color
-                            ? 'border-brand-accent bg-brand-accent/15 text-white'
-                            : 'border-brand-border bg-brand-bg text-brand-secondary hover:bg-white/5 hover:text-white'
+                            ? 'border-[#D4AF6E] bg-[#D4AF6E]/15 text-white'
+                            : 'border-[rgba(212,175,110,0.12)] bg-[#080B14] text-[#8E8B82] hover:bg-white/5 hover:text-white'
                             }`}
                         >
                           {color === 'w' ? 'White to move' : 'Black to move'}
@@ -307,11 +307,11 @@ export function EditPositionModal({
                     </div>
                   </div>
 
-                  <div className="rounded-xl border border-brand-border bg-brand-bg/50 p-3">
+                  <div className="rounded-xl border border-[rgba(212,175,110,0.12)] bg-[#080B14]/50 p-3">
                     <div className="grid grid-cols-2 gap-x-4 gap-y-2.5">
                       {/* White Castling Rights (Left Column) */}
                       <div className="space-y-2 text-left">
-                        <div className="text-xs font-semibold text-brand-secondary font-sans uppercase tracking-wider">White</div>
+                        <div className="text-xs font-semibold text-[#8E8B82] font-sans uppercase tracking-wider">White</div>
                         <div className="flex flex-col gap-2 pl-1">
                           <label className="flex items-center gap-2 text-sm text-white/90 cursor-pointer select-none group">
                             <input
@@ -328,8 +328,8 @@ export function EditPositionModal({
                             />
                             <div
                               className={`relative flex items-center justify-center w-5 h-5 rounded-md border transition-all duration-200 ${editorState.castlingRights.K
-                                ? 'border-brand-accent bg-brand-accent text-white scale-100 shadow-[0_0_12px_rgba(99,102,241,0.45)]'
-                                : 'border-brand-border bg-brand-bg text-transparent group-hover:border-brand-accent/50'
+                                ? 'border-brand-accent bg-brand-accent text-white scale-100 shadow-[0_0_12px_rgba(212,175,110,0.45)]'
+                                : 'border-[rgba(212,175,110,0.12)] bg-[#080B14] text-transparent group-hover:border-brand-accent/50'
                                 }`}
                             >
                               <svg
@@ -346,7 +346,7 @@ export function EditPositionModal({
                                 <polyline points="20 6 9 17 4 12" />
                               </svg>
                             </div>
-                            <span className="font-sans font-medium text-brand-secondary group-hover:text-white transition-colors duration-150">
+                            <span className="font-sans font-medium text-[#8E8B82] group-hover:text-white transition-colors duration-150">
                               (O-O)
                             </span>
                           </label>
@@ -365,8 +365,8 @@ export function EditPositionModal({
                             />
                             <div
                               className={`relative flex items-center justify-center w-5 h-5 rounded-md border transition-all duration-200 ${editorState.castlingRights.Q
-                                ? 'border-brand-accent bg-brand-accent text-white scale-100 shadow-[0_0_12px_rgba(99,102,241,0.45)]'
-                                : 'border-brand-border bg-brand-bg text-transparent group-hover:border-brand-accent/50'
+                                ? 'border-brand-accent bg-brand-accent text-white scale-100 shadow-[0_0_12px_rgba(212,175,110,0.45)]'
+                                : 'border-[rgba(212,175,110,0.12)] bg-[#080B14] text-transparent group-hover:border-brand-accent/50'
                                 }`}
                             >
                               <svg
@@ -383,7 +383,7 @@ export function EditPositionModal({
                                 <polyline points="20 6 9 17 4 12" />
                               </svg>
                             </div>
-                            <span className="font-sans font-medium text-brand-secondary group-hover:text-white transition-colors duration-150">
+                            <span className="font-sans font-medium text-[#8E8B82] group-hover:text-white transition-colors duration-150">
                               (O-O-O)
                             </span>
                           </label>
@@ -392,7 +392,7 @@ export function EditPositionModal({
 
                       {/* Black Castling Rights (Right Column) */}
                       <div className="space-y-2 text-left">
-                        <div className="text-xs font-semibold text-brand-secondary font-sans uppercase tracking-wider">Black</div>
+                        <div className="text-xs font-semibold text-[#8E8B82] font-sans uppercase tracking-wider">Black</div>
                         <div className="flex flex-col gap-2 pl-1">
                           <label className="flex items-center gap-2 text-sm text-white/90 cursor-pointer select-none group">
                             <input
@@ -409,8 +409,8 @@ export function EditPositionModal({
                             />
                             <div
                               className={`relative flex items-center justify-center w-5 h-5 rounded-md border transition-all duration-200 ${editorState.castlingRights.k
-                                ? 'border-brand-accent bg-brand-accent text-white scale-100 shadow-[0_0_12px_rgba(99,102,241,0.45)]'
-                                : 'border-brand-border bg-brand-bg text-transparent group-hover:border-brand-accent/50'
+                                ? 'border-brand-accent bg-brand-accent text-white scale-100 shadow-[0_0_12px_rgba(212,175,110,0.45)]'
+                                : 'border-[rgba(212,175,110,0.12)] bg-[#080B14] text-transparent group-hover:border-brand-accent/50'
                                 }`}
                             >
                               <svg
@@ -427,7 +427,7 @@ export function EditPositionModal({
                                 <polyline points="20 6 9 17 4 12" />
                               </svg>
                             </div>
-                            <span className="font-sans font-medium text-brand-secondary group-hover:text-white transition-colors duration-150">
+                            <span className="font-sans font-medium text-[#8E8B82] group-hover:text-white transition-colors duration-150">
                               (O-O)
                             </span>
                           </label>
@@ -446,8 +446,8 @@ export function EditPositionModal({
                             />
                             <div
                               className={`relative flex items-center justify-center w-5 h-5 rounded-md border transition-all duration-200 ${editorState.castlingRights.q
-                                ? 'border-brand-accent bg-brand-accent text-white scale-100 shadow-[0_0_12px_rgba(99,102,241,0.45)]'
-                                : 'border-brand-border bg-brand-bg text-transparent group-hover:border-brand-accent/50'
+                                ? 'border-brand-accent bg-brand-accent text-white scale-100 shadow-[0_0_12px_rgba(212,175,110,0.45)]'
+                                : 'border-[rgba(212,175,110,0.12)] bg-[#080B14] text-transparent group-hover:border-brand-accent/50'
                                 }`}
                             >
                               <svg
@@ -464,7 +464,7 @@ export function EditPositionModal({
                                 <polyline points="20 6 9 17 4 12" />
                               </svg>
                             </div>
-                            <span className="font-sans font-medium text-brand-secondary group-hover:text-white transition-colors duration-150">
+                            <span className="font-sans font-medium text-[#8E8B82] group-hover:text-white transition-colors duration-150">
                               (O-O-O)
                             </span>
                           </label>
@@ -474,7 +474,7 @@ export function EditPositionModal({
                   </div>
 
                   {/* This was breaking the previewFen */}
-                  {/* <div className="overflow-hidden rounded-xl border border-brand-border bg-brand-bg/50 px-2.5 h-8 flex items-center">
+                  {/* <div className="overflow-hidden rounded-xl border border-[rgba(212,175,110,0.12)] bg-[#080B14]/50 px-2.5 h-8 flex items-center">
                     <div className="w-full overflow-x-auto overflow-y-hidden no-scrollbar flex items-center">
                       <div className="font-mono text-[11px] leading-normal text-white whitespace-nowrap select-all">
                         {previewFen}
@@ -482,12 +482,12 @@ export function EditPositionModal({
                     </div>
                   </div> */}
                   {/* This Fixes It */}
-                  <div className="rounded-xl border border-brand-border bg-brand-bg/50 px-2"><input type="text" readOnly value={previewFen} onFocus={(e) => e.target.select()} className="w-full bg-transparent border-0 outline-none font-mono text-[11px] leading-5 text-white px-0 py-1" /></div>
+                  <div className="rounded-xl border border-[rgba(212,175,110,0.12)] bg-[#080B14]/50 px-2"><input type="text" readOnly value={previewFen} onFocus={(e) => e.target.select()} className="w-full bg-transparent border-0 outline-none font-mono text-[11px] leading-5 text-white px-0 py-1" /></div>
 
-                  <div className="rounded-xl border border-brand-border bg-brand-bg/50 p-2.5 space-y-2">
+                  <div className="rounded-xl border border-[rgba(212,175,110,0.12)] bg-[#080B14]/50 p-2.5 space-y-2">
                     <button
                       onClick={() => handleLoadPreset(createEmptyEditorState())}
-                      className="w-full rounded-lg border border-brand-border bg-brand-bg px-3 py-2 text-sm font-medium text-brand-secondary transition-colors hover:bg-white/5 hover:text-white"
+                      className="w-full rounded-lg border border-[rgba(212,175,110,0.12)] bg-[#080B14] px-3 py-2 text-sm font-medium text-[#8E8B82] transition-colors hover:bg-white/5 hover:text-white"
                     >
                       <Trash2 className="mr-2 inline-block h-4 w-4 align-[-2px]" />
                       Clear
@@ -495,7 +495,7 @@ export function EditPositionModal({
 
                     <button
                       onClick={() => handleLoadPreset(createStandardEditorState())}
-                      className="w-full rounded-lg border border-brand-border bg-brand-bg px-3 py-2 text-sm font-medium text-brand-secondary transition-colors hover:bg-white/5 hover:text-white"
+                      className="w-full rounded-lg border border-[rgba(212,175,110,0.12)] bg-[#080B14] px-3 py-2 text-sm font-medium text-[#8E8B82] transition-colors hover:bg-white/5 hover:text-white"
                     >
                       <Home className="mr-2 inline-block h-4 w-4 align-[-2px]" />
                       Starting Position
@@ -503,7 +503,7 @@ export function EditPositionModal({
 
                     <button
                       onClick={() => handleLoadPreset(createChess960EditorState())}
-                      className="w-full rounded-lg border border-brand-border bg-brand-bg px-3 py-2 text-sm font-medium text-brand-secondary transition-colors hover:bg-white/5 hover:text-white"
+                      className="w-full rounded-lg border border-[rgba(212,175,110,0.12)] bg-[#080B14] px-3 py-2 text-sm font-medium text-[#8E8B82] transition-colors hover:bg-white/5 hover:text-white"
                     >
                       <Shuffle className="mr-2 inline-block h-4 w-4 align-[-2px]" />
                       Shuffle
@@ -511,7 +511,7 @@ export function EditPositionModal({
 
                     <button
                       onClick={handleSwitchSides}
-                      className="w-full rounded-lg border border-brand-border bg-brand-bg px-3 py-2 text-sm font-medium text-brand-secondary transition-colors hover:bg-white/5 hover:text-white"
+                      className="w-full rounded-lg border border-[rgba(212,175,110,0.12)] bg-[#080B14] px-3 py-2 text-sm font-medium text-[#8E8B82] transition-colors hover:bg-white/5 hover:text-white"
                     >
                       <ArrowLeftRight className="mr-2 inline-block h-4 w-4 align-[-2px]" />
                       Switch Sides
@@ -521,7 +521,7 @@ export function EditPositionModal({
                   <div className="flex items-end justify-end pt-0.5 mt-auto">
                     <button
                       onClick={handleLoad}
-                      className="w-full rounded-lg bg-brand-accent px-5 py-2 text-sm font-semibold text-white transition-colors hover:bg-brand-accent/90"
+                      className="w-full rounded-lg btn-premium-cta cta-shine w-full py-2 text-sm font-medium"
                     >
                       Load
                     </button>
@@ -541,7 +541,7 @@ export function EditPositionModal({
             aria-hidden="true"
           />
 
-          <div className="relative w-full max-w-md rounded-2xl border border-red-500/40 bg-brand-surface/95 p-5 text-red-100 shadow-[0_0_40px_rgba(239,68,68,0.22)] backdrop-blur-md animate-fade-in">
+          <div className="relative w-full max-w-md rounded-2xl border border-red-500/40 bg-[#0C1020]/95 p-5 text-red-100 shadow-[0_0_40px_rgba(239,68,68,0.22)] backdrop-blur-md animate-fade-in">
             <button
               onClick={() => setLoadErrorMessage(null)}
               className="absolute right-3 top-3 rounded-md p-1 text-red-200/80 transition-colors hover:bg-white/10 hover:text-white"
@@ -569,3 +569,4 @@ export function EditPositionModal({
     </div>
   );
 }
+
