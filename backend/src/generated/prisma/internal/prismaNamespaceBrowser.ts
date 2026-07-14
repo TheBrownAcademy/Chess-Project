@@ -54,7 +54,13 @@ export const ModelName = {
   User: 'User',
   Account: 'Account',
   Session: 'Session',
-  VerificationToken: 'VerificationToken'
+  VerificationToken: 'VerificationToken',
+  Subscription: 'Subscription',
+  Payment: 'Payment',
+  BillingProfile: 'BillingProfile',
+  Product: 'Product',
+  ProductFeature: 'ProductFeature',
+  WebhookEvent: 'WebhookEvent'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -79,7 +85,8 @@ export const UserScalarFieldEnum = {
   email: 'email',
   emailVerified: 'emailVerified',
   image: 'image',
-  createdAt: 'createdAt'
+  createdAt: 'createdAt',
+  gatewayCustomerId: 'gatewayCustomerId'
 } as const
 
 export type UserScalarFieldEnum = (typeof UserScalarFieldEnum)[keyof typeof UserScalarFieldEnum]
@@ -122,12 +129,126 @@ export const VerificationTokenScalarFieldEnum = {
 export type VerificationTokenScalarFieldEnum = (typeof VerificationTokenScalarFieldEnum)[keyof typeof VerificationTokenScalarFieldEnum]
 
 
+export const SubscriptionScalarFieldEnum = {
+  id: 'id',
+  userId: 'userId',
+  productId: 'productId',
+  status: 'status',
+  gatewaySubscriptionId: 'gatewaySubscriptionId',
+  currentPeriodStart: 'currentPeriodStart',
+  currentPeriodEnd: 'currentPeriodEnd',
+  cancelAtPeriodEnd: 'cancelAtPeriodEnd',
+  canceledAt: 'canceledAt',
+  endedAt: 'endedAt',
+  trialStart: 'trialStart',
+  trialEnd: 'trialEnd',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type SubscriptionScalarFieldEnum = (typeof SubscriptionScalarFieldEnum)[keyof typeof SubscriptionScalarFieldEnum]
+
+
+export const PaymentScalarFieldEnum = {
+  id: 'id',
+  userId: 'userId',
+  subscriptionId: 'subscriptionId',
+  amount: 'amount',
+  currency: 'currency',
+  status: 'status',
+  paymentMethod: 'paymentMethod',
+  gatewayPaymentIntentId: 'gatewayPaymentIntentId',
+  gatewayInvoiceId: 'gatewayInvoiceId',
+  receiptUrl: 'receiptUrl',
+  errorMessage: 'errorMessage',
+  provider: 'provider',
+  failureCode: 'failureCode',
+  gatewayCustomerId: 'gatewayCustomerId',
+  refundedAmount: 'refundedAmount',
+  gatewayMetadata: 'gatewayMetadata',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type PaymentScalarFieldEnum = (typeof PaymentScalarFieldEnum)[keyof typeof PaymentScalarFieldEnum]
+
+
+export const BillingProfileScalarFieldEnum = {
+  id: 'id',
+  userId: 'userId',
+  billingEmail: 'billingEmail',
+  billingName: 'billingName',
+  addressLine1: 'addressLine1',
+  addressLine2: 'addressLine2',
+  city: 'city',
+  state: 'state',
+  postalCode: 'postalCode',
+  country: 'country',
+  vatId: 'vatId',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type BillingProfileScalarFieldEnum = (typeof BillingProfileScalarFieldEnum)[keyof typeof BillingProfileScalarFieldEnum]
+
+
+export const ProductScalarFieldEnum = {
+  id: 'id',
+  identifier: 'identifier',
+  name: 'name',
+  description: 'description',
+  priceAmount: 'priceAmount',
+  currency: 'currency',
+  billingInterval: 'billingInterval',
+  gatewayPriceId: 'gatewayPriceId',
+  isActive: 'isActive',
+  displayOrder: 'displayOrder',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type ProductScalarFieldEnum = (typeof ProductScalarFieldEnum)[keyof typeof ProductScalarFieldEnum]
+
+
+export const ProductFeatureScalarFieldEnum = {
+  id: 'id',
+  productId: 'productId',
+  featureKey: 'featureKey',
+  featureValue: 'featureValue',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type ProductFeatureScalarFieldEnum = (typeof ProductFeatureScalarFieldEnum)[keyof typeof ProductFeatureScalarFieldEnum]
+
+
+export const WebhookEventScalarFieldEnum = {
+  id: 'id',
+  gatewayEventId: 'gatewayEventId',
+  provider: 'provider',
+  eventType: 'eventType',
+  processed: 'processed',
+  payload: 'payload',
+  createdAt: 'createdAt'
+} as const
+
+export type WebhookEventScalarFieldEnum = (typeof WebhookEventScalarFieldEnum)[keyof typeof WebhookEventScalarFieldEnum]
+
+
 export const SortOrder = {
   asc: 'asc',
   desc: 'desc'
 } as const
 
 export type SortOrder = (typeof SortOrder)[keyof typeof SortOrder]
+
+
+export const NullableJsonNullValueInput = {
+  DbNull: DbNull,
+  JsonNull: JsonNull
+} as const
+
+export type NullableJsonNullValueInput = (typeof NullableJsonNullValueInput)[keyof typeof NullableJsonNullValueInput]
 
 
 export const QueryMode = {
@@ -144,4 +265,13 @@ export const NullsOrder = {
 } as const
 
 export type NullsOrder = (typeof NullsOrder)[keyof typeof NullsOrder]
+
+
+export const JsonNullValueFilter = {
+  DbNull: DbNull,
+  JsonNull: JsonNull,
+  AnyNull: AnyNull
+} as const
+
+export type JsonNullValueFilter = (typeof JsonNullValueFilter)[keyof typeof JsonNullValueFilter]
 
