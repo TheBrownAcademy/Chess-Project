@@ -20,7 +20,7 @@ import {
 import { useScrollReveal } from '../hooks/useScrollReveal';
 import { useButtonGlow } from '../hooks/useButtonGlow';
 
-// ── Board colours ─────────────────────────────────────────────────────────────
+// â”€â”€ Board colours â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const BOARD_DARK  = '#769656';   // Tournament green
 const BOARD_LIGHT = '#EEEED2';   // Off-white / cream
 
@@ -28,15 +28,15 @@ const BOARD_LIGHT = '#EEEED2';   // Off-white / cream
 const SHOW_COORDINATES = false;
 
 export default function ProductDemo() {
-  // ─── ROOT CAUSE OF SCROLL BUG ─────────────────────────────────────────────
-  // Previously: game was in useState → setGame() during reset caused React to
+  // â”€â”€â”€ ROOT CAUSE OF SCROLL BUG â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // Previously: game was in useState â†’ setGame() during reset caused React to
   // unmount+remount the Chessboard. react-chessboard internally calls focus()
   // on mount, which triggers browser scroll-into-view behavior.
   //
   // FIX: keep game in a useRef so the Chess instance is mutated in place.
   // setGameFen() only triggers a re-render of FEN-dependent UI, not a remount
   // of the Chessboard component itself (same DOM node, no focus side-effects).
-  // ─────────────────────────────────────────────────────────────────────────
+  // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const gameRef = useRef(new Chess());
   const [gameFen, setGameFen] = useState(() => gameRef.current.fen());
 
@@ -67,13 +67,13 @@ export default function ProductDemo() {
     resetEvaluation,
   } = useStockfish();
 
-  // Move history container — scroll inside the box, never the page
+  // Move history container â€” scroll inside the box, never the page
   const moveHistoryContainerRef = useRef<HTMLDivElement>(null);
 
-  // ── Layout measurements for exact sizing alignment ───────────────────────
+  // â”€â”€ Layout measurements for exact sizing alignment â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const [boardHeight, setBoardHeight] = useState<number>(0);
   const [isDesktop, setIsDesktop] = useState<boolean>(false);
-  // Progressive eval stabilization — separate displayed eval from raw eval
+  // Progressive eval stabilization â€” separate displayed eval from raw eval
   // Start at 0.0 (never -0.0) for initial position
   const [displayEval, setDisplayEval] = useState<{ type: 'cp' | 'mate'; value: number } | null>({ type: 'cp', value: 0 });
   const evalTimeoutsRef = useRef<ReturnType<typeof setTimeout>[]>([]);
@@ -115,7 +115,7 @@ export default function ProductDemo() {
     setGameOverReason(getGameOverReason(gameRef.current));
   }, [gameFen]);
 
-  // Progressive eval stabilization — update display eval at 1s, 2s, 3s, 4s, 5s after each change
+  // Progressive eval stabilization â€” update display eval at 1s, 2s, 3s, 4s, 5s after each change
   useEffect(() => {
     // Clear existing scheduled updates
     evalTimeoutsRef.current.forEach(t => clearTimeout(t));
@@ -123,7 +123,7 @@ export default function ProductDemo() {
 
     if (!evaluation) return;
 
-    // Schedule delayed snapshots — each one captures evaluation at that moment
+    // Schedule delayed snapshots â€” each one captures evaluation at that moment
     // Do NOT set immediately; let Stockfish stabilize before showing values.
     const delays = [1000, 2000, 3000, 4000, 5000];
     delays.forEach(delay => {
@@ -164,7 +164,7 @@ export default function ProductDemo() {
     return () => document.removeEventListener('mousedown', handleOutsideClick);
   }, [showMoreMenu]);
 
-  // AI move trigger — fires when it's the engine's turn
+  // AI move trigger â€” fires when it's the engine's turn
   useEffect(() => {
     const game = gameRef.current;
     if (game.isGameOver()) return;
@@ -199,7 +199,7 @@ export default function ProductDemo() {
     };
   }, [showHint, bestMove]);
 
-  // Piece drop handler — called by react-chessboard
+  // Piece drop handler â€” called by react-chessboard
   const onDrop = useCallback(
     (sourceSquare: string, targetSquare: string | null): boolean => {
       const game = gameRef.current;
@@ -221,14 +221,14 @@ export default function ProductDemo() {
           return true;
         }
       } catch {
-        // illegal move — no-op
+        // illegal move â€” no-op
       }
       return false;
     },
     [isEditMode, playerColor]
   );
 
-  // Undo — take back the last TWO half-moves (human + engine)
+  // Undo â€” take back the last TWO half-moves (human + engine)
   const handleUndo = useCallback(() => {
     const game = gameRef.current;
     const history = game.history();
@@ -243,13 +243,13 @@ export default function ProductDemo() {
     stopSearch();
   }, [playerColor, stopSearch]);
 
-  // Hint — ask engine for best move and highlight squares (no auto-play)
+  // Hint â€” ask engine for best move and highlight squares (no auto-play)
   const handleHint = useCallback(() => {
     setShowHint(true);
     analyzePosition(gameRef.current.fen());
   }, [analyzePosition]);
 
-  // Reset — load a fresh game into the ref without replacing the ref itself
+  // Reset â€” load a fresh game into the ref without replacing the ref itself
   const loadFreshGame = useCallback((fen?: string) => {
     stopSearch();
     const freshGame = new Chess();
@@ -300,21 +300,21 @@ export default function ProductDemo() {
 
   /*
     stopSearch();
-    gameRef.current.reset();           // mutate in-place → Chessboard stays mounted
+    gameRef.current.reset();           // mutate in-place â†’ Chessboard stays mounted
     setGameFen(gameRef.current.fen()); // trigger re-render with starting position
     setShowHint(false);
     setGameOverReason(null);
-    resetEvaluation();                 // ← fix: clear eval bar + bestMove
+    resetEvaluation();                 // â† fix: clear eval bar + bestMove
     if (hintTimerRef.current) clearTimeout(hintTimerRef.current);
   */
 
-  // Switch Side — ONLY flips board orientation, never triggers engine move
+  // Switch Side â€” ONLY flips board orientation, never triggers engine move
   const handleSwitchSide = useCallback(() => {
     setBoardOrientation((prev) => (prev === 'white' ? 'black' : 'white'));
     setPlayerColor((prev) => (prev === 'w' ? 'b' : 'w'));
   }, []);
 
-  // Move history — derived from the current game instance
+  // Move history â€” derived from the current game instance
   const history = gameRef.current.history({ verbose: true });
   const movePairs: { moveNumber: number; white: (typeof history)[0]; black: (typeof history)[0] | undefined }[] = [];
   for (let i = 0; i < history.length; i += 2) {
@@ -350,19 +350,19 @@ export default function ProductDemo() {
 
   return (
     <section id="interactive-demo" className="py-12 md:py-16 relative overflow-hidden">
-      <div className="absolute top-1/2 left-1/4 -translate-y-1/2 w-[600px] h-[600px] bg-brand-accent/5 rounded-full blur-[140px] pointer-events-none" />
+      <div className="absolute top-1/2 left-1/4 -translate-y-1/2 w-[600px] h-[600px] bg-[rgba(212,175,110,0.05)] rounded-full blur-[140px] pointer-events-none" />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
 
         {/* Dashboard */}
         <div
           ref={dashboardRef}
-          className="bg-brand-surface border border-brand-border rounded-xl shadow-2xl p-4 sm:p-6 lg:p-8 max-w-5xl mx-auto"
+          className="luxury-card rounded-sm shadow-2xl p-4 sm:p-6 lg:p-8 max-w-5xl mx-auto"
           style={{ opacity: 0 }}
         >
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:items-stretch">
 
-            {/* ── Col 1: Eval Bar ──────────────────────────────────── */}
+            {/* â”€â”€ Col 1: Eval Bar â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
             <div
               className="lg:col-span-1 flex lg:flex-col items-center lg:justify-start justify-center gap-0"
               style={{ alignSelf: 'stretch', padding: '0' }}
@@ -370,24 +370,24 @@ export default function ProductDemo() {
               <EvaluationBar evaluation={displayEval} isDesktop={isDesktop} boardHeight={boardHeight} />
             </div>
 
-            {/* ── Col 2: Chessboard ────────────────────────────────────────── */}
+            {/* â”€â”€ Col 2: Chessboard â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
             <div className="lg:col-span-7 flex flex-col lg:justify-start justify-center">
-              <div ref={boardContainerRef} className="aspect-square w-full shadow-xl border border-brand-border relative overflow-hidden" style={{ borderRadius: '4px' }}>
+              <div ref={boardContainerRef} className="aspect-square w-full shadow-xl border border-[rgba(212,175,110,0.12)] relative overflow-hidden" style={{ borderRadius: '4px' }}>
 
                 {/* Game Over Overlay */}
                 {gameOverReason && (
-                  <div className="absolute inset-0 z-20 bg-brand-bg/90 backdrop-blur-sm flex flex-col items-center justify-center p-6 space-y-4">
-                    <div className="w-12 h-12 rounded-full bg-brand-accent/20 border border-brand-accent/30 flex items-center justify-center text-brand-accent">
+                  <div className="absolute inset-0 z-20 bg-[#080B14]/90 backdrop-blur-sm flex flex-col items-center justify-center p-6 space-y-4">
+                    <div className="w-12 h-12 rounded-full border border-[rgba(212,175,110,0.3)] flex items-center justify-center text-[#D4AF6E]">
                       <AlertCircle className="w-6 h-6" />
                     </div>
                     <div className="text-center">
                       <h4 className="text-lg font-bold text-white">Game Finished</h4>
-                      <p className="text-sm text-brand-secondary mt-1">{gameOverReason}</p>
+                      <p className="text-sm text-[#8E8B82] mt-1">{gameOverReason}</p>
                     </div>
                     <button
                       ref={playAgainGlowRef}
                       onClick={handleReset}
-                      className="flex items-center gap-2 px-5 py-2.5 bg-brand-accent hover:bg-brand-accent/90 text-white rounded-lg text-sm font-semibold transition-colors duration-200 btn-glow-container btn-glow-accent"
+                      className="flex items-center gap-2 px-5 py-2.5 btn-premium-cta cta-shine rounded-sm text-sm font-medium"
                     >
                       <RotateCcw className="w-4 h-4" />
                       Play Again
@@ -395,7 +395,7 @@ export default function ProductDemo() {
                   </div>
                 )}
 
-                {/* react-chessboard — green/cream theme, stays mounted, never remounts */}
+                {/* react-chessboard â€” green/cream theme, stays mounted, never remounts */}
                 <Chessboard
                   options={{
                     position: gameFen,
@@ -412,21 +412,21 @@ export default function ProductDemo() {
               </div>
 
               {/* Turn indicator */}
-              <div className="mt-3 flex items-center gap-2 text-xs text-brand-secondary px-1">
+              <div className="mt-3 flex items-center gap-2 text-xs text-[#8E8B82] px-1">
                 <span
-                  className={`w-2.5 h-2.5 rounded-full border border-brand-border ${
+                  className={`w-2.5 h-2.5 rounded-full border border-[rgba(212,175,110,0.12)] ${
                     currentTurn === 'w' ? 'bg-white' : 'bg-neutral-800'
                   }`}
                 />
                 <span>
                   {currentTurn === 'w' ? "White's Turn" : "Black's Turn"}
                   {isEditMode && (
-                    <span className="text-brand-accent ml-1.5 font-medium">
+                    <span className="text-[#D4AF6E] ml-1.5 font-medium">
                       (Edit Position Mode)
                     </span>
                   )}
                   {isThinking && (
-                    <span className="text-brand-accent animate-pulse ml-1.5 font-medium">
+                    <span className="text-[#D4AF6E] animate-pulse ml-1.5 font-medium">
                       (AI Thinking...)
                     </span>
                   )}
@@ -440,7 +440,7 @@ export default function ProductDemo() {
               </div>
             </div>
 
-            {/* ── Col 3: Control Panel ─────────────────────────────────────── */}
+            {/* â”€â”€ Col 3: Control Panel â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
             <div
               className="lg:col-span-4 flex flex-col lg:gap-6 gap-10 lg:self-stretch"
               style={{
@@ -449,7 +449,7 @@ export default function ProductDemo() {
             >
 
               <div className="flex flex-col gap-8">
-                {/* ── Toolbar ───────────────────────────────────── */}
+                {/* â”€â”€ Toolbar â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
                 <div className="grid grid-cols-4 gap-2">
 
                   {/* Undo */}
@@ -457,7 +457,7 @@ export default function ProductDemo() {
                     onClick={handleUndo}
                     disabled={!canUndo || isThinking || isEditMode}
                     title="Undo last move"
-                    className="flex flex-col items-center justify-center gap-1.5 py-3 px-1 rounded-lg border border-brand-border bg-brand-bg hover:bg-white/5 hover:border-brand-accent/40 text-brand-secondary hover:text-white transition-all duration-200 disabled:opacity-40 group"
+                    className="flex flex-col items-center justify-center gap-1.5 py-3 px-1 rounded-lg border border-[rgba(212,175,110,0.12)] bg-[#080B14] hover:bg-white/5 hover:border-[rgba(212,175,110,0.4)] text-[#8E8B82] hover:text-white transition-all duration-200 disabled:opacity-40 group"
                     style={{ cursor: (!canUndo || isThinking || isEditMode) ? 'not-allowed' : 'pointer' }}
                   >
                     <CornerUpLeft className="w-5 h-5 group-hover:scale-110 transition-transform" />
@@ -469,7 +469,7 @@ export default function ProductDemo() {
                     onClick={handleHint}
                     disabled={!!gameOverReason || isThinking || isEditMode || game_is_human_turn(currentTurn, playerColor) === false}
                     title="Get a hint"
-                    className="flex flex-col items-center justify-center gap-1.5 py-3 px-1 rounded-lg border border-brand-border bg-brand-bg hover:bg-white/5 hover:border-brand-accent/40 text-brand-secondary hover:text-yellow-400 transition-all duration-200 disabled:opacity-40 group"
+                    className="flex flex-col items-center justify-center gap-1.5 py-3 px-1 rounded-lg border border-[rgba(212,175,110,0.12)] bg-[#080B14] hover:bg-white/5 hover:border-[rgba(212,175,110,0.4)] text-[#8E8B82] hover:text-yellow-400 transition-all duration-200 disabled:opacity-40 group"
                     style={{ cursor: (!!gameOverReason || isThinking || isEditMode || !game_is_human_turn(currentTurn, playerColor)) ? 'not-allowed' : 'pointer' }}
                   >
                     <Lightbulb className="w-5 h-5 group-hover:scale-110 transition-transform" />
@@ -481,14 +481,14 @@ export default function ProductDemo() {
                     onClick={handleReset}
                     disabled={isEditMode}
                     title="Reset game"
-                    className="flex flex-col items-center justify-center gap-1.5 py-3 px-1 rounded-lg border border-brand-border bg-brand-bg hover:bg-white/5 hover:border-red-500/40 text-brand-secondary hover:text-red-400 transition-all duration-200 disabled:opacity-40 group"
+                    className="flex flex-col items-center justify-center gap-1.5 py-3 px-1 rounded-lg border border-[rgba(212,175,110,0.12)] bg-[#080B14] hover:bg-white/5 hover:border-red-500/40 text-[#8E8B82] hover:text-red-400 transition-all duration-200 disabled:opacity-40 group"
                     style={{ cursor: isEditMode ? 'not-allowed' : 'pointer' }}
                   >
                     <RotateCcw className="w-5 h-5 group-hover:rotate-[-45deg] transition-transform duration-300" />
                     <span className="text-[10px] font-medium font-sans tracking-wide">Reset</span>
                   </button>
 
-                  {/* More — opens popup with Chess960 + Edit Position */}
+                  {/* More â€” opens popup with Chess960 + Edit Position */}
                   <div className="relative">
                     <button
                       ref={moreButtonRef}
@@ -496,8 +496,8 @@ export default function ProductDemo() {
                       title="More options"
                       className={`w-full flex flex-col items-center justify-center gap-1.5 py-3 px-1 rounded-lg border transition-all duration-200 group cursor-pointer ${
                         showMoreMenu
-                          ? 'border-brand-accent/60 bg-brand-accent/10 text-white'
-                          : 'border-brand-border bg-brand-bg hover:bg-white/5 hover:border-brand-accent/40 text-brand-secondary hover:text-white'
+                          ? 'border-[rgba(212,175,110,0.6)] bg-[rgba(212,175,110,0.08)] text-white'
+                          : 'border-[rgba(212,175,110,0.12)] bg-[#080B14] hover:bg-white/5 hover:border-[rgba(212,175,110,0.4)] text-[#8E8B82] hover:text-white'
                       }`}
                     >
                       <MoreHorizontal className="w-5 h-5 group-hover:scale-110 transition-transform" />
@@ -510,10 +510,10 @@ export default function ProductDemo() {
                         ref={moreMenuRef}
                         className="absolute right-0 top-full mt-1.5 z-50 min-w-[160px] animate-fade-in"
                         style={{
-                          background: 'rgba(17, 24, 39, 0.97)',
-                          border: '1px solid rgba(99, 102, 241, 0.25)',
+                          background: 'rgba(8, 11, 20, 0.97)',
+                          border: '1px solid rgba(212,175,110,0.2)',
                           borderRadius: '10px',
-                          boxShadow: '0 8px 32px rgba(0,0,0,0.55), 0 0 0 1px rgba(99,102,241,0.1)',
+                          boxShadow: '0 8px 32px rgba(0,0,0,0.55), 0 0 0 1px rgba(212,175,110,0.08)',
                           backdropFilter: 'blur(12px)',
                           overflow: 'hidden',
                         }}
@@ -522,10 +522,10 @@ export default function ProductDemo() {
                         <button
                           onClick={() => { handleChess960(); setShowMoreMenu(false); }}
                           disabled={isEditMode}
-                          className="w-full flex items-center gap-3 px-4 py-3 text-sm text-brand-secondary hover:text-white hover:bg-white/10 transition-all duration-150 disabled:opacity-40 group cursor-pointer"
+                          className="w-full flex items-center gap-3 px-4 py-3 text-sm text-[#8E8B82] hover:text-white hover:bg-white/10 transition-all duration-150 disabled:opacity-40 group cursor-pointer"
                           style={{ cursor: isEditMode ? 'not-allowed' : 'pointer' }}
                         >
-                          <Shuffle className="w-4 h-4 text-brand-accent group-hover:scale-110 transition-transform" />
+                          <Shuffle className="w-4 h-4 text-[#D4AF6E] group-hover:scale-110 transition-transform" />
                           <span className="font-sans font-medium">Chess960</span>
                         </button>
 
@@ -536,10 +536,10 @@ export default function ProductDemo() {
                         <button
                           onClick={() => { handleOpenEditor(); setShowMoreMenu(false); }}
                           disabled={isThinking}
-                          className="w-full flex items-center gap-3 px-4 py-3 text-sm text-brand-secondary hover:text-white hover:bg-white/10 transition-all duration-150 disabled:opacity-40 group cursor-pointer"
+                          className="w-full flex items-center gap-3 px-4 py-3 text-sm text-[#8E8B82] hover:text-white hover:bg-white/10 transition-all duration-150 disabled:opacity-40 group cursor-pointer"
                           style={{ cursor: isThinking ? 'not-allowed' : 'pointer' }}
                         >
-                          <Pencil className="w-4 h-4 text-brand-accent group-hover:scale-110 transition-transform" />
+                          <Pencil className="w-4 h-4 text-[#D4AF6E] group-hover:scale-110 transition-transform" />
                           <span className="font-sans font-medium">Edit Position</span>
                         </button>
                       </div>
@@ -548,15 +548,15 @@ export default function ProductDemo() {
 
                 </div>
 
-                {/* ── Difficulty ───────────────────────────────────── */}
+                {/* â”€â”€ Difficulty â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
                 <div className="space-y-2 text-left">
                   <div className="flex items-center justify-between">
-                    <label className="text-xs font-sans text-brand-secondary">Difficulty</label>
-                    <span className="text-xs font-semibold text-brand-accent font-sans">
+                    <label className="text-xs font-sans text-[#8E8B82]">Difficulty</label>
+                    <span className="text-xs font-semibold text-[#D4AF6E] font-sans">
                       {currentConfig.name} ({currentConfig.rating})
                     </span>
                   </div>
-                  <div className="grid grid-cols-5 gap-1 bg-brand-bg p-1 rounded-lg border border-brand-border">
+                  <div className="grid grid-cols-5 gap-1 bg-[#080B14] p-1 rounded-lg border border-[rgba(212,175,110,0.12)]">
                     {([1, 2, 3, 4, 5] as DifficultyLevel[]).map((level) => (
                       <button
                         key={level}
@@ -567,8 +567,8 @@ export default function ProductDemo() {
                         title={`${DIFFICULTY_CONFIGS[level].name} (${DIFFICULTY_CONFIGS[level].rating})`}
                         className={`py-1 rounded text-xs font-mono transition-all duration-200 ${
                           difficulty === level
-                            ? 'bg-brand-accent text-white shadow-sm font-bold'
-                            : 'text-brand-secondary hover:bg-white/5'
+                            ? 'bg-[#D4AF6E] text-[#080B14] shadow-sm font-bold'
+                            : 'text-[#8E8B82] hover:bg-white/5'
                         }`}
                       >
                         {level}
@@ -578,7 +578,7 @@ export default function ProductDemo() {
                 </div>
               </div>
 
-              {/* ── Move History ──────────────────────────────────────────── */}
+              {/* â”€â”€ Move History â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
               <div
                 className={`flex flex-col text-left ${isDesktop ? 'flex-1 min-h-0' : ''}`}
                 style={{
@@ -587,10 +587,10 @@ export default function ProductDemo() {
               >
                 <div
                   ref={moveHistoryContainerRef}
-                  className="flex-1 overflow-y-auto border border-brand-border/60 rounded-lg p-3 bg-brand-bg/40 font-mono text-sm space-y-1 move-history-scroll"
+                  className="flex-1 overflow-y-auto border border-[rgba(212,175,110,0.12)]/60 rounded-lg p-3 bg-[#080B14]/40 font-mono text-sm space-y-1 move-history-scroll"
                 >
                   {movePairs.length === 0 ? (
-                    <div className="text-brand-secondary/60 text-xs text-center py-10">
+                    <div className="text-[#8E8B82]/60 text-xs text-center py-10">
                       No moves yet. Make a move on the board.
                     </div>
                   ) : (
@@ -599,9 +599,9 @@ export default function ProductDemo() {
                         key={pair.moveNumber}
                         className="grid grid-cols-12 gap-1 py-1 px-2 rounded hover:bg-white/5 transition-colors"
                       >
-                        <span className="col-span-2 text-brand-secondary/70">{pair.moveNumber}.</span>
+                        <span className="col-span-2 text-[#8E8B82]/70">{pair.moveNumber}.</span>
                         <span className="col-span-5 text-white font-medium">{pair.white.san}</span>
-                        <span className="col-span-5 text-brand-secondary font-medium">
+                        <span className="col-span-5 text-[#8E8B82] font-medium">
                           {pair.black ? pair.black.san : ''}
                         </span>
                       </div>
@@ -628,7 +628,8 @@ export default function ProductDemo() {
   );
 }
 
-// Helper — is it currently the human player's turn?
+// Helper â€” is it currently the human player's turn?
 function game_is_human_turn(currentTurn: 'w' | 'b', playerColor: 'w' | 'b') {
   return currentTurn === playerColor;
 }
+

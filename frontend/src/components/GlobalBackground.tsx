@@ -6,29 +6,18 @@ const CHESS_PIECE_TYPES = ['rook', 'bishop', 'knight', 'queen', 'king', 'pawn'] 
 const BACKGROUND_PIECES = Array.from({ length: 15 }).map((_, i) => {
   const type = CHESS_PIECE_TYPES[i % CHESS_PIECE_TYPES.length];
   const baseLeft = (i / 15) * 100;
-  const jitter = (Math.random() - 0.5) * 4; // +/- 2%
-  const left = Math.min(95, Math.max(2, baseLeft + jitter)); // Keep away from very edges slightly
+  const jitter = (Math.random() - 0.5) * 4;
+  const left = Math.min(95, Math.max(2, baseLeft + jitter));
 
   const size = Math.floor(Math.random() * 30 + 85); // 85px to 115px
-  const duration = Math.floor(Math.random() * 25 + 50); // 50s to 75s (very slow and elegant)
-  const delay = -(Math.random() * 75); // negative delay so they start animated at random scroll points
-  const drift = (Math.random() - 0.5) * 80; // horizontal drift +/- 40px
-  const startRotate = Math.floor(Math.random() * 40 - 20); // -20deg to 20deg
-  const endRotate = Math.floor(Math.random() * 40 - 20); // -20deg to 20deg
-  const opacity = Math.random() * 0.4 + 0.5; // subtle opacity factor
+  const duration = Math.floor(Math.random() * 25 + 50); // 50s to 75s
+  const delay = -(Math.random() * 75);
+  const drift = (Math.random() - 0.5) * 80;
+  const startRotate = Math.floor(Math.random() * 40 - 20);
+  const endRotate = Math.floor(Math.random() * 40 - 20);
+  const opacity = Math.random() * 0.4 + 0.5;
 
-  return {
-    id: i,
-    type,
-    left,
-    size,
-    duration,
-    delay,
-    drift,
-    startRotate,
-    endRotate,
-    opacity,
-  };
+  return { id: i, type, left, size, duration, delay, drift, startRotate, endRotate, opacity };
 });
 
 function renderPieceSvg(type: 'rook' | 'bishop' | 'knight' | 'queen' | 'king' | 'pawn') {
@@ -46,7 +35,7 @@ function renderPieceSvg(type: 'rook' | 'bishop' | 'knight' | 'queen' | 'king' | 
       return (
         <svg viewBox="0 0 100 100">
           <path d="M50 10c5 0 9 4 9 9 0 4-2 7-5 8 13 9 21 24 21 39 0 10-10 13-25 13S25 76 25 66c0-15 8-30 21-39-3-1-5-4-5-8 0-5 4-9 9-9z" />
-          <path d="M53 36l-13 24h9l10-19z" fill="rgba(4,12,31,0.42)" />
+          <path d="M53 36l-13 24h9l10-19z" fill="rgba(8,11,20,0.3)" />
           <path d="M31 79h38v8H31z" />
           <path d="M24 87h52v7H24z" />
         </svg>
@@ -57,7 +46,7 @@ function renderPieceSvg(type: 'rook' | 'bishop' | 'knight' | 'queen' | 'king' | 
           <path d="M61 12c15 7 24 22 24 40 0 10-4 20-10 28H40c2-11 8-20 18-27-9 0-17-4-24-11l5-16c6 4 12 6 18 6-4-4-6-9-6-15l10-5z" />
           <path d="M42 80h38v8H42z" />
           <path d="M34 88h52v7H34z" />
-          <circle cx="58" cy="31" r="3" fill="rgba(4,12,31,0.45)" />
+          <circle cx="58" cy="31" r="3" fill="rgba(8,11,20,0.3)" />
         </svg>
       );
     case 'pawn':
@@ -95,8 +84,8 @@ export default function GlobalBackground() {
     <>
       <style>{`
         .global-animated-bg {
-          --piece: rgba(255, 255, 255, 0.04);
-          --piece-soft: rgba(255, 255, 255, 0.024);
+          --piece: rgba(212, 175, 110, 0.025);
+          --piece-soft: rgba(212, 175, 110, 0.015);
           position: fixed;
           inset: 0;
           overflow: hidden;
@@ -107,8 +96,8 @@ export default function GlobalBackground() {
         .global-piece {
           position: absolute;
           top: -150px;
-          opacity: 0.72;
-          filter: blur(0.2px);
+          opacity: 0.55;
+          filter: blur(0.3px);
           animation-name: global-fall;
           animation-timing-function: linear;
           animation-iteration-count: infinite;
@@ -121,7 +110,7 @@ export default function GlobalBackground() {
           display: block;
           fill: var(--piece);
           stroke: var(--piece-soft);
-          stroke-width: 1.5;
+          stroke-width: 1;
         }
 
         @keyframes global-fall {
@@ -138,8 +127,8 @@ export default function GlobalBackground() {
 
         @media (max-width: 700px) {
           .global-piece {
-            width: 70px !important;
-            height: 70px !important;
+            width: 60px !important;
+            height: 60px !important;
           }
         }
       `}</style>
@@ -155,7 +144,7 @@ export default function GlobalBackground() {
               height: `${piece.size}px`,
               animationDuration: `${piece.duration}s`,
               animationDelay: `${piece.delay}s`,
-              opacity: 0.72 * piece.opacity,
+              opacity: 0.55 * piece.opacity,
               ['--start-rotate' as any]: `${piece.startRotate}deg`,
               ['--end-rotate' as any]: `${piece.endRotate}deg`,
               ['--drift' as any]: `${piece.drift}px`,

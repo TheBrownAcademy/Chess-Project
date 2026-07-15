@@ -16,7 +16,7 @@ import {
 } from "lucide-react";
 import { useSession } from "../hooks/useSession";
 import { navigate } from "../hooks/useRoute";
-import { AvatarDropdown } from "./AvatarDropdown";
+import { AvatarDropdown } from "../components/AvatarDropdown";
 
 interface PlatformButtonProps {
   name: string;
