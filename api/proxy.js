@@ -2,9 +2,14 @@ export default async function handler(req, res) {
   // Read backend URL from Vercel environment variables (set per-environment in Vercel dashboard)
   const backendUrl = process.env.BACKEND_URL || 'http://localhost:3000';
 
-  // Extract path after /api
-  const path = req.url.replace(/^\/api/, '');
-  const targetUrl = `${backendUrl}/api${path}`;
+  // Vercel injects the captured :path* segment as a 'path' query param when rewriting to a
+  // serverless function. Extract it cleanly to avoid forwarding ?path= to the backend.
+  const parsedUrl = new URL(req.url, 'http://placeholder');
+  const capturedPath = parsedUrl.searchParams.get('path') || '';
+  parsedUrl.searchParams.delete('path'); // strip the vercel-injected param
+  const remainingQuery = parsedUrl.search; // preserve any real query params
+
+  const targetUrl = `${backendUrl}/api/${capturedPath}${remainingQuery}`;
 
   try {
     let body = undefined;
