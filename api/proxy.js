@@ -18,8 +18,14 @@ export default async function handler(req, res) {
     }
 
     const headers = { ...req.headers };
-    // Remove host header to avoid SSL handshake issues with the backend
+    // Remove host header — the backend's hostname, not the user-facing one
     delete headers.host;
+    // Forward the user-facing domain so Auth.js builds the correct OAuth callback URL.
+    // With trustHost:true, Auth.js reads x-forwarded-host to determine the base URL.
+    // Without this, Auth.js would use Railway's internal hostname for the callback URL
+    // instead of dev.xlchess.com, causing a redirect_uri mismatch with Google OAuth.
+    headers['x-forwarded-host'] = req.headers.host; // e.g. dev.xlchess.com
+    headers['x-forwarded-proto'] = 'https';
 
     const response = await fetch(targetUrl, {
       method: req.method,
