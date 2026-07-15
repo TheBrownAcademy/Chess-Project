@@ -13,7 +13,7 @@
 // ── GSAP: register plugins immediately (before any component renders) ──────
 import './utils/gsapConfig';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 import Hero from './components/Hero';
 import BrandSection from './components/BrandSection';
@@ -25,6 +25,9 @@ import Navbar from './components/Navbar';
 import PremiumLoader from './components/PremiumLoader';
 import PuzzlePage from './pages/PuzzlePage';
 import ProfilePage from './pages/ProfilePage';
+import PricingPage from './pages/PricingPage';
+import SuccessfulPage from './pages/SuccessfulPage';
+import CheckoutPage from './pages/CheckoutPage';
 import { useRoute } from './hooks/useRoute';
 
 import { ParticlesProvider } from '@tsparticles/react';
@@ -57,6 +60,19 @@ function App() {
   const normalizedPath = path.replace(/\/+$/, '') || '/';
   const isPuzzlesPage = normalizedPath === '/puzzles' || window.location.hash.startsWith('#/puzzles');
   const isProfilePage = normalizedPath === '/profile';
+  const isPricingPage = normalizedPath === '/pricing' || window.location.hash.startsWith('#/pricing');
+  const isSuccessfulPage = normalizedPath === '/successful' || window.location.hash.startsWith('#/successful');
+  const isCheckoutPage = normalizedPath === '/payment' || window.location.hash.startsWith('#/payment');
+
+  useEffect(() => {
+    if (normalizedPath !== '/successful') {
+      try {
+        sessionStorage.removeItem('xlchess_payment_completed');
+        sessionStorage.removeItem('xlchess_upgrade_success_data');
+      } catch (e) {}
+      (window as any).xlchess_payment_completed = false;
+    }
+  }, [normalizedPath]);
 
   return (
     <ParticlesProvider init={initParticles}>
@@ -77,6 +93,12 @@ function App() {
             <PuzzlePage />
           ) : isProfilePage ? (
             <ProfilePage />
+          ) : isPricingPage ? (
+            <PricingPage />
+          ) : isSuccessfulPage ? (
+            <SuccessfulPage />
+          ) : isCheckoutPage ? (
+            <CheckoutPage />
           ) : (
             /* Landing Page Content */
             <div className="min-h-screen text-brand-text flex flex-col">

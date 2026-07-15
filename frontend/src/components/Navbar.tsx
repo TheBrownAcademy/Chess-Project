@@ -6,6 +6,7 @@ import { useButtonGlow } from '../hooks/useButtonGlow';
 import { useSession } from '../hooks/useSession';
 import { AuthModal } from './AuthModal';
 import { AvatarDropdown } from './AvatarDropdown';
+import { navigate } from '../hooks/useRoute';
 
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
@@ -34,6 +35,7 @@ export default function Navbar() {
   const navLinks = [
     { name: 'Live Demo',        href: '#interactive-demo' },
     { name: 'Practice Puzzles', href: '/puzzles' },
+    { name: 'Pricing',          href: '/pricing' },
   ];
 
   return (
@@ -88,7 +90,13 @@ export default function Navbar() {
               <a
                 key={link.name}
                 href={link.href}
-                className="nav-link font-sans font-light text-sm tracking-wide text-brand-secondary hover:text-ivory transition-colors duration-300"
+                onClick={(e) => {
+                  if (link.href.startsWith('/')) {
+                    e.preventDefault();
+                    navigate(link.href);
+                  }
+                }}
+                className="nav-link font-sans font-light text-sm tracking-wide text-brand-secondary hover:text-ivory transition-colors duration-300 cursor-pointer"
                 style={{ letterSpacing: '0.06em' }}
               >
                 {link.name}
@@ -162,8 +170,14 @@ export default function Navbar() {
               <a
                 key={link.name}
                 href={link.href}
-                onClick={() => setIsOpen(false)}
-                className="font-sans font-light text-base text-brand-secondary hover:text-ivory transition-colors py-1"
+                onClick={(e) => {
+                  setIsOpen(false);
+                  if (link.href.startsWith('/')) {
+                    e.preventDefault();
+                    navigate(link.href);
+                  }
+                }}
+                className="font-sans font-light text-base text-brand-secondary hover:text-ivory transition-colors py-1 cursor-pointer"
                 style={{ letterSpacing: '0.04em' }}
               >
                 {link.name}

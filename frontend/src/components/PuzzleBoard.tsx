@@ -4,6 +4,7 @@ import { Chess } from 'chess.js';
 import type { ChessPuzzle } from '../utils/PuzzleLoader';
 import { validateMove } from '../utils/PuzzleValidator';
 import { useConfetti } from '../hooks/useConfetti';
+import { HelpCircle, RotateCcw, ArrowRight, Play, Check } from 'lucide-react';
 
 const BOARD_DARK = '#769656';
 const BOARD_LIGHT = '#EEEED2';
@@ -160,12 +161,9 @@ export function PuzzleBoard({
   return (
     <div className="flex flex-col items-center gap-3 sm:gap-3.5 w-full">
       {/* Top Heading */}
-      <div className="text-center space-y-0.5">
-        <h1 className="font-sans font-extrabold text-3xl sm:text-4xl text-white tracking-tight">
-          Mate in 1
-        </h1>
+      <div className="text-center space-y-0.5 z-10">
         {puzzleNumber !== undefined && (
-          <p className="font-sans text-sm sm:text-base text-brand-secondary font-medium">
+          <p className="font-mono text-xs text-brand-accent uppercase tracking-widest font-semibold">
             Puzzle #{puzzleNumber}
           </p>
         )}
@@ -173,11 +171,11 @@ export function PuzzleBoard({
 
       {/* Chessboard Container */}
       <div
-        className={`relative w-full max-w-[520px] sm:max-w-[570px] aspect-square shadow-2xl border rounded-2xl overflow-hidden bg-brand-surface transition-all duration-300 ${
+        className={`relative w-full max-w-[500px] sm:max-w-[540px] aspect-square shadow-[0_20px_50px_rgba(212,175,110,0.03)] border rounded-2xl overflow-hidden bg-brand-surface transition-all duration-300 z-10 ${
           isShaking
             ? 'border-rose-500 ring-4 ring-rose-500/25'
             : puzzleStatus === 'solved'
-              ? 'border-emerald-500 ring-4 ring-emerald-500/25'
+              ? 'border-emerald-500 ring-4 ring-emerald-500/25 animate-pulse'
               : 'border-brand-border/80'
         }`}
       >
@@ -198,45 +196,49 @@ export function PuzzleBoard({
       </div>
 
       {/* Below the board: Status indicator */}
-      <div className="h-7 flex items-center justify-center">
+      <div className="h-8 flex items-center justify-center z-10">
         {puzzleStatus === 'solved' ? (
-          <span className="font-sans font-semibold text-base sm:text-lg text-emerald-400 flex items-center gap-2">
-            <span>✓</span> Correct
+          <span className="font-mono uppercase tracking-wider text-xs font-bold text-emerald-400 flex items-center gap-1.5 bg-emerald-500/10 border border-emerald-500/20 px-3 py-1 rounded-full">
+            <Check className="w-3.5 h-3.5" /> Correct Move
           </span>
         ) : puzzleStatus === 'failed' || isShaking ? (
-          <span className="font-sans font-semibold text-base sm:text-lg text-rose-400 flex items-center gap-2">
-            Try Again
+          <span className="font-mono uppercase tracking-wider text-xs font-bold text-rose-400 flex items-center gap-1.5 bg-rose-500/10 border border-rose-500/20 px-3 py-1 rounded-full animate-bounce">
+            Incorrect. Try Again
           </span>
         ) : (
-          <span className="font-sans font-semibold text-base sm:text-lg text-white/90 flex items-center gap-2">
+          <span className="font-mono uppercase tracking-wider text-xs font-bold text-[#e5dfd5] flex items-center gap-1.5 bg-white/5 border border-white/10 px-3 py-1 rounded-full">
+            <Play className="w-3.5 h-3.5 text-brand-accent fill-current" />
             {playerColor === 'w' ? 'White to Move' : 'Black to Move'}
           </span>
         )}
       </div>
 
       {/* Elegant Controls: Hint, Reset, Next Puzzle */}
-      <div className="flex items-center gap-3 sm:gap-4 pt-1">
+      <div className="flex items-center gap-3 sm:gap-4 pt-2 z-10">
         <button
           onClick={handleHint}
           disabled={puzzleStatus === 'solved'}
-          className="px-5 py-2.5 rounded-xl font-sans font-medium text-sm text-brand-secondary hover:text-white bg-brand-surface border border-brand-border hover:border-brand-accent/40 transition-all duration-200 hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+          className="px-5 py-2.5 rounded-xl font-mono text-xs uppercase tracking-wider font-semibold bg-white/5 border border-white/10 hover:border-brand-accent/40 text-brand-secondary hover:text-white transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer flex items-center gap-1.5 shadow-sm"
         >
+          <HelpCircle className="w-3.5 h-3.5" />
           Hint
         </button>
 
         <button
           onClick={handleReset}
-          className="px-5 py-2.5 rounded-xl font-sans font-medium text-sm text-brand-secondary hover:text-white bg-brand-surface border border-brand-border hover:border-brand-accent/40 transition-all duration-200 hover:shadow-md cursor-pointer"
+          className="px-5 py-2.5 rounded-xl font-mono text-xs uppercase tracking-wider font-semibold bg-white/5 border border-white/10 hover:border-brand-accent/40 text-brand-secondary hover:text-white transition-all duration-300 cursor-pointer flex items-center gap-1.5 shadow-sm"
         >
+          <RotateCcw className="w-3.5 h-3.5" />
           Reset
         </button>
 
         {onNextPuzzle && (
           <button
             onClick={onNextPuzzle}
-            className="px-6 py-2.5 rounded-xl font-sans font-semibold text-sm text-white bg-brand-accent hover:bg-brand-accent/90 transition-all duration-200 shadow-lg shadow-brand-accent/20 hover:scale-[1.02] active:scale-[0.98] btn-glow-container btn-glow-accent cursor-pointer"
+            className="px-6 py-2.5 rounded-xl font-mono text-xs uppercase tracking-widest font-bold btn-premium-cta cta-shine cursor-pointer flex items-center gap-1.5 shadow-md shadow-brand-accent/5 hover:scale-[1.02] active:scale-[0.98]"
           >
-            Next Puzzle
+            <span>Next Puzzle</span>
+            <ArrowRight className="w-3.5 h-3.5" />
           </button>
         )}
       </div>
