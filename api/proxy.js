@@ -38,7 +38,8 @@ export default async function handler(req, res) {
     const responseBody = await response.text();
     res.send(responseBody);
   } catch (error) {
-    console.error('Vercel API Proxy Error:', error);
-    res.status(500).json({ error: 'Proxy failed to connect to backend' });
+    const message = error instanceof Error ? error.message : String(error);
+    console.error('Vercel API Proxy Error:', message, '| Target:', targetUrl);
+    res.status(500).json({ error: 'Proxy failed to connect to backend', detail: message, target: targetUrl });
   }
 }
