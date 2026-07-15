@@ -23,7 +23,9 @@ import Footer from './components/Footer';
 import GlobalBackground from './components/GlobalBackground';
 import Navbar from './components/Navbar';
 import PremiumLoader from './components/PremiumLoader';
-import PuzzlePage from './components/PuzzlePage';
+import PuzzlePage from './pages/PuzzlePage';
+import ProfilePage from './pages/ProfilePage';
+import { useRoute } from './hooks/useRoute';
 
 import { ParticlesProvider } from '@tsparticles/react';
 import { loadConfettiCannonPreset } from '@tsparticles/preset-confetti-cannon';
@@ -51,8 +53,10 @@ function App() {
     setLoaderDone(true);
   };
 
-  const normalizedPath = window.location.pathname.replace(/\/+$/, '') || '/';
+  const path = useRoute();
+  const normalizedPath = path.replace(/\/+$/, '') || '/';
   const isPuzzlesPage = normalizedPath === '/puzzles' || window.location.hash.startsWith('#/puzzles');
+  const isProfilePage = normalizedPath === '/profile';
 
   return (
     <ParticlesProvider init={initParticles}>
@@ -71,6 +75,8 @@ function App() {
 
           {isPuzzlesPage ? (
             <PuzzlePage />
+          ) : isProfilePage ? (
+            <ProfilePage />
           ) : (
             /* Landing Page Content */
             <div className="min-h-screen text-brand-text flex flex-col">
