@@ -1,24 +1,26 @@
-/**
- * Navbar.tsx
- * Fixed navigation bar with:
- *   - GSAP fade-down entrance on load
- *   - Scroll-direction hide/show (via useNavbarAnimation)
- *   - Luxury gold underline effect on nav links (.nav-link class)
- *   - CTA button with pearl-gold gradient and shine sweep
- *   - Logo: full GSAP interpolate() + quickTo() cursor-driven animation
- *     (via useLogoAnimation hook — see hooks/useLogoAnimation.ts)
- *   - Luxury glassmorphism styling (.navbar-luxury)
- */
-
 import { useState, useRef } from 'react';
 import { Menu, X } from 'lucide-react';
 import { useNavbarAnimation } from '../hooks/useNavbarAnimation';
 import { useLogoAnimation } from '../hooks/useLogoAnimation';
 import { useButtonGlow } from '../hooks/useButtonGlow';
+import { useSession } from '../hooks/useSession';
+import { AuthModal } from './AuthModal';
+import { AvatarDropdown } from './AvatarDropdown';
 
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
   const navRef = useRef<HTMLElement>(null);
+
+  // Authentication states
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [modalMode, setModalMode] = useState<"login" | "register">("login");
+  const { status } = useSession();
+
+  const openModal = (mode: "login" | "register") => {
+    setModalMode(mode);
+    setIsModalOpen(true);
+    setIsOpen(false); // Close mobile menu if open
+  };
 
   // Navbar entrance + hide/show on scroll
   useNavbarAnimation(navRef as React.RefObject<HTMLElement | null>);
@@ -27,7 +29,7 @@ export default function Navbar() {
   const { containerRef, logoRef } = useLogoAnimation();
 
   // Button interactive hover glow
-  const ctaGlowRef = useButtonGlow<HTMLAnchorElement>();
+  const ctaGlowRef = useButtonGlow<HTMLButtonElement>();
 
   const navLinks = [
     { name: 'Live Demo',        href: '#interactive-demo' },
@@ -93,22 +95,43 @@ export default function Navbar() {
               </a>
             ))}
 
-            {/* Primary CTA — pearl/gold */}
-            <a
-              ref={ctaGlowRef}
-              href="#contact-us"
-              id="navbar-cta-btn"
-              className="btn-premium-cta btn-glow-container cta-shine px-5 py-2.5 rounded-sm text-sm"
-            >
-              Become a Partner
-            </a>
+            {/* Auth Integration / CTA */}
+            {status === "loading" ? (
+              <div className="w-6 h-6 rounded-full border-2 border-brand-accent/30 border-t-brand-accent animate-spin" />
+            ) : status === "authenticated" ? (
+              <AvatarDropdown />
+            ) : (
+              <div className="flex items-center gap-6">
+                <button
+                  onClick={() => openModal("login")}
+                  className="nav-link font-sans font-light text-sm tracking-wide text-brand-secondary hover:text-ivory transition-colors duration-300 cursor-pointer"
+                  style={{ letterSpacing: '0.06em' }}
+                >
+                  Login
+                </button>
+                <span className="text-brand-border/40 text-sm select-none">|</span>
+                <button
+                  ref={ctaGlowRef}
+                  onClick={() => openModal("register")}
+                  className="btn-premium-cta btn-glow-container cta-shine px-5 py-2.5 rounded-sm text-sm cursor-pointer"
+                >
+                  Get Started
+                </button>
+              </div>
+            )}
           </div>
 
-          {/* Mobile Menu Toggle */}
-          <div className="md:hidden">
+          {/* Mobile Menu Toggle / Auth status */}
+          <div className="md:hidden flex items-center gap-4">
+            {status === "loading" ? (
+              <div className="w-6 h-6 rounded-full border-2 border-brand-accent/30 border-t-brand-accent animate-spin" />
+            ) : status === "authenticated" ? (
+              <AvatarDropdown />
+            ) : null}
+
             <button
               onClick={() => setIsOpen(!isOpen)}
-              className="text-brand-secondary hover:text-ivory p-2 transition-colors duration-200"
+              className="text-brand-secondary hover:text-ivory p-2 transition-colors duration-200 cursor-pointer"
               aria-label="Toggle menu"
               aria-expanded={isOpen}
               aria-controls="mobile-nav-menu"
@@ -146,17 +169,35 @@ export default function Navbar() {
                 {link.name}
               </a>
             ))}
-            <div className="section-divider my-1" />
-            <a
-              href="#contact-us"
-              onClick={() => setIsOpen(false)}
-              className="btn-premium-cta cta-shine text-center py-3 px-4 rounded-sm block"
-            >
-              Become a Partner
-            </a>
+
+            {status !== "authenticated" && (
+              <>
+                <div className="section-divider my-1" />
+                <button
+                  onClick={() => openModal("login")}
+                  className="text-left font-sans text-base font-light text-brand-secondary hover:text-ivory transition-colors py-1 cursor-pointer"
+                  style={{ letterSpacing: '0.04em' }}
+                >
+                  Login
+                </button>
+                <button
+                  onClick={() => openModal("register")}
+                  className="btn-premium-cta cta-shine text-center py-3 px-4 rounded-sm block cursor-pointer"
+                >
+                  Get Started
+                </button>
+              </>
+            )}
           </div>
         </div>
       )}
+
+      {/* Reusable Auth Modal */}
+      <AuthModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        initialMode={modalMode}
+      />
     </nav>
   );
 }
