@@ -1,0 +1,196 @@
+export type SoundName =
+  | "move"
+  | "capture"
+  | "castle"
+  | "check"
+  | "checkmate"
+  | "promote"
+  | "illegal"
+  | "game-start"
+  | "game-end"
+  | "applause"
+  | "button-click";
+
+interface SoundConfig {
+  src: string;
+  volume?: number;
+  allowOverlap?: boolean;
+}
+
+const SOUND_CONFIG: Record<SoundName, SoundConfig> = {
+  move: { src: "/sounds/move.mp3" },
+  capture: { src: "/sounds/capture.mp3" },
+  castle: { src: "/sounds/castle.mp3" },
+  check: { src: "/sounds/check.mp3" },
+  checkmate: { src: "/sounds/checkmate.mp3" },
+  promote: { src: "/sounds/promote.mp3" },
+  illegal: { src: "/sounds/illegal.mp3" },
+  "game-start": { src: "/sounds/game-start.mp3" },
+  "game-end": { src: "/sounds/game-end.mp3" },
+  applause: { src: "/sounds/applause.mp3", allowOverlap: true },
+  "button-click": { src: "/sounds/button-click.mp3", allowOverlap: true },
+};
+
+class SoundManager {
+  private static instance: SoundManager;
+  private sounds = new Map<SoundName, HTMLAudioElement>();
+  private activeClones = new Set<HTMLAudioElement>();
+  private muted = false;
+  private globalVolume = 1;
+  private readonly isBrowser = typeof window !== "undefined";
+
+  private constructor() {
+    if (this.isBrowser) this.preload();
+  }
+
+  static getInstance(): SoundManager {
+    if (!SoundManager.instance) {
+      SoundManager.instance = new SoundManager();
+    }
+    return SoundManager.instance;
+  }
+
+  private preload() {
+    (Object.keys(SOUND_CONFIG) as SoundName[]).forEach((name) => {
+      const config = SOUND_CONFIG[name];
+      const audio = new Audio(config.src);
+      audio.preload = "auto";
+      audio.volume = (config.volume ?? 1) * this.globalVolume;
+      audio.load();
+      this.sounds.set(name, audio);
+    });
+  }
+
+  play(name: SoundName) {
+    if (!this.isBrowser || this.muted) return;
+
+    const base = this.sounds.get(name);
+    if (!base) {
+      console.warn(`SoundManager: sound "${name}" not found`);
+      return;
+    }
+
+    const config = SOUND_CONFIG[name];
+    const node = config.allowOverlap
+      ? (base.cloneNode(true) as HTMLAudioElement)
+      : base;
+
+    if (config.allowOverlap) {
+      this.activeClones.add(node);
+      const cleanup = () => {
+        node.removeEventListener("ended", cleanup);
+        node.removeEventListener("error", cleanup);
+        node.src = "";
+        this.activeClones.delete(node);
+      };
+      node.addEventListener("ended", cleanup);
+      node.addEventListener("error", cleanup);
+    } else {
+      node.pause();
+      node.currentTime = 0;
+    }
+
+    node.volume = (config.volume ?? 1) * this.globalVolume;
+    node.play().catch((err) => {
+      console.warn(`SoundManager: unable to play "${name}"`, err);
+    });
+  }
+
+  // Explicit helpers matching project requirements
+  playMove() {
+    this.play("move");
+  }
+
+  playCapture() {
+    this.play("capture");
+  }
+
+  playCastle() {
+    this.play("castle");
+  }
+
+  playCheck() {
+    this.play("check");
+  }
+
+  playCheckmate() {
+    this.play("checkmate");
+  }
+
+  playPromote() {
+    this.play("promote");
+  }
+
+  playIllegal() {
+    this.play("illegal");
+  }
+
+  playGameStart() {
+    this.play("game-start");
+  }
+
+  playGameEnd() {
+    this.play("game-end");
+  }
+
+  playApplause() {
+    this.play("applause");
+  }
+
+  playButtonClick() {
+    this.play("button-click");
+  }
+
+  stop(name: SoundName) {
+    const audio = this.sounds.get(name);
+    if (!audio) return;
+    audio.pause();
+    audio.currentTime = 0;
+  }
+
+  stopAll() {
+    this.sounds.forEach((audio) => {
+      audio.pause();
+      audio.currentTime = 0;
+    });
+    this.activeClones.forEach((clone) => {
+      clone.pause();
+      clone.src = "";
+    });
+    this.activeClones.clear();
+  }
+
+  setMuted(muted: boolean) {
+    this.muted = muted;
+  }
+
+  toggleMute(): boolean {
+    this.muted = !this.muted;
+    return this.muted;
+  }
+
+  isMuted(): boolean {
+    return this.muted;
+  }
+
+  setVolume(volume: number) {
+    this.globalVolume = Math.min(1, Math.max(0, volume));
+
+    // Update already preloaded instances immediately
+    this.sounds.forEach((audio, name) => {
+      const config = SOUND_CONFIG[name];
+      audio.volume = (config.volume ?? 1) * this.globalVolume;
+    });
+
+    // Update any currently playing overlap clones too
+    this.activeClones.forEach((clone) => {
+      clone.volume = this.globalVolume;
+    });
+  }
+
+  getVolume(): number {
+    return this.globalVolume;
+  }
+}
+
+export const soundManager = SoundManager.getInstance();
