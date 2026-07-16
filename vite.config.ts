@@ -1,7 +1,4 @@
-import { defineConfig } from 'vite'
-import react from '@vitejs/plugin-react'
-
-// https://vite.dev/config/
-export default defineConfig({
-  plugins: [react()],
-})
+// Obsolete configuration file.
+// The active full-stack Vite configuration now resides inside the frontend/ workspace at:
+// frontend/vite.config.ts
+export default {};
