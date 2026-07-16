@@ -1,4 +1,4 @@
-﻿import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { defaultPieces } from 'react-chessboard';
 import { ArrowLeftRight, Eraser, Home, Shuffle, Trash2, X } from 'lucide-react';
 import {
@@ -14,6 +14,7 @@ import { useStockfish } from '../hooks/useStockfish';
 import { EvaluationBar } from './EvaluationBar';
 import { EditPositionBoard } from './EditPositionBoard';
 import type { BoardOrientation } from '../utils/editModeInteraction';
+import { soundManager } from '../utils/SoundManager';
 
 const PIECE_ROWS = [
   ['wK', 'wQ', 'wR', 'wB', 'wN', 'wP'] as const,
@@ -192,7 +193,7 @@ export function EditPositionModal({
       >
         <div className={`relative flex h-full w-full overflow-hidden rounded-sm border border-[rgba(212,175,110,0.12)] bg-[#0C1020] shadow-2xl ${isEraserActive ? 'eraser-mode-active' : ''}`}>
           <button
-            onClick={onCancel}
+            onClick={() => { soundManager.playButtonClick(); onCancel(); }}
             className="absolute right-4 top-2.5 z-20 rounded-md border border-[rgba(212,175,110,0.12)] bg-[#080B14]/80 p-2 text-[#8E8B82] transition-colors hover:bg-white/10 hover:text-white"
             aria-label="Close editor"
             title="Close"
@@ -486,7 +487,7 @@ export function EditPositionModal({
 
                   <div className="rounded-xl border border-[rgba(212,175,110,0.12)] bg-[#080B14]/50 p-2.5 space-y-2">
                     <button
-                      onClick={() => handleLoadPreset(createEmptyEditorState())}
+                      onClick={() => { soundManager.playButtonClick(); handleLoadPreset(createEmptyEditorState()); }}
                       className="w-full rounded-lg border border-[rgba(212,175,110,0.12)] bg-[#080B14] px-3 py-2 text-sm font-medium text-[#8E8B82] transition-colors hover:bg-white/5 hover:text-white"
                     >
                       <Trash2 className="mr-2 inline-block h-4 w-4 align-[-2px]" />
@@ -494,7 +495,7 @@ export function EditPositionModal({
                     </button>
 
                     <button
-                      onClick={() => handleLoadPreset(createStandardEditorState())}
+                      onClick={() => { soundManager.playButtonClick(); handleLoadPreset(createStandardEditorState()); }}
                       className="w-full rounded-lg border border-[rgba(212,175,110,0.12)] bg-[#080B14] px-3 py-2 text-sm font-medium text-[#8E8B82] transition-colors hover:bg-white/5 hover:text-white"
                     >
                       <Home className="mr-2 inline-block h-4 w-4 align-[-2px]" />
@@ -502,7 +503,7 @@ export function EditPositionModal({
                     </button>
 
                     <button
-                      onClick={() => handleLoadPreset(createChess960EditorState())}
+                      onClick={() => { soundManager.playButtonClick(); handleLoadPreset(createChess960EditorState()); }}
                       className="w-full rounded-lg border border-[rgba(212,175,110,0.12)] bg-[#080B14] px-3 py-2 text-sm font-medium text-[#8E8B82] transition-colors hover:bg-white/5 hover:text-white"
                     >
                       <Shuffle className="mr-2 inline-block h-4 w-4 align-[-2px]" />
@@ -510,7 +511,7 @@ export function EditPositionModal({
                     </button>
 
                     <button
-                      onClick={handleSwitchSides}
+                      onClick={() => { soundManager.playButtonClick(); handleSwitchSides(); }}
                       className="w-full rounded-lg border border-[rgba(212,175,110,0.12)] bg-[#080B14] px-3 py-2 text-sm font-medium text-[#8E8B82] transition-colors hover:bg-white/5 hover:text-white"
                     >
                       <ArrowLeftRight className="mr-2 inline-block h-4 w-4 align-[-2px]" />
@@ -520,7 +521,7 @@ export function EditPositionModal({
 
                   <div className="flex items-end justify-end pt-0.5 mt-auto">
                     <button
-                      onClick={handleLoad}
+                      onClick={() => { soundManager.playButtonClick(); handleLoad(); }}
                       className="w-full rounded-lg btn-premium-cta cta-shine w-full py-2 text-sm font-medium"
                     >
                       Load

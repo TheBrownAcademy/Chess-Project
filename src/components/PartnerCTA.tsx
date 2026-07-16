@@ -8,6 +8,7 @@
 import { useState, useRef } from 'react';
 import { CheckCircle2, AlertCircle } from 'lucide-react';
 import { useScrollReveal } from '../hooks/useScrollReveal';
+import { soundManager } from '../utils/SoundManager';
 
 type FormStatus = 'idle' | 'submitting' | 'success' | 'error';
 
@@ -222,6 +223,7 @@ export default function ContactSection() {
               <button
                 type="submit"
                 disabled={status === 'submitting'}
+                onClick={() => soundManager.playButtonClick()}
                 className="contact-btn font-sans flex items-center justify-center gap-2 disabled:opacity-75 disabled:pointer-events-none"
               >
                 {status === 'submitting' ? (

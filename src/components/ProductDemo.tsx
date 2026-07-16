@@ -8,6 +8,7 @@ import { EditPositionModal } from './EditPositionModal';
 import { EvaluationBar } from './EvaluationBar';
 import { validateEditorPosition, type EditorPositionState } from '../utils/positionEditor';
 import { DIFFICULTY_CONFIGS, type DifficultyLevel } from '../types/chess';
+import { soundManager } from '../utils/SoundManager';
 import {
   RotateCcw,
   Lightbulb,
@@ -20,23 +21,41 @@ import {
 import { useScrollReveal } from '../hooks/useScrollReveal';
 import { useButtonGlow } from '../hooks/useButtonGlow';
 
-// â”€â”€ Board colours â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Board colours ───────────────────────────────────────────────────────────────
 const BOARD_DARK  = '#769656';   // Tournament green
 const BOARD_LIGHT = '#EEEED2';   // Off-white / cream
 
 // Set false to hide coordinates; toggle easily here.
 const SHOW_COORDINATES = false;
 
+// ── Sound helper ─────────────────────────────────────────────────────────────────
+// Plays the correct sound for a chess.js move result and current game state.
+function playMoveSound(game: Chess, moveFlags: string, captured: boolean): void {
+  if (game.isCheckmate()) {
+    soundManager.playCheckmate();
+  } else if (game.inCheck()) {
+    soundManager.playCheck();
+  } else if (moveFlags.includes('k') || moveFlags.includes('q')) {
+    soundManager.playCastle();
+  } else if (moveFlags.includes('p')) {
+    soundManager.playPromote();
+  } else if (captured) {
+    soundManager.playCapture();
+  } else {
+    soundManager.playMove();
+  }
+}
+
 export default function ProductDemo() {
-  // â”€â”€â”€ ROOT CAUSE OF SCROLL BUG â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-  // Previously: game was in useState â†’ setGame() during reset caused React to
+  // ─── ROOT CAUSE OF SCROLL BUG ──────────────────────────────────────────────────
+  // Previously: game was in useState → setGame() during reset caused React to
   // unmount+remount the Chessboard. react-chessboard internally calls focus()
   // on mount, which triggers browser scroll-into-view behavior.
   //
   // FIX: keep game in a useRef so the Chess instance is mutated in place.
   // setGameFen() only triggers a re-render of FEN-dependent UI, not a remount
   // of the Chessboard component itself (same DOM node, no focus side-effects).
-  // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ──────────────────────────────────────────────────────────────────────────────
   const gameRef = useRef(new Chess());
   const [gameFen, setGameFen] = useState(() => gameRef.current.fen());
 
@@ -67,13 +86,13 @@ export default function ProductDemo() {
     resetEvaluation,
   } = useStockfish();
 
-  // Move history container â€” scroll inside the box, never the page
+  // Move history container — scroll inside the box, never the page
   const moveHistoryContainerRef = useRef<HTMLDivElement>(null);
 
-  // â”€â”€ Layout measurements for exact sizing alignment â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Layout measurements for exact sizing alignment ──────────────────────────
   const [boardHeight, setBoardHeight] = useState<number>(0);
   const [isDesktop, setIsDesktop] = useState<boolean>(false);
-  // Progressive eval stabilization â€” separate displayed eval from raw eval
+  // Progressive eval stabilization — separate displayed eval from raw eval
   // Start at 0.0 (never -0.0) for initial position
   const [displayEval, setDisplayEval] = useState<{ type: 'cp' | 'mate'; value: number } | null>({ type: 'cp', value: 0 });
   const evalTimeoutsRef = useRef<ReturnType<typeof setTimeout>[]>([]);
@@ -112,10 +131,15 @@ export default function ProductDemo() {
 
   // Sync game-over state after every FEN change
   useEffect(() => {
-    setGameOverReason(getGameOverReason(gameRef.current));
+    const reason = getGameOverReason(gameRef.current);
+    setGameOverReason(reason);
+    // Play game-end sound when game is over
+    if (reason) {
+      soundManager.playGameEnd();
+    }
   }, [gameFen]);
 
-  // Progressive eval stabilization â€” update display eval at 1s, 2s, 3s, 4s, 5s after each change
+  // Progressive eval stabilization — update display eval at 1s, 2s, 3s, 4s, 5s after each change
   useEffect(() => {
     // Clear existing scheduled updates
     evalTimeoutsRef.current.forEach(t => clearTimeout(t));
@@ -123,7 +147,7 @@ export default function ProductDemo() {
 
     if (!evaluation) return;
 
-    // Schedule delayed snapshots â€” each one captures evaluation at that moment
+    // Schedule delayed snapshots — each one captures evaluation at that moment
     // Do NOT set immediately; let Stockfish stabilize before showing values.
     const delays = [1000, 2000, 3000, 4000, 5000];
     delays.forEach(delay => {
@@ -164,7 +188,7 @@ export default function ProductDemo() {
     return () => document.removeEventListener('mousedown', handleOutsideClick);
   }, [showMoreMenu]);
 
-  // AI move trigger â€” fires when it's the engine's turn
+  // AI move trigger — fires when it's the engine's turn
   useEffect(() => {
     const game = gameRef.current;
     if (game.isGameOver()) return;
@@ -175,8 +199,11 @@ export default function ProductDemo() {
       getEngineMove(game.fen(), difficulty, (bestMoveStr) => {
         const { from, to, promotion } = parseUciMove(bestMoveStr);
         try {
-          gameRef.current.move({ from, to, promotion: promotion || 'q' });
-          setGameFen(gameRef.current.fen());
+          const move = gameRef.current.move({ from, to, promotion: promotion || 'q' });
+          if (move) {
+            setGameFen(gameRef.current.fen());
+            playMoveSound(gameRef.current, move.flags, !!move.captured);
+          }
         } catch (e) {
           console.error('AI tried to make invalid move:', bestMoveStr, e);
         }
@@ -199,7 +226,7 @@ export default function ProductDemo() {
     };
   }, [showHint, bestMove]);
 
-  // Piece drop handler â€” called by react-chessboard
+  // Piece drop handler — called by react-chessboard
   const onDrop = useCallback(
     (sourceSquare: string, targetSquare: string | null): boolean => {
       const game = gameRef.current;
@@ -218,17 +245,19 @@ export default function ProductDemo() {
           setGameFen(game.fen());
           setShowHint(false); // dismiss hint on move
           if (hintTimerRef.current) clearTimeout(hintTimerRef.current);
+          // Play the correct sound for this move
+          playMoveSound(game, move.flags, !!move.captured);
           return true;
         }
       } catch {
-        // illegal move â€” no-op
+        // illegal move — no-op
       }
       return false;
     },
     [isEditMode, playerColor]
   );
 
-  // Undo â€” take back the last TWO half-moves (human + engine)
+  // Undo — take back the last TWO half-moves (human + engine)
   const handleUndo = useCallback(() => {
     const game = gameRef.current;
     const history = game.history();
@@ -241,6 +270,7 @@ export default function ProductDemo() {
     setGameFen(game.fen());
     setShowHint(false);
     stopSearch();
+    soundManager.playMove();
   }, [playerColor, stopSearch]);
 
   // Hint â€” ask engine for best move and highlight squares (no auto-play)
@@ -268,6 +298,8 @@ export default function ProductDemo() {
     evalTimeoutsRef.current.forEach(t => clearTimeout(t));
     evalTimeoutsRef.current = [];
     if (hintTimerRef.current) clearTimeout(hintTimerRef.current);
+    // Signal game start
+    soundManager.playGameStart();
   }, [stopSearch, resetEvaluation]);
 
   const handleReset = useCallback(() => {
@@ -386,7 +418,7 @@ export default function ProductDemo() {
                     </div>
                     <button
                       ref={playAgainGlowRef}
-                      onClick={handleReset}
+                      onClick={() => { soundManager.playButtonClick(); handleReset(); }}
                       className="flex items-center gap-2 px-5 py-2.5 btn-premium-cta cta-shine rounded-sm text-sm font-medium"
                     >
                       <RotateCcw className="w-4 h-4" />
@@ -454,7 +486,7 @@ export default function ProductDemo() {
 
                   {/* Undo */}
                   <button
-                    onClick={handleUndo}
+                    onClick={() => { soundManager.playButtonClick(); handleUndo(); }}
                     disabled={!canUndo || isThinking || isEditMode}
                     title="Undo last move"
                     className="flex flex-col items-center justify-center gap-1.5 py-3 px-1 rounded-lg border border-[rgba(212,175,110,0.12)] bg-[#080B14] hover:bg-white/5 hover:border-[rgba(212,175,110,0.4)] text-[#8E8B82] hover:text-white transition-all duration-200 disabled:opacity-40 group"
@@ -466,7 +498,7 @@ export default function ProductDemo() {
 
                   {/* Hint */}
                   <button
-                    onClick={handleHint}
+                    onClick={() => { soundManager.playButtonClick(); handleHint(); }}
                     disabled={!!gameOverReason || isThinking || isEditMode || game_is_human_turn(currentTurn, playerColor) === false}
                     title="Get a hint"
                     className="flex flex-col items-center justify-center gap-1.5 py-3 px-1 rounded-lg border border-[rgba(212,175,110,0.12)] bg-[#080B14] hover:bg-white/5 hover:border-[rgba(212,175,110,0.4)] text-[#8E8B82] hover:text-yellow-400 transition-all duration-200 disabled:opacity-40 group"
@@ -478,7 +510,7 @@ export default function ProductDemo() {
 
                   {/* Reset */}
                   <button
-                    onClick={handleReset}
+                    onClick={() => { soundManager.playButtonClick(); handleReset(); }}
                     disabled={isEditMode}
                     title="Reset game"
                     className="flex flex-col items-center justify-center gap-1.5 py-3 px-1 rounded-lg border border-[rgba(212,175,110,0.12)] bg-[#080B14] hover:bg-white/5 hover:border-red-500/40 text-[#8E8B82] hover:text-red-400 transition-all duration-200 disabled:opacity-40 group"
@@ -492,7 +524,7 @@ export default function ProductDemo() {
                   <div className="relative">
                     <button
                       ref={moreButtonRef}
-                      onClick={() => setShowMoreMenu(prev => !prev)}
+                      onClick={() => { soundManager.playButtonClick(); setShowMoreMenu(prev => !prev); }}
                       title="More options"
                       className={`w-full flex flex-col items-center justify-center gap-1.5 py-3 px-1 rounded-lg border transition-all duration-200 group cursor-pointer ${
                         showMoreMenu
@@ -520,7 +552,7 @@ export default function ProductDemo() {
                       >
                         {/* Chess960 */}
                         <button
-                          onClick={() => { handleChess960(); setShowMoreMenu(false); }}
+                          onClick={() => { soundManager.playButtonClick(); handleChess960(); setShowMoreMenu(false); }}
                           disabled={isEditMode}
                           className="w-full flex items-center gap-3 px-4 py-3 text-sm text-[#8E8B82] hover:text-white hover:bg-white/10 transition-all duration-150 disabled:opacity-40 group cursor-pointer"
                           style={{ cursor: isEditMode ? 'not-allowed' : 'pointer' }}
@@ -534,7 +566,7 @@ export default function ProductDemo() {
 
                         {/* Edit Position */}
                         <button
-                          onClick={() => { handleOpenEditor(); setShowMoreMenu(false); }}
+                          onClick={() => { soundManager.playButtonClick(); handleOpenEditor(); setShowMoreMenu(false); }}
                           disabled={isThinking}
                           className="w-full flex items-center gap-3 px-4 py-3 text-sm text-[#8E8B82] hover:text-white hover:bg-white/10 transition-all duration-150 disabled:opacity-40 group cursor-pointer"
                           style={{ cursor: isThinking ? 'not-allowed' : 'pointer' }}

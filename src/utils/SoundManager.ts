@@ -191,6 +191,21 @@ class SoundManager {
   getVolume(): number {
     return this.globalVolume;
   }
+
+  /**
+   * Reads the stored sound preference from localStorage and applies it.
+   * Call once at application startup (e.g. in main.tsx or a top-level hook).
+   * Defaults to sound ENABLED when no preference has been saved yet.
+   */
+  initFromStorage() {
+    if (!this.isBrowser) return;
+    const stored = localStorage.getItem(SoundManager.STORAGE_KEY);
+    // "false" means the user explicitly disabled sound; anything else → enabled
+    this.muted = stored === 'false';
+  }
+
+  /** The localStorage key used to persist the sound-enabled preference. */
+  static readonly STORAGE_KEY = 'sound-enabled';
 }
 
 export const soundManager = SoundManager.getInstance();
