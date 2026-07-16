@@ -80,7 +80,7 @@ export const SessionProvider: React.FC<{ children: React.ReactNode }> = ({ child
       const callbackInput = document.createElement("input");
       callbackInput.type = "hidden";
       callbackInput.name = "callbackUrl";
-      callbackInput.value = window.location.origin;
+      callbackInput.value = window.location.href;
       form.appendChild(callbackInput);
 
       document.body.appendChild(form);

@@ -29,4 +29,14 @@ export const env = {
   AUTH_GOOGLE_ID: process.env.AUTH_GOOGLE_ID!,
   AUTH_GOOGLE_SECRET: process.env.AUTH_GOOGLE_SECRET!,
   CLIENT_ORIGIN: process.env.CLIENT_ORIGIN || "http://localhost:5173",
+  
+  // Payment variables (placeholders/infrastructure)
+  PAYMENT_PROVIDER: process.env.PAYMENT_PROVIDER || "stripe",
+  STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY,
+  STRIPE_PUBLISHABLE_KEY: process.env.STRIPE_PUBLISHABLE_KEY,
+  STRIPE_WEBHOOK_SECRET: process.env.STRIPE_WEBHOOK_SECRET,
+  STRIPE_PRICE_PRO_MONTHLY: process.env.STRIPE_PRICE_PRO_MONTHLY,
+  STRIPE_PRICE_PRO_YEARLY: process.env.STRIPE_PRICE_PRO_YEARLY,
+  STRIPE_SUCCESS_URL: process.env.STRIPE_SUCCESS_URL,
+  STRIPE_CANCEL_URL: process.env.STRIPE_CANCEL_URL,
 };

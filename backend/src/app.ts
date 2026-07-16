@@ -5,6 +5,7 @@ import { rateLimit } from "express-rate-limit";
 import { env } from "./config/env.js";
 import { authRouter } from "./routes/auth.route.js";
 import { userRouter } from "./routes/user.route.js";
+import { paymentRouter } from "./routes/payment.route.js";
 import { errorHandler } from "./middleware/error.middleware.js";
 
 const app = express();
@@ -38,6 +39,10 @@ app.use(
   })
 );
 
+// Stripe Webhook Endpoint Raw Parser Bypass
+// Webhook validation requires raw binary buffer to verify signature integrity.
+app.use("/api/payments/webhook", express.raw({ type: "application/json" }));
+
 // Payload Size Restrictions (prevents memory-exhaustion denial of service attacks)
 app.use(express.json({ limit: "10kb" }));
 app.use(express.urlencoded({ extended: true, limit: "10kb" }));
@@ -70,6 +75,7 @@ app.use("/api/auth/*", (req, _res, next) => {
   next();
 }, authRouter);
 app.use("/api/users", userRouter);
+app.use("/api/payments", paymentRouter);
 
 // Catch-all centralized error handler
 app.use(errorHandler);
