@@ -4,6 +4,7 @@ import { Chess } from 'chess.js';
 import type { ChessPuzzle } from '../utils/PuzzleLoader';
 import { validateMove } from '../utils/PuzzleValidator';
 import { useConfetti } from '../hooks/useConfetti';
+import { soundManager } from '../utils/SoundManager';
 
 const BOARD_DARK = '#769656';
 const BOARD_LIGHT = '#EEEED2';
@@ -83,6 +84,22 @@ export function PuzzleBoard({
             setLastMove({ from: sourceSquare, to: targetSquare });
             setPuzzleStatus('solved');
 
+            // Play appropriate move sound, then applause for solved
+            if (game.isCheckmate()) {
+              soundManager.playCheckmate();
+            } else if (game.inCheck()) {
+              soundManager.playCheck();
+            } else if (move.flags.includes('k') || move.flags.includes('q')) {
+              soundManager.playCastle();
+            } else if (move.flags.includes('p')) {
+              soundManager.playPromote();
+            } else if (move.captured) {
+              soundManager.playCapture();
+            } else {
+              soundManager.playMove();
+            }
+            soundManager.playApplause();
+
             fireConfetti();
             onSolved?.();
             return true;
@@ -90,6 +107,9 @@ export function PuzzleBoard({
             // Incorrect Move: Undo instantly in chess engine
             game.undo();
             setPuzzleStatus('failed');
+
+            // Play illegal/wrong move sound
+            soundManager.playIllegal();
 
             // Trigger visual feedback
             setIsShaking(true);
@@ -107,6 +127,7 @@ export function PuzzleBoard({
         }
       } catch {
         // Illegal chess move - snap piece back
+        soundManager.playIllegal();
       }
 
       return false;
@@ -217,7 +238,7 @@ export function PuzzleBoard({
       {/* Elegant Controls: Hint, Reset, Next Puzzle */}
       <div className="flex items-center gap-3 sm:gap-4 pt-1">
         <button
-          onClick={handleHint}
+          onClick={() => { soundManager.playButtonClick(); handleHint(); }}
           disabled={puzzleStatus === 'solved'}
           className="px-5 py-2.5 rounded-xl font-sans font-medium text-sm text-brand-secondary hover:text-white bg-brand-surface border border-brand-border hover:border-brand-accent/40 transition-all duration-200 hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
         >
@@ -225,7 +246,7 @@ export function PuzzleBoard({
         </button>
 
         <button
-          onClick={handleReset}
+          onClick={() => { soundManager.playButtonClick(); handleReset(); }}
           className="px-5 py-2.5 rounded-xl font-sans font-medium text-sm text-brand-secondary hover:text-white bg-brand-surface border border-brand-border hover:border-brand-accent/40 transition-all duration-200 hover:shadow-md cursor-pointer"
         >
           Reset
@@ -233,7 +254,7 @@ export function PuzzleBoard({
 
         {onNextPuzzle && (
           <button
-            onClick={onNextPuzzle}
+            onClick={() => { soundManager.playButtonClick(); onNextPuzzle(); }}
             className="px-6 py-2.5 rounded-xl font-sans font-semibold text-sm text-white bg-brand-accent hover:bg-brand-accent/90 transition-all duration-200 shadow-lg shadow-brand-accent/20 hover:scale-[1.02] active:scale-[0.98] btn-glow-container btn-glow-accent cursor-pointer"
           >
             Next Puzzle
