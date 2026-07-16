@@ -4,7 +4,7 @@ import { useNavbarAnimation } from '../hooks/useNavbarAnimation';
 import { useLogoAnimation } from '../hooks/useLogoAnimation';
 import { useButtonGlow } from '../hooks/useButtonGlow';
 import { soundManager } from '../utils/SoundManager';
-import SoundToggle from './SoundToggle';
+
 import { useSession } from '../hooks/useSession';
 import { AuthModal } from './AuthModal';
 import { AvatarDropdown } from './AvatarDropdown';
@@ -105,8 +105,6 @@ export default function Navbar() {
               </a>
             ))}
 
-            <SoundToggle />
-
             {/* Auth Integration / CTA */}
             {status === "loading" ? (
               <div className="w-6 h-6 rounded-full border-2 border-brand-accent/30 border-t-brand-accent animate-spin" />
@@ -187,11 +185,6 @@ export default function Navbar() {
                 {link.name}
               </a>
             ))}
-
-            <div className="flex items-center justify-between">
-              <span className="font-sans font-light text-sm text-brand-secondary" style={{ letterSpacing: '0.04em' }}>Sound</span>
-              <SoundToggle />
-            </div>
 
             {status !== "authenticated" && (
               <>

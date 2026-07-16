@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { User, LogOut } from "lucide-react";
+import { User, LogOut, Settings } from "lucide-react";
 import { useSession } from "../hooks/useSession";
 import { navigate } from "../hooks/useRoute";
 
@@ -95,6 +95,19 @@ export const AvatarDropdown: React.FC = () => {
           >
             <User className="w-4 h-4 text-brand-accent" />
             Profile
+          </button>
+
+          {/* Settings option */}
+          <button
+            onClick={() => {
+              navigate("/account-settings");
+              setIsOpen(false);
+            }}
+            className="w-full flex items-center gap-3 px-4 py-2 text-sm font-sans text-brand-secondary hover:text-white hover:bg-white/5 text-left transition-colors duration-150 cursor-pointer"
+            role="menuitem"
+          >
+            <Settings className="w-4 h-4 text-brand-accent" />
+            Settings
           </button>
 
           {/* Sign Out option */}

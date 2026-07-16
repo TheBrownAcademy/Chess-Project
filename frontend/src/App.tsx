@@ -28,6 +28,7 @@ import ProfilePage from './pages/ProfilePage';
 import PricingPage from './pages/PricingPage';
 import SuccessfulPage from './pages/SuccessfulPage';
 import CheckoutPage from './pages/CheckoutPage';
+import AccountSettingsPage from './pages/AccountSettingsPage';
 import { useRoute } from './hooks/useRoute';
 
 import { ParticlesProvider } from '@tsparticles/react';
@@ -63,6 +64,7 @@ function App() {
   const isPricingPage = normalizedPath === '/pricing' || window.location.hash.startsWith('#/pricing');
   const isSuccessfulPage = normalizedPath === '/successful' || window.location.hash.startsWith('#/successful');
   const isCheckoutPage = normalizedPath === '/payment' || window.location.hash.startsWith('#/payment');
+  const isAccountSettingsPage = normalizedPath === '/account-settings' || window.location.hash.startsWith('#/account-settings');
 
   useEffect(() => {
     if (normalizedPath !== '/successful') {
@@ -99,6 +101,8 @@ function App() {
             <SuccessfulPage />
           ) : isCheckoutPage ? (
             <CheckoutPage />
+          ) : isAccountSettingsPage ? (
+            <AccountSettingsPage />
           ) : (
             /* Landing Page Content */
             <div className="min-h-screen text-brand-text flex flex-col">

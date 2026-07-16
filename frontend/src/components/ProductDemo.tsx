@@ -22,7 +22,7 @@ import { useScrollReveal } from '../hooks/useScrollReveal';
 import { useButtonGlow } from '../hooks/useButtonGlow';
 
 // ── Board colours ───────────────────────────────────────────────────────────────
-const BOARD_DARK  = '#769656';   // Tournament green
+const BOARD_DARK = '#769656';   // Tournament green
 const BOARD_LIGHT = '#EEEED2';   // Off-white / cream
 
 // Set false to hide coordinates; toggle easily here.
@@ -362,7 +362,7 @@ export default function ProductDemo() {
   if (history.length > 0) {
     const last = history[history.length - 1];
     customSquareStyles[last.from] = { backgroundColor: 'rgba(255, 255, 0, 0.4)' };
-    customSquareStyles[last.to]   = { backgroundColor: 'rgba(255, 255, 0, 0.4)' };
+    customSquareStyles[last.to] = { backgroundColor: 'rgba(255, 255, 0, 0.4)' };
   }
   if (showHint && bestMove) {
     const { from, to } = parseUciMove(bestMove);
@@ -418,7 +418,7 @@ export default function ProductDemo() {
                     </div>
                     <button
                       ref={playAgainGlowRef}
-                      onClick={() => { soundManager.playButtonClick(); handleReset(); }}
+                      onClick={() => { handleReset(); }}
                       className="flex items-center gap-2 px-5 py-2.5 btn-premium-cta cta-shine rounded-sm text-sm font-medium"
                     >
                       <RotateCcw className="w-4 h-4" />
@@ -435,7 +435,7 @@ export default function ProductDemo() {
                       onDrop(sourceSquare, targetSquare),
                     boardOrientation: boardOrientation,
                     squareStyles: customSquareStyles,
-                    darkSquareStyle:  { backgroundColor: BOARD_DARK },
+                    darkSquareStyle: { backgroundColor: BOARD_DARK },
                     lightSquareStyle: { backgroundColor: BOARD_LIGHT },
                     boardStyle: { borderRadius: '0px' },
                     showNotation: SHOW_COORDINATES,
@@ -446,9 +446,8 @@ export default function ProductDemo() {
               {/* Turn indicator */}
               <div className="mt-3 flex items-center gap-2 text-xs text-[#8E8B82] px-1">
                 <span
-                  className={`w-2.5 h-2.5 rounded-full border border-[rgba(212,175,110,0.12)] ${
-                    currentTurn === 'w' ? 'bg-white' : 'bg-neutral-800'
-                  }`}
+                  className={`w-2.5 h-2.5 rounded-full border border-[rgba(212,175,110,0.12)] ${currentTurn === 'w' ? 'bg-white' : 'bg-neutral-800'
+                    }`}
                 />
                 <span>
                   {currentTurn === 'w' ? "White's Turn" : "Black's Turn"}
@@ -486,7 +485,7 @@ export default function ProductDemo() {
 
                   {/* Undo */}
                   <button
-                    onClick={() => { soundManager.playButtonClick(); handleUndo(); }}
+                    onClick={() => { handleUndo(); }}
                     disabled={!canUndo || isThinking || isEditMode}
                     title="Undo last move"
                     className="flex flex-col items-center justify-center gap-1.5 py-3 px-1 rounded-lg border border-[rgba(212,175,110,0.12)] bg-[#080B14] hover:bg-white/5 hover:border-[rgba(212,175,110,0.4)] text-[#8E8B82] hover:text-white transition-all duration-200 disabled:opacity-40 group"
@@ -510,7 +509,7 @@ export default function ProductDemo() {
 
                   {/* Reset */}
                   <button
-                    onClick={() => { soundManager.playButtonClick(); handleReset(); }}
+                    onClick={() => { handleReset(); }}
                     disabled={isEditMode}
                     title="Reset game"
                     className="flex flex-col items-center justify-center gap-1.5 py-3 px-1 rounded-lg border border-[rgba(212,175,110,0.12)] bg-[#080B14] hover:bg-white/5 hover:border-red-500/40 text-[#8E8B82] hover:text-red-400 transition-all duration-200 disabled:opacity-40 group"
@@ -526,11 +525,10 @@ export default function ProductDemo() {
                       ref={moreButtonRef}
                       onClick={() => { soundManager.playButtonClick(); setShowMoreMenu(prev => !prev); }}
                       title="More options"
-                      className={`w-full flex flex-col items-center justify-center gap-1.5 py-3 px-1 rounded-lg border transition-all duration-200 group cursor-pointer ${
-                        showMoreMenu
-                          ? 'border-[rgba(212,175,110,0.6)] bg-[rgba(212,175,110,0.08)] text-white'
-                          : 'border-[rgba(212,175,110,0.12)] bg-[#080B14] hover:bg-white/5 hover:border-[rgba(212,175,110,0.4)] text-[#8E8B82] hover:text-white'
-                      }`}
+                      className={`w-full flex flex-col items-center justify-center gap-1.5 py-3 px-1 rounded-lg border transition-all duration-200 group cursor-pointer ${showMoreMenu
+                        ? 'border-[rgba(212,175,110,0.6)] bg-[rgba(212,175,110,0.08)] text-white'
+                        : 'border-[rgba(212,175,110,0.12)] bg-[#080B14] hover:bg-white/5 hover:border-[rgba(212,175,110,0.4)] text-[#8E8B82] hover:text-white'
+                        }`}
                     >
                       <MoreHorizontal className="w-5 h-5 group-hover:scale-110 transition-transform" />
                       <span className="text-[10px] font-medium font-sans tracking-wide">More</span>
@@ -597,11 +595,10 @@ export default function ProductDemo() {
                           setShowHint(false);
                         }}
                         title={`${DIFFICULTY_CONFIGS[level].name} (${DIFFICULTY_CONFIGS[level].rating})`}
-                        className={`py-1 rounded text-xs font-mono transition-all duration-200 ${
-                          difficulty === level
-                            ? 'bg-[#D4AF6E] text-[#080B14] shadow-sm font-bold'
-                            : 'text-[#8E8B82] hover:bg-white/5'
-                        }`}
+                        className={`py-1 rounded text-xs font-mono transition-all duration-200 ${difficulty === level
+                          ? 'bg-[#D4AF6E] text-[#080B14] shadow-sm font-bold'
+                          : 'text-[#8E8B82] hover:bg-white/5'
+                          }`}
                       >
                         {level}
                       </button>
