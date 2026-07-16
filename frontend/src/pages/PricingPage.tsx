@@ -1,14 +1,30 @@
-import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Check, ChevronDown, Star, Sparkles, Trophy, ArrowRight, ShieldCheck, Gamepad2, Info, AlertCircle } from 'lucide-react';
-import { navigate } from '../hooks/useRoute';
+import React, { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  Check,
+  ChevronDown,
+  Star,
+  Sparkles,
+  Trophy,
+  ArrowRight,
+  ShieldCheck,
+  Gamepad2,
+  Info,
+  AlertCircle,
+} from "lucide-react";
+import { navigate } from "../hooks/useRoute";
 
 // Custom SVG Chess Pieces for premium decorative background
-const PieceSvg: React.FC<{ type: 'king' | 'queen' | 'rook' | 'knight' | 'bishop' }> = ({ type }) => {
+const PieceSvg: React.FC<{
+  type: "king" | "queen" | "rook" | "knight" | "bishop";
+}> = ({ type }) => {
   switch (type) {
-    case 'king':
+    case "king":
       return (
-        <svg viewBox="0 0 100 100" className="w-full h-full fill-brand-accent/10 stroke-brand-accent/20 stroke-[0.8] drop-shadow-[0_0_15px_rgba(212,175,110,0.1)]">
+        <svg
+          viewBox="0 0 100 100"
+          className="w-full h-full fill-brand-accent/10 stroke-brand-accent/20 stroke-[0.8] drop-shadow-[0_0_15px_rgba(212,175,110,0.1)]"
+        >
           <path d="M48 8h4v14h-4z" />
           <path d="M44 12h12v4H44z" />
           <path d="M50 22c14 0 20 8 20 22 0 14-8 20-12 24H42c-4-4-12-10-12-24 0-14 6-22 20-22z" />
@@ -16,36 +32,48 @@ const PieceSvg: React.FC<{ type: 'king' | 'queen' | 'rook' | 'knight' | 'bishop'
           <path d="M24 80h52v8H24z" />
         </svg>
       );
-    case 'queen':
+    case "queen":
       return (
-        <svg viewBox="0 0 100 100" className="w-full h-full fill-brand-accent/10 stroke-brand-accent/20 stroke-[0.8] drop-shadow-[0_0_15px_rgba(212,175,110,0.1)]">
+        <svg
+          viewBox="0 0 100 100"
+          className="w-full h-full fill-brand-accent/10 stroke-brand-accent/20 stroke-[0.8] drop-shadow-[0_0_15px_rgba(212,175,110,0.1)]"
+        >
           <path d="M50 16a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5zm22 6a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5zm-44 0a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5z" />
           <path d="M25 32l8 16 17-21 17 21 8-16 5 36H20l5-36z" />
           <path d="M28 72h44v8H28z" />
           <path d="M22 80h56v8H22z" />
         </svg>
       );
-    case 'rook':
+    case "rook":
       return (
-        <svg viewBox="0 0 100 100" className="w-full h-full fill-brand-accent/10 stroke-brand-accent/20 stroke-[0.8] drop-shadow-[0_0_15px_rgba(212,175,110,0.1)]">
+        <svg
+          viewBox="0 0 100 100"
+          className="w-full h-full fill-brand-accent/10 stroke-brand-accent/20 stroke-[0.8] drop-shadow-[0_0_15px_rgba(212,175,110,0.1)]"
+        >
           <path d="M27 18h10v10h8V18h10v10h8V18h10v21H27V18z" />
           <path d="M35 39h30l-4 34H39L35 39z" />
           <path d="M30 73h40v8H30z" />
           <path d="M24 81h52v8H24z" />
         </svg>
       );
-    case 'knight':
+    case "knight":
       return (
-        <svg viewBox="0 0 100 100" className="w-full h-full fill-brand-accent/10 stroke-brand-accent/20 stroke-[0.8] drop-shadow-[0_0_15px_rgba(212,175,110,0.1)]">
+        <svg
+          viewBox="0 0 100 100"
+          className="w-full h-full fill-brand-accent/10 stroke-brand-accent/20 stroke-[0.8] drop-shadow-[0_0_15px_rgba(212,175,110,0.1)]"
+        >
           <path d="M61 12c15 7 24 22 24 40 0 10-4 20-10 28H40c2-11 8-20 18-27-9 0-17-4-24-11l5-16c6 4 12 6 18 6-4-4-6-9-6-15l10-5z" />
           <path d="M42 80h38v8H42z" />
           <path d="M34 88h52v7H34z" />
           <circle cx="58" cy="31" r="3" fill="rgba(8,11,20,0.3)" />
         </svg>
       );
-    case 'bishop':
+    case "bishop":
       return (
-        <svg viewBox="0 0 100 100" className="w-full h-full fill-brand-accent/10 stroke-brand-accent/20 stroke-[0.8] drop-shadow-[0_0_15px_rgba(212,175,110,0.1)]">
+        <svg
+          viewBox="0 0 100 100"
+          className="w-full h-full fill-brand-accent/10 stroke-brand-accent/20 stroke-[0.8] drop-shadow-[0_0_15px_rgba(212,175,110,0.1)]"
+        >
           <path d="M50 10c5 0 9 4 9 9 0 4-2 7-5 8 13 9 21 24 21 39 0 10-10 13-25 13S25 76 25 66c0-15 8-30 21-39-3-1-5-4-5-8 0-5 4-9 9-9z" />
           <path d="M31 79h38v8H31z" />
           <path d="M24 87h52v7H24z" />
@@ -77,19 +105,20 @@ const PricingCard: React.FC<PlanProps> = ({
   ctaText,
   isPopular = false,
   yearlySaving,
-  onCtaClick
+  onCtaClick,
 }) => {
   return (
     <motion.div
       initial={{ opacity: 0, y: 30 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true }}
-      whileHover={{ y: -8, transition: { duration: 0.3, ease: 'easeOut' } }}
+      whileHover={{ y: -8, transition: { duration: 0.3, ease: "easeOut" } }}
       transition={{ duration: 0.6 }}
       className={`relative rounded-3xl p-6 sm:p-8 flex flex-col justify-between overflow-hidden transition-all duration-500
-        ${isPopular 
-          ? 'bg-gradient-to-b from-[#0e1428] to-[#080b14] border border-brand-accent/30 shadow-[0_20px_50px_rgba(212,175,110,0.06)]' 
-          : 'bg-[#0c1020]/60 backdrop-blur-xl border border-brand-border/40 hover:border-brand-accent/20'
+        ${
+          isPopular
+            ? "bg-gradient-to-b from-[#0e1428] to-[#080b14] border border-brand-accent/30 shadow-[0_20px_50px_rgba(212,175,110,0.06)]"
+            : "bg-[#0c1020]/60 backdrop-blur-xl border border-brand-border/40 hover:border-brand-accent/20"
         }
       `}
     >
@@ -146,9 +175,11 @@ const PricingCard: React.FC<PlanProps> = ({
         <ul className="space-y-4 mb-8">
           {features.map((feature, i) => (
             <li key={i} className="flex items-start gap-3">
-              <span className={`flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center mt-0.5
-                ${isPopular ? 'bg-brand-accent/15 text-brand-accent' : 'bg-white/5 text-brand-secondary'}
-              `}>
+              <span
+                className={`flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center mt-0.5
+                ${isPopular ? "bg-brand-accent/15 text-brand-accent" : "bg-white/5 text-brand-secondary"}
+              `}
+              >
                 <Check className="w-3 h-3" />
               </span>
               <span className="text-sm font-sans text-[#e5dfd5] leading-relaxed">
@@ -163,9 +194,10 @@ const PricingCard: React.FC<PlanProps> = ({
       <button
         onClick={onCtaClick}
         className={`w-full py-3.5 px-6 rounded-xl font-mono text-xs uppercase tracking-widest font-semibold transition-all duration-300 relative overflow-hidden cursor-pointer
-          ${isPopular 
-            ? 'btn-premium-cta cta-shine text-brand-accent border-brand-accent/40 shadow-lg hover:scale-[1.01]' 
-            : 'bg-white/5 border border-white/10 hover:border-brand-accent/40 text-brand-secondary hover:text-white active:scale-[0.99]'
+          ${
+            isPopular
+              ? "btn-premium-cta cta-shine text-brand-accent border-brand-accent/40 shadow-lg hover:scale-[1.01]"
+              : "bg-white/5 border border-white/10 hover:border-brand-accent/40 text-brand-secondary hover:text-white active:scale-[0.99]"
           }
         `}
       >
@@ -178,59 +210,66 @@ const PricingCard: React.FC<PlanProps> = ({
 export default function PricingPage() {
   const [isYearly, setIsYearly] = useState(false);
   const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(null);
-  
+
   const [showSessionError, setShowSessionError] = useState(() => {
     const params = new URLSearchParams(window.location.search);
-    return params.get('error') === 'payment_expired';
+    return params.get("error") === "payment_expired";
   });
 
   // Navigate back to Home
   const handleNavigateHome = () => {
-    navigate('/');
+    navigate("/");
   };
 
-  const handleUpgrade = (planType: 'Monthly' | 'Yearly') => {
+  const handleUpgrade = (planType: "Monthly" | "Yearly") => {
     navigate(`/payment?plan=${planType.toLowerCase()}`);
   };
 
   const faqs = [
     {
       q: "What happens if I cancel?",
-      a: "You will retain access to all Premium features until the end of your current billing period (monthly or yearly). After that, your account will revert to the Free tier. Your saved game history, analysis, and custom configurations will remain safely stored, though advanced engine tool access will be locked."
+      a: "You will retain access to all Premium features until the end of your current billing period (monthly or yearly). After that, your account will revert to the Free tier. Your saved game history, analysis, and custom configurations will remain safely stored, though advanced engine tool access will be locked.",
     },
     {
       q: "Can I switch plans?",
-      a: "Yes, absolutely! You can switch from monthly to yearly billing at any time to lock in the 20% discount. The remaining time on your monthly plan will be credited pro-rata toward the cost of the yearly plan automatically."
+      a: "Yes, absolutely! You can switch from monthly to yearly billing at any time to lock in the 20% discount. The remaining time on your monthly plan will be credited pro-rata toward the cost of the yearly plan automatically.",
     },
     {
       q: "Do yearly plans save money?",
-      a: "Yes. The yearly plan saves you over 33% compared to paying monthly. This brings your effective monthly rate down to just $9.99, saving you $60 over a full year compared to standard monthly renewals."
+      a: "Yes. The yearly plan saves you over 33% compared to paying monthly. This brings your effective monthly rate down to just $9.99, saving you $60 over a full year compared to standard monthly renewals.",
     },
     {
       q: "Can I upgrade anytime?",
-      a: "Yes! You can instantly upgrade your account from anywhere on the platform. The pricing is prorated, meaning you'll only pay the difference for the remainder of your current billing cycle."
+      a: "Yes! You can instantly upgrade your account from anywhere on the platform. The pricing is prorated, meaning you'll only pay the difference for the remainder of your current billing cycle.",
     },
     {
       q: "Is my payment secure?",
-      a: "We prioritize transactional security above all else. We process all payments using world-class certified secure payment gateways with industry-standard 256-bit encryption. Your credit card or banking details are never stored on our servers."
-    }
+      a: "We prioritize transactional security above all else. We process all payments using world-class certified secure payment gateways with industry-standard 256-bit encryption. Your credit card or banking details are never stored on our servers.",
+    },
   ];
 
   const featuresList = [
-    { name: 'Unlimited Games', free: true, premium: true },
-    { name: 'Engine Analysis', free: 'Basic', premium: 'Unlimited (Deep Stockfish)' },
-    { name: 'Game Review', free: false, premium: true },
-    { name: 'Puzzle Training', free: 'Daily Limit', premium: 'Unlimited' },
-    { name: 'Opening Explorer', free: 'Limited Depth', premium: 'Advanced Explorer' },
-    { name: 'Performance Insights', free: false, premium: true },
-    { name: 'Priority Support', free: false, premium: true },
-    { name: 'Ad Free', free: false, premium: true },
-    { name: 'Premium Themes', free: false, premium: true },
+    { name: "Unlimited Games", free: true, premium: true },
+    {
+      name: "Engine Analysis",
+      free: "Basic",
+      premium: "Unlimited (Deep Stockfish)",
+    },
+    { name: "Game Review", free: false, premium: true },
+    { name: "Puzzle Training", free: "Daily Limit", premium: "Unlimited" },
+    {
+      name: "Opening Explorer",
+      free: "Limited Depth",
+      premium: "Advanced Explorer",
+    },
+    { name: "Performance Insights", free: false, premium: true },
+    { name: "Priority Support", free: false, premium: true },
+    { name: "Ad Free", free: false, premium: true },
+    { name: "Premium Themes", free: false, premium: true },
   ];
 
   return (
     <div className="min-h-screen bg-brand-bg text-brand-text flex flex-col relative overflow-hidden select-none pb-16 sm:pb-24">
-      
       {/* ── BACKGROUND ORNAMENTATION ─────────────────────────────────────────── */}
       {/* Ambient background glows */}
       <div className="absolute top-[10%] left-1/2 -translate-x-1/2 w-[80vw] max-w-[1200px] h-[500px] bg-brand-accent/5 rounded-full blur-[140px] pointer-events-none z-0" />
@@ -310,7 +349,9 @@ export default function PricingPage() {
             onClick={handleNavigateHome}
             className="flex items-center gap-2.5 text-xs sm:text-sm text-brand-secondary hover:text-white transition-all duration-300 cursor-pointer uppercase tracking-wider font-mono font-medium"
           >
-            <span className="w-5 h-5 rounded-full border border-brand-border flex items-center justify-center font-bold text-[9px] hover:border-brand-accent/50">&lt;</span>
+            <span className="w-5 h-5 rounded-full border border-brand-border flex items-center justify-center font-bold text-[9px] hover:border-brand-accent/50">
+              &lt;
+            </span>
             Back to Home
           </button>
 
@@ -333,13 +374,16 @@ export default function PricingPage() {
           >
             <div className="flex items-center gap-2">
               <AlertCircle className="w-5 h-5 flex-shrink-0" />
-              <span>Your payment session has expired or no completed purchase was found.</span>
+              <span>
+                Your payment session has expired or no completed purchase was
+                found.
+              </span>
             </div>
             <button
               onClick={() => {
                 setShowSessionError(false);
                 try {
-                  window.history.replaceState({}, '', window.location.pathname);
+                  window.history.replaceState({}, "", window.location.pathname);
                 } catch (e) {}
               }}
               className="text-amber-400 hover:text-white font-mono text-xs uppercase font-bold cursor-pointer flex-shrink-0"
@@ -348,7 +392,7 @@ export default function PricingPage() {
             </button>
           </motion.div>
         )}
-        
+
         {/* ── HERO SECTION ────────────────────────────────────────────────────── */}
         <section className="text-center pt-16 sm:pt-20 pb-12 sm:pb-16 max-w-3xl flex flex-col items-center">
           {/* Badge */}
@@ -370,7 +414,9 @@ export default function PricingPage() {
             className="text-4xl sm:text-5xl md:text-6xl font-display font-medium tracking-tight text-white mb-6 leading-[1.05]"
           >
             Unlock Your Full <br className="sm:block hidden" />
-            <span className="text-gold-gradient font-bold italic">Chess Potential</span>
+            <span className="text-gold-gradient font-bold italic">
+              Chess Potential
+            </span>
           </motion.h1>
 
           {/* Subtitle */}
@@ -380,7 +426,9 @@ export default function PricingPage() {
             transition={{ duration: 0.6, delay: 0.2 }}
             className="text-base sm:text-lg text-brand-secondary font-sans leading-relaxed max-w-2xl px-2"
           >
-            Take your game to the next level with deep Stockfish engine analysis, unlimited game reviews, personalized accuracy reports, and comprehensive puzzles.
+            Take your game to the next level with deep Stockfish engine
+            analysis, unlimited game reviews, personalized accuracy reports, and
+            comprehensive puzzles.
           </motion.p>
         </section>
 
@@ -390,7 +438,7 @@ export default function PricingPage() {
             <button
               onClick={() => setIsYearly(false)}
               className={`relative z-10 px-6 py-2.5 rounded-xl font-mono text-xs uppercase tracking-wider font-semibold transition-all duration-300 cursor-pointer min-w-[120px] text-center
-                ${!isYearly ? 'text-[#080b14]' : 'text-brand-secondary hover:text-white'}
+                ${!isYearly ? "text-[#080b14]" : "text-brand-secondary hover:text-white"}
               `}
             >
               {/* Animated active BG slider */}
@@ -407,7 +455,7 @@ export default function PricingPage() {
             <button
               onClick={() => setIsYearly(true)}
               className={`relative z-10 px-6 py-2.5 rounded-xl font-mono text-xs uppercase tracking-wider font-semibold transition-all duration-300 cursor-pointer min-w-[120px] text-center flex items-center justify-center gap-1.5
-                ${isYearly ? 'text-[#080b14]' : 'text-brand-secondary hover:text-white'}
+                ${isYearly ? "text-[#080b14]" : "text-brand-secondary hover:text-white"}
               `}
             >
               {isYearly && (
@@ -429,7 +477,6 @@ export default function PricingPage() {
 
         {/* ── PRICING CARDS ──────────────────────────────────────────────────── */}
         <section className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl w-full px-4 mb-20 sm:mb-24 z-10">
-          
           {/* FREE PLAN */}
           <PricingCard
             name="Free Plan"
@@ -443,10 +490,12 @@ export default function PricingPage() {
               "Game History",
               "Public Leaderboards",
               "Basic Analysis",
-              "Community Access"
+              "Community Access",
             ]}
             ctaText="Current Plan"
-            onCtaClick={() => alert('You are already enjoying our free features!')}
+            onCtaClick={() =>
+              alert("You are already enjoying our free features!")
+            }
           />
 
           {/* PREMIUM PLAN */}
@@ -454,7 +503,9 @@ export default function PricingPage() {
             name="Premium Plan"
             price={isYearly ? "$119.99" : "$14.99"}
             period={isYearly ? "/ year" : "/ month"}
-            yearlySaving={isYearly ? "Save $60 (Equivalent to $9.99/mo)" : undefined}
+            yearlySaving={
+              isYearly ? "Save $60 (Equivalent to $9.99/mo)" : undefined
+            }
             description="Built for ambitious chess players who want unlimited reviews, deep analysis, and tracking."
             features={[
               "Unlimited Engine Analysis",
@@ -467,11 +518,11 @@ export default function PricingPage() {
               "Premium Themes",
               "Early Access Features",
               "Priority Support",
-              "No Ads"
+              "No Ads",
             ]}
             ctaText="Upgrade to Premium"
             isPopular={true}
-            onCtaClick={() => handleUpgrade(isYearly ? 'Yearly' : 'Monthly')}
+            onCtaClick={() => handleUpgrade(isYearly ? "Yearly" : "Monthly")}
           />
         </section>
 
@@ -492,19 +543,28 @@ export default function PricingPage() {
               <table className="w-full text-left border-collapse">
                 <thead>
                   <tr className="border-b border-brand-border/60 bg-white/[0.02]">
-                    <th className="py-5 px-6 text-sm font-mono tracking-wider text-brand-secondary uppercase">Feature</th>
-                    <th className="py-5 px-6 text-sm font-mono tracking-wider text-brand-secondary uppercase text-center w-1/4">Free</th>
-                    <th className="py-5 px-6 text-sm font-mono tracking-wider text-brand-accent uppercase text-center w-1/4">Premium</th>
+                    <th className="py-5 px-6 text-sm font-mono tracking-wider text-brand-secondary uppercase">
+                      Feature
+                    </th>
+                    <th className="py-5 px-6 text-sm font-mono tracking-wider text-brand-secondary uppercase text-center w-1/4">
+                      Free
+                    </th>
+                    <th className="py-5 px-6 text-sm font-mono tracking-wider text-brand-accent uppercase text-center w-1/4">
+                      Premium
+                    </th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-brand-border/40">
                   {featuresList.map((feature, index) => (
-                    <tr key={index} className="hover:bg-white/[0.01] transition-colors duration-150">
-                      <td className="py-4.5 px-6 text-sm font-sans font-medium text-[#e5dfd5]">
+                    <tr
+                      key={index}
+                      className="hover:bg-white/[0.01] transition-colors duration-150"
+                    >
+                      <td className="py-2 px-6 text-sm font-sans font-medium text-[#e5dfd5]">
                         {feature.name}
                       </td>
-                      <td className="py-4.5 px-6 text-center text-sm font-sans text-brand-secondary">
-                        {typeof feature.free === 'boolean' ? (
+                      <td className="py-2 px-6 text-center text-sm font-sans text-brand-secondary">
+                        {typeof feature.free === "boolean" ? (
                           feature.free ? (
                             <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-emerald-500/10 text-emerald-400">
                               <Check className="w-3.5 h-3.5" />
@@ -513,11 +573,13 @@ export default function PricingPage() {
                             <span className="text-brand-secondary/40">—</span>
                           )
                         ) : (
-                          <span className="font-mono text-xs">{feature.free}</span>
+                          <span className="font-mono text-xs">
+                            {feature.free}
+                          </span>
                         )}
                       </td>
                       <td className="py-4.5 px-6 text-center text-sm font-sans text-brand-accent font-semibold">
-                        {typeof feature.premium === 'boolean' ? (
+                        {typeof feature.premium === "boolean" ? (
                           feature.premium ? (
                             <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-emerald-500/10 text-emerald-400">
                               <Check className="w-3.5 h-3.5" />
@@ -576,9 +638,9 @@ export default function PricingPage() {
                     {isOpen && (
                       <motion.div
                         initial={{ height: 0, opacity: 0 }}
-                        animate={{ height: 'auto', opacity: 1 }}
+                        animate={{ height: "auto", opacity: 1 }}
                         exit={{ height: 0, opacity: 0 }}
-                        transition={{ duration: 0.25, ease: 'easeInOut' }}
+                        transition={{ duration: 0.25, ease: "easeInOut" }}
                       >
                         <div className="px-6 pb-5 pt-1 text-sm sm:text-base text-brand-secondary font-sans leading-relaxed border-t border-brand-border/20">
                           {faq.a}
@@ -610,14 +672,15 @@ export default function PricingPage() {
             <h2 className="text-3xl sm:text-4xl md:text-5xl font-display font-medium text-white mb-4 tracking-tight">
               Ready to Level Up Your Chess?
             </h2>
-            
+
             <p className="text-sm sm:text-base text-brand-secondary font-sans max-w-xl mx-auto mb-8 leading-relaxed">
-              Join thousands of chess players analyzing, learning, and improving their play daily. Elevate your tactical edge now.
+              Join thousands of chess players analyzing, learning, and improving
+              their play daily. Elevate your tactical edge now.
             </p>
 
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
               <button
-                onClick={() => handleUpgrade(isYearly ? 'Yearly' : 'Monthly')}
+                onClick={() => handleUpgrade(isYearly ? "Yearly" : "Monthly")}
                 className="w-full sm:w-auto px-8 py-4 rounded-xl font-mono text-xs uppercase tracking-widest font-semibold btn-premium-cta btn-glow-container btn-glow-accent cta-shine cursor-pointer shadow-lg hover:scale-[1.02] flex items-center justify-center gap-2"
               >
                 <span>Start Premium</span>
@@ -649,7 +712,6 @@ export default function PricingPage() {
             </div>
           </motion.div>
         </section>
-
       </main>
     </div>
   );
