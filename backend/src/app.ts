@@ -62,8 +62,18 @@ app.get("/api/auth/signin/", (req, res) => {
   res.redirect("/");
 });
 
-// Register modular endpoints
-app.use("/api/auth/*", authRouter);
+// Ensure Auth.js sees the correct public hostname when behind a reverse proxy (Vercel rewrite).
+// Vercel rewrites change the Host header to the Railway backend hostname, which causes Auth.js
+// to construct OAuth callback URLs with the wrong origin (redirect_uri_mismatch).
+app.use("/api/auth/*", (req, _res, next) => {
+  try {
+    const authUrl = new URL(env.AUTH_URL);
+    req.headers.host = authUrl.host;
+  } catch {
+    // If AUTH_URL is invalid, fall through with the original host header.
+  }
+  next();
+}, authRouter);
 app.use("/api/users", userRouter);
 app.use("/api/payments", paymentRouter);
 

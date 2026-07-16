@@ -1,4 +1,4 @@
-﻿/**
+/**
  * HeroPuzzle.tsx
  *
  * Premium chess puzzle component â€” Chess.com / Lichess quality experience.
@@ -53,6 +53,7 @@ import { useMoveAnnotation } from "../hooks/useMoveAnnotation";
 import { MoveAnnotation } from "./MoveAnnotation";
 import ChessAnimationLayer from "./ChessAnimationLayer";
 import { motion } from "framer-motion";
+import { soundManager } from "../utils/SoundManager";
 interface ActiveMove {
   startX: number;
   startY: number;
@@ -630,6 +631,16 @@ export default function HeroPuzzle() {
       );
       if (instanceId !== autoplayInstanceRef.current || abortRef.current)
         return;
+      // Play appropriate sound after the move
+      if (move.isCheckmate) {
+        soundManager.playCheckmate();
+      } else if (move.isCheck) {
+        soundManager.playCheck();
+      } else if (move.isCapture) {
+        soundManager.playCapture();
+      } else {
+        soundManager.playMove();
+      }
       // Pulse checked king's square if checked
       if (move.isCheck || move.isCheckmate) {
         setCheckedKingSquare0(move.kingSquare);
@@ -886,9 +897,11 @@ export default function HeroPuzzle() {
     setPhase1("solved");
     setIsCheckmateGlow1(true);
 
+    soundManager.playCheckmate();
     await runCheckmateImpact(losingKingSq);
     await safeDelay(900);
     if (solveAbortRef.current) return;
+    soundManager.playApplause();
     fireConfetti();
     if (checkmateRef.current) {
       gsap.to(checkmateRef.current, {
@@ -925,6 +938,16 @@ export default function HeroPuzzle() {
       ).then(() => {
         if (solveAbortRef.current) return;
         const game = gameRef1.current;
+        // Play sound based on move result
+        if (game.isCheckmate()) {
+          soundManager.playCheckmate();
+        } else if (game.inCheck()) {
+          soundManager.playCheck();
+        } else if (isCapture) {
+          soundManager.playCapture();
+        } else {
+          soundManager.playMove();
+        }
         // const history = game.history({ verbose: true });
         // const lastEntry = history[history.length - 1];
         // const displaySan = lastEntry.san.replace('x', '');
@@ -957,6 +980,12 @@ export default function HeroPuzzle() {
                     showTrail(moveResult.from, moveResult.to);
                   },
                 ).then(() => {
+                  // Black's response sound
+                  if (!!moveResult.captured) {
+                    soundManager.playCapture();
+                  } else {
+                    soundManager.playMove();
+                  }
                   setPhase1("awaiting_mate");
                 });
               } else {
@@ -993,6 +1022,12 @@ export default function HeroPuzzle() {
                       showTrail(moveResult.from, moveResult.to);
                     },
                   ).then(() => {
+                    // Black's response sound
+                    if (!!moveResult.captured) {
+                      soundManager.playCapture();
+                    } else {
+                      soundManager.playMove();
+                    }
                     setPhase1("awaiting_mate");
                   });
                 } else {
@@ -1036,6 +1071,7 @@ export default function HeroPuzzle() {
       },
     );
     if (solveAbortRef.current) return;
+    soundManager.playMove();
     setMovesLeftOriginal(1);
     triggerAnnotation(step1.to, "!!");
     await safeDelay(900);
@@ -1052,6 +1088,7 @@ export default function HeroPuzzle() {
       },
     );
     if (solveAbortRef.current) return;
+    soundManager.playCapture();
     await safeDelay(900);
     if (solveAbortRef.current) return;
     const step3 = PUZZLE_ORIGINAL.solution[2];
@@ -1086,11 +1123,13 @@ export default function HeroPuzzle() {
     async (kingSq: string | null) => {
       setPhase0("SUCCESS");
       setIsCheckmateGlow0(true);
+      soundManager.playCheckmate();
       // Show CHECKMATE popup
       await runCheckmateImpact(kingSq);
       // Hold the checkmate text for a brief pause before fading it out
       await safeDelay(900);
       if (abortRef.current) return;
+      soundManager.playApplause();
       fireConfetti();
       // Fade checkmate badge overlay out smoothly
       if (checkmateRef.current) {
@@ -1129,13 +1168,16 @@ export default function HeroPuzzle() {
     if (whiteWon) {
       setPhase2("solved");
       setIsCheckmateGlow2(true);
+      soundManager.playCheckmate();
       await runCheckmateImpact(losingKingSq);
       await safeDelay(900);
       if (solveAbortRef.current) return;
+      soundManager.playApplause();
       fireConfetti();
     } else {
       // Black won (White checkmated)
       setPhase2("failed");
+      soundManager.playGameEnd();
       await runCheckmateImpact(losingKingSq);
       await safeDelay(900);
       if (solveAbortRef.current) return;
@@ -1176,12 +1218,15 @@ export default function HeroPuzzle() {
     if (whiteWon) {
       setPhase3("solved");
       setIsCheckmateGlow3(true);
+      soundManager.playCheckmate();
       await runCheckmateImpact(losingKingSq);
       await safeDelay(900);
       if (solveAbortRef.current) return;
+      soundManager.playApplause();
       fireConfetti();
     } else {
       setPhase3("failed");
+      soundManager.playGameEnd();
       await runCheckmateImpact(losingKingSq);
       await safeDelay(900);
       if (solveAbortRef.current) return;
@@ -1227,9 +1272,17 @@ export default function HeroPuzzle() {
         },
       ).then(() => {
         if (solveAbortRef.current) return;
+        // Play sound for user's move
         if (game.isGameOver()) {
           celebrate3();
           return;
+        }
+        if (game.inCheck()) {
+          soundManager.playCheck();
+        } else if (isCapture) {
+          soundManager.playCapture();
+        } else {
+          soundManager.playMove();
         }
 
         setPhase3("black_responding");
@@ -1257,6 +1310,12 @@ export default function HeroPuzzle() {
                   showTrail(from, to);
                 },
               ).then(() => {
+                // Play sound for engine's response
+                if (!!engineMove.captured) {
+                  soundManager.playCapture();
+                } else {
+                  soundManager.playMove();
+                }
                 if (game.isGameOver()) {
                   celebrate3();
                 } else {
@@ -1309,9 +1368,17 @@ export default function HeroPuzzle() {
         },
       ).then(() => {
         if (solveAbortRef.current) return;
+        // Play sound for user's move
         if (game.isGameOver()) {
           celebrate2();
           return;
+        }
+        if (game.inCheck()) {
+          soundManager.playCheck();
+        } else if (isCapture) {
+          soundManager.playCapture();
+        } else {
+          soundManager.playMove();
         }
 
         // Trigger Stockfish response for Black
@@ -1340,6 +1407,12 @@ export default function HeroPuzzle() {
                   showTrail(from, to);
                 },
               ).then(() => {
+                // Play sound for engine's response
+                if (!!engineMove.captured) {
+                  soundManager.playCapture();
+                } else {
+                  soundManager.playMove();
+                }
                 if (game.isGameOver()) {
                   celebrate2();
                 } else {
@@ -1422,6 +1495,17 @@ export default function HeroPuzzle() {
           ).then(() => {
             if (abortRef.current) return;
 
+            // Play sound for user's white move
+            if (game.isCheckmate()) {
+              // celebrate0 will play checkmate sound
+            } else if (game.inCheck()) {
+              soundManager.playCheck();
+            } else if (isCapture) {
+              soundManager.playCapture();
+            } else {
+              soundManager.playMove();
+            }
+
             if (game.isGameOver()) {
               if (game.isCheckmate()) {
                 const { losingKingSq } = getKingSquares(game.fen());
@@ -1455,6 +1539,12 @@ export default function HeroPuzzle() {
                   },
                 );
                 if (abortRef.current) return;
+                // Play sound for scripted black's move
+                if (expectedBlackMove.isCapture) {
+                  soundManager.playCapture();
+                } else {
+                  soundManager.playMove();
+                }
                 setPuzzleMoveIndex0((prev) => prev + 1);
                 setPuzzleStep0((prev) => prev + 1);
 
@@ -1492,6 +1582,17 @@ export default function HeroPuzzle() {
           ).then(() => {
             if (abortRef.current) return;
 
+            // Play sound for user's deviating white move
+            if (game.isCheckmate()) {
+              // celebrate0 will play checkmate sound
+            } else if (game.inCheck()) {
+              soundManager.playCheck();
+            } else if (isCapture) {
+              soundManager.playCapture();
+            } else {
+              soundManager.playMove();
+            }
+
             if (game.isGameOver()) {
               if (game.isCheckmate()) {
                 const { losingKingSq } = getKingSquares(game.fen());
@@ -1526,6 +1627,12 @@ export default function HeroPuzzle() {
                     },
                   ).then(() => {
                     setIsStockfishThinking0(false);
+                    // Play sound for engine's response
+                    if (!!engineMove.captured) {
+                      soundManager.playCapture();
+                    } else {
+                      soundManager.playMove();
+                    }
                     setPuzzleMoveIndex0((prev) => prev + 1);
                     setPuzzleStep0((prev) => prev + 1);
 
@@ -1564,6 +1671,17 @@ export default function HeroPuzzle() {
         ).then(() => {
           if (abortRef.current) return;
 
+          // Play sound for user's white move (Stockfish mode)
+          if (game.isCheckmate()) {
+            // celebrate0 will play checkmate sound
+          } else if (game.inCheck()) {
+            soundManager.playCheck();
+          } else if (isCapture) {
+            soundManager.playCapture();
+          } else {
+            soundManager.playMove();
+          }
+
           if (game.isGameOver()) {
             if (game.isCheckmate()) {
               const { losingKingSq } = getKingSquares(game.fen());
@@ -1598,6 +1716,12 @@ export default function HeroPuzzle() {
                   },
                 ).then(() => {
                   setIsStockfishThinking0(false);
+                  // Play sound for engine's response
+                  if (!!engineMove.captured) {
+                    soundManager.playCapture();
+                  } else {
+                    soundManager.playMove();
+                  }
                   setPuzzleMoveIndex0((prev) => prev + 1);
                   setPuzzleStep0((prev) => prev + 1);
 
