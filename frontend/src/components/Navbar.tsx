@@ -3,6 +3,8 @@ import { Menu, X } from 'lucide-react';
 import { useNavbarAnimation } from '../hooks/useNavbarAnimation';
 import { useLogoAnimation } from '../hooks/useLogoAnimation';
 import { useButtonGlow } from '../hooks/useButtonGlow';
+import { soundManager } from '../utils/SoundManager';
+import SoundToggle from './SoundToggle';
 import { useSession } from '../hooks/useSession';
 import { AuthModal } from './AuthModal';
 import { AvatarDropdown } from './AvatarDropdown';
@@ -33,7 +35,7 @@ export default function Navbar() {
   const ctaGlowRef = useButtonGlow<HTMLButtonElement>();
 
   const navLinks = [
-    { name: 'Live Demo',        href: '#interactive-demo' },
+    { name: 'Live Demo', href: '#interactive-demo' },
     { name: 'Practice Puzzles', href: '/puzzles' },
     { name: 'Pricing',          href: '/pricing' },
   ];
@@ -85,7 +87,7 @@ export default function Navbar() {
           </div>
 
           {/* Desktop Nav Items */}
-          <div className="hidden md:flex items-center gap-10">
+          <div className="hidden md:flex items-center gap-6">
             {navLinks.map((link) => (
               <a
                 key={link.name}
@@ -102,6 +104,8 @@ export default function Navbar() {
                 {link.name}
               </a>
             ))}
+
+            <SoundToggle />
 
             {/* Auth Integration / CTA */}
             {status === "loading" ? (
@@ -138,8 +142,8 @@ export default function Navbar() {
             ) : null}
 
             <button
-              onClick={() => setIsOpen(!isOpen)}
-              className="text-brand-secondary hover:text-ivory p-2 transition-colors duration-200 cursor-pointer"
+              onClick={() => { soundManager.playButtonClick(); setIsOpen(!isOpen); }}
+              className="text-brand-secondary hover:text-ivory p-2 transition-colors duration-200"
               aria-label="Toggle menu"
               aria-expanded={isOpen}
               aria-controls="mobile-nav-menu"
@@ -183,6 +187,11 @@ export default function Navbar() {
                 {link.name}
               </a>
             ))}
+
+            <div className="flex items-center justify-between">
+              <span className="font-sans font-light text-sm text-brand-secondary" style={{ letterSpacing: '0.04em' }}>Sound</span>
+              <SoundToggle />
+            </div>
 
             {status !== "authenticated" && (
               <>
