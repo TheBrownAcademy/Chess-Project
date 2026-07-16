@@ -43,12 +43,29 @@ export const authConfig: ExpressAuthConfig = {
       return session;
     },
     async redirect({ url }) {
-      const clientOrigin = env.CLIENT_ORIGIN || "http://localhost:5173";
-      // If the redirect URL points to localhost:3000 or is relative, rewrite the origin to the client origin.
-      if (url.includes("localhost:3000") || url.startsWith("/")) {
-        const path = url.replace(/^(https?:\/\/localhost:3000)?/, "");
-        return `${clientOrigin}${path.startsWith("/") ? "" : "/"}${path}`;
+      const clientOrigin = (env.CLIENT_ORIGIN || "http://localhost:5173").replace(/\/$/, "");
+      let authOrigin: string;
+      try {
+        authOrigin = new URL(env.AUTH_URL).origin;
+      } catch {
+        authOrigin = "http://localhost:3000";
       }
+
+      // Relative paths always redirect to the frontend origin.
+      if (url.startsWith("/")) {
+        return `${clientOrigin}${url}`;
+      }
+
+      // Rewrite backend/auth-origin URLs back to the frontend (local dev + deployed proxy setups).
+      try {
+        const parsed = new URL(url);
+        if (parsed.origin === authOrigin || parsed.hostname === "localhost") {
+          return `${clientOrigin}${parsed.pathname}${parsed.search}${parsed.hash}`;
+        }
+      } catch {
+        return url;
+      }
+
       return url;
     },
   },
