@@ -13,7 +13,6 @@ import {
   CircleDot,
   CheckCircle2} from 'lucide-react';
 import { Chess } from 'chess.js';
-import Navbar from '../components/Navbar';
 
 function formatPuzzleNumber(id: string): string {
   if (!id) return '';
@@ -142,8 +141,6 @@ export default function PuzzlePage() {
   return (
     <div className="min-h-screen bg-brand-bg text-brand-text flex flex-col relative select-none pb-16">
       
-      {/* Premium Navigation Header */}
-      <Navbar />
 
       {/* Ambient background glows */}
       <div className="absolute top-[20%] left-1/2 -translate-x-1/2 w-[80vw] max-w-[1000px] h-[400px] bg-brand-accent/3 rounded-full blur-[140px] pointer-events-none z-0" />
