@@ -60,6 +60,7 @@ export default function SidebarLayout({
       setIsExpanded(!isExpanded);
     }
   };
+  
 
   return (
     <div className="min-h-screen text-brand-text bg-brand-bg flex flex-col relative select-none">
@@ -98,6 +99,7 @@ export default function SidebarLayout({
             />
           </div>
         </div>
+        
 
         {/* Right: Sound Toggle & Auth Controls */}
         <div className="flex items-center gap-4 sm:gap-6">
@@ -149,7 +151,7 @@ export default function SidebarLayout({
                   key={item.name}
                   href={item.href}
                   onClick={(e) => handleLinkClick(item.href, e)}
-                  className={`group relative flex transition-all duration-200 cursor-pointer ${
+                  className={`b1 group relative flex transition-all duration-200 cursor-pointer ${
                     isExpanded
                       ? `items-center gap-4 px-4 py-3 mx-3 rounded-xl ${
                           isActive
