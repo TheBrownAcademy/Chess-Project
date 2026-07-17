@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route } from 'react-router';
 import MainLayout from '../layouts/MainLayout';
 import MinimalLayout from '../layouts/MinimalLayout';
 import { mainRoutes, minimalRoutes } from './routes';
+import NotFoundPage from '../pages/NotFoundPage';
 
 export default function AppRouter() {
   return (
@@ -19,6 +20,8 @@ export default function AppRouter() {
           {minimalRoutes.map((route) => (
             <Route key={route.path} path={route.path} element={route.element} />
           ))}
+          {/* Wildcard 404 Page */}
+          <Route path="*" element={<NotFoundPage />} />
         </Route>
       </Routes>
     </BrowserRouter>
