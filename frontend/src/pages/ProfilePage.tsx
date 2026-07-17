@@ -16,7 +16,6 @@ import {
 } from "lucide-react";
 import { useSession } from "../hooks/useSession";
 import { navigate } from "../hooks/useRoute";
-import { AvatarDropdown } from "../components/AvatarDropdown";
 
 interface PlatformButtonProps {
   name: string;
@@ -214,32 +213,7 @@ export default function ProfilePage() {
 
   return (
     <div className="min-h-screen text-brand-text flex flex-col bg-transparent selection:bg-brand-accent selection:text-white">
-      {/* Header bar */}
-      <nav className="fixed top-0 left-0 right-0 z-50 bg-brand-bg/85 backdrop-blur-md border-b border-brand-border">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16 sm:h-20">
-            {/* Logo linked to home */}
-            <div
-              onClick={() => navigate("/")}
-              className="flex items-center gap-2 cursor-pointer select-none transition-transform duration-200 active:scale-[0.98]"
-              role="link"
-              aria-label="XLChess Home"
-            >
-              <img
-                src="/final%20logo.png"
-                alt="XLChess logo"
-                className="h-[68px] sm:h-[80px] w-auto object-contain"
-                draggable={false}
-              />
-            </div>
-
-            {/* Authenticated user Avatar dropdown */}
-            <div className="flex items-center gap-4">
-              <AvatarDropdown />
-            </div>
-          </div>
-        </div>
-      </nav>
+      {/* SidebarLayout handles header globally */}
 
       {/* Main layout container */}
       <main className="flex-1 max-w-5xl w-full mx-auto px-4 sm:px-6 lg:px-8 pt-24 pb-16 relative z-10 flex flex-col gap-6">

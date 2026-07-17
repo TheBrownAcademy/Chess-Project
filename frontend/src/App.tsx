@@ -21,7 +21,7 @@ import ProductDemo from './components/ProductDemo';
 import PartnerCTA from './components/PartnerCTA';
 import Footer from './components/Footer';
 import GlobalBackground from './components/GlobalBackground';
-import Navbar from './components/Navbar';
+import SidebarLayout from './components/SidebarLayout';
 import PremiumLoader from './components/PremiumLoader';
 import PuzzlePage from './pages/PuzzlePage';
 import ProfilePage from './pages/ProfilePage';
@@ -89,42 +89,42 @@ function App() {
       <div id="smooth-wrapper">
         <div id="smooth-content">
 
-          {isPuzzlesPage ? (
-            <PuzzlePage />
-          ) : isProfilePage ? (
-            <ProfilePage />
-          ) : isPricingPage ? (
-            <PricingPage />
-          ) : isSuccessfulPage ? (
-            <SuccessfulPage />
-          ) : isCheckoutPage ? (
-            <CheckoutPage />
-          ) : (
-            /* Landing Page Content */
-            <div className="min-h-screen text-brand-text flex flex-col">
-              {/* Premium Navigation */}
-              <Navbar />
+          <SidebarLayout>
+            {isPuzzlesPage ? (
+              <PuzzlePage />
+            ) : isProfilePage ? (
+              <ProfilePage />
+            ) : isPricingPage ? (
+              <PricingPage />
+            ) : isSuccessfulPage ? (
+              <SuccessfulPage />
+            ) : isCheckoutPage ? (
+              <CheckoutPage />
+            ) : (
+              /* Landing Page Content */
+              <div className="min-h-screen text-brand-text flex flex-col">
 
-              <main className="flex-1">
+                <main className="flex-1">
 
-                {/* Section 1: Hero Visual and Brand Statement */}
-                <Hero />
+                  {/* Section 1: Hero Visual and Brand Statement */}
+                  <Hero />
 
-                {/* Section 2: Build More Than Subscribers */}
-                <BrandSection />
+                  {/* Section 2: Build More Than Subscribers */}
+                  <BrandSection />
 
-                {/* Section 3: Interactive Product Demo (Chessboard + Stockfish) */}
-                <ProductDemo />
+                  {/* Section 3: Interactive Product Demo (Chessboard + Stockfish) */}
+                  <ProductDemo />
 
-                {/* Section 4: Partner Call to Action */}
-                <PartnerCTA />
+                  {/* Section 4: Partner Call to Action */}
+                  <PartnerCTA />
 
-              </main>
+                </main>
 
-              {/* Footer Summary */}
-              <Footer />
-            </div>
-          )}
+                {/* Footer Summary */}
+                <Footer />
+              </div>
+            )}
+          </SidebarLayout>
 
         </div>
       </div>

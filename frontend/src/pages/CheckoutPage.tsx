@@ -182,17 +182,7 @@ export default function CheckoutPage() {
         {/* Glow Effects */}
         <div className="absolute top-[15%] left-1/2 -translate-x-1/2 w-[70vw] max-w-[800px] h-[350px] bg-brand-accent/5 rounded-full blur-[140px] pointer-events-none z-0" />
         
-        {/* Simple Navbar Header */}
-        <header className="relative z-10 w-full bg-brand-bg/80 backdrop-blur-md border-b border-brand-border px-4 py-4">
-          <div className="max-w-5xl mx-auto flex items-center justify-center">
-            <img
-              src="/final%20logo.png"
-              alt="XLChess logo"
-              className="h-[36px] w-auto object-contain cursor-pointer"
-              onClick={() => navigate('/')}
-            />
-          </div>
-        </header>
+        {/* SidebarLayout handles header globally */}
 
         {/* Lock Gate Screen */}
         <main className="relative z-10 flex-1 flex flex-col items-center justify-center max-w-md mx-auto px-4 text-center mt-12 sm:mt-16">
@@ -286,9 +276,11 @@ export default function CheckoutPage() {
       {/* Ambient background glows */}
       <div className="absolute top-[10%] left-1/2 -translate-x-1/2 w-[90vw] max-w-[1200px] h-[400px] bg-brand-accent/5 rounded-full blur-[140px] pointer-events-none z-0" />
 
-      {/* Page Header (Navigation) */}
-      <header className="relative z-10 w-full bg-brand-bg/85 backdrop-blur-md border-b border-brand-border px-4 py-4 sm:py-5 lg:px-8">
-        <div className="max-w-7xl mx-auto flex items-center justify-between">
+      {/* SidebarLayout handles header globally */}
+
+      {/* Main Container */}
+      <main className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-10 sm:pt-14 w-full flex-1 flex flex-col">
+        <div className="w-full flex justify-start mb-6">
           <button
             onClick={() => navigate('/pricing')}
             className="flex items-center gap-2.5 text-xs sm:text-sm text-brand-secondary hover:text-white transition-all duration-300 cursor-pointer uppercase tracking-wider font-mono font-medium"
@@ -296,20 +288,8 @@ export default function CheckoutPage() {
             <span className="w-5 h-5 rounded-full border border-brand-border flex items-center justify-center font-bold text-[9px] hover:border-brand-accent/50">&lt;</span>
             Back to Plans
           </button>
-
-          <img
-            src="/final%20logo.png"
-            alt="XLChess logo"
-            className="h-[38px] w-auto object-contain cursor-pointer"
-            onClick={() => navigate('/')}
-          />
-          
-          <div className="w-[110px]" />
         </div>
-      </header>
 
-      {/* Main Container */}
-      <main className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-10 sm:pt-14 w-full flex-1 flex flex-col">
         
         {/* Checkout Header Title */}
         <section className="mb-10 text-left border-b border-brand-border/40 pb-6 flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
