@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Check,
@@ -13,6 +13,7 @@ import {
   AlertCircle,
 } from "lucide-react";
 import { navigate } from "../hooks/useRoute";
+import { gsap, ScrollTrigger, prefersReducedMotion } from "../utils/gsapConfig";
 
 // Custom SVG Chess Pieces for premium decorative background
 const PieceSvg: React.FC<{
@@ -84,60 +85,239 @@ const PieceSvg: React.FC<{
   }
 };
 
-interface PlanProps {
+interface Plan {
+  id: string;
   name: string;
-  price: string;
-  period: string;
+  priceMonthly: string;
+  priceYearly: string;
+  periodMonthly: string;
+  periodYearly: string;
   description: string;
   features: string[];
   ctaText: string;
   isPopular?: boolean;
   yearlySaving?: string;
-  onCtaClick: () => void;
 }
 
-const PricingCard: React.FC<PlanProps> = ({
-  name,
-  price,
-  period,
-  description,
-  features,
-  ctaText,
-  isPopular = false,
-  yearlySaving,
-  onCtaClick,
-}) => {
+const PLANS: Plan[] = [
+  {
+    id: "free",
+    name: "Free Plan",
+    priceMonthly: "Free",
+    priceYearly: "Free",
+    periodMonthly: "",
+    periodYearly: "",
+    description: "Perfect for casual players looking to play online and solve daily puzzles.",
+    features: [
+      "Unlimited Online Games",
+      "Play Against Stockfish",
+      "Daily Puzzles",
+      "Game History",
+      "Public Leaderboards",
+      "Basic Analysis",
+      "Community Access",
+    ],
+    ctaText: "Current Plan",
+  },
+  {
+    id: "premium",
+    name: "Premium Plan",
+    priceMonthly: "$14.99",
+    priceYearly: "$119.99",
+    periodMonthly: "/ month",
+    periodYearly: "/ year",
+    yearlySaving: "Save $60 (Equivalent to $9.99/mo)",
+    description: "Built for ambitious chess players who want unlimited reviews, deep analysis, and tracking.",
+    features: [
+      "Unlimited Engine Analysis",
+      "Unlimited Game Reviews",
+      "Advanced Opening Explorer",
+      "Deep Position Evaluation",
+      "Unlimited Puzzle Training",
+      "Performance Insights",
+      "Accuracy Reports",
+      "Premium Themes",
+      "Early Access Features",
+      "Priority Support",
+      "No Ads",
+    ],
+    ctaText: "Upgrade to Premium",
+    isPopular: true,
+  },
+];
+
+// Premium Button with Magnetic Hover effect and diagonal Shine sweep
+const PremiumButton: React.FC<{
+  onClick?: (e: React.MouseEvent) => void;
+  children: React.ReactNode;
+  variant?: "primary" | "secondary";
+  className?: string;
+  showArrow?: boolean;
+}> = ({ onClick, children, variant = "secondary", className = "", showArrow = false }) => {
+  const buttonRef = useRef<HTMLButtonElement>(null);
+  const [coords, setCoords] = useState({ x: 0, y: 0 });
+  const [isHovered, setIsHovered] = useState(false);
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLButtonElement>) => {
+    if (prefersReducedMotion() || !buttonRef.current) return;
+    const rect = buttonRef.current.getBoundingClientRect();
+    const x = e.clientX - (rect.left + rect.width / 2);
+    const y = e.clientY - (rect.top + rect.height / 2);
+    // Soft attraction pull (max 5px movement)
+    setCoords({ x: x * 0.08, y: y * 0.08 });
+  };
+
+  const handleMouseLeave = () => {
+    setCoords({ x: 0, y: 0 });
+    setIsHovered(false);
+  };
+
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 30 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true }}
-      whileHover={{ y: -8, transition: { duration: 0.3, ease: "easeOut" } }}
-      transition={{ duration: 0.6 }}
-      className={`relative rounded-3xl p-6 sm:p-8 flex flex-col justify-between overflow-hidden transition-all duration-500
+    <button
+      ref={buttonRef}
+      onClick={onClick}
+      onMouseMove={handleMouseMove}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={handleMouseLeave}
+      style={{
+        transform: `translate3d(${coords.x}px, ${coords.y}px, 0) scale(${isHovered ? 1.015 : 1})`,
+        transition: isHovered ? "transform 0.05s linear" : "transform 0.3s cubic-bezier(0.16, 1, 0.3, 1)",
+      }}
+      className={`relative w-full py-3.5 px-6 rounded-xl font-mono text-xs uppercase tracking-widest font-semibold overflow-hidden transition-all duration-300 cursor-pointer select-none outline-none active:scale-[0.98] ${
+        variant === "primary"
+          ? "btn-premium-cta text-brand-accent border-brand-accent/40 shadow-lg hover:border-brand-accent/70 hover:shadow-[0_0_20px_rgba(212,175,110,0.15)]"
+          : "bg-white/5 border border-white/10 hover:border-brand-accent/40 text-brand-secondary hover:text-white"
+      } ${className}`}
+    >
+      {/* Shine Sweep Overlay */}
+      <div
+        className="absolute inset-0 w-[50%] h-full skew-x-[-25deg] bg-gradient-to-r from-transparent via-white/15 to-transparent pointer-events-none -translate-x-[200%]"
+        style={{
+          transform: isHovered && !prefersReducedMotion()
+            ? "translateX(400%) skewX(-25deg)"
+            : "translateX(-200%) skewX(-25deg)",
+          transition: isHovered && !prefersReducedMotion() ? "transform 0.8s cubic-bezier(0.16, 1, 0.3, 1)" : "none",
+        }}
+      />
+
+      <span className="relative z-10 flex items-center justify-center gap-2">
+        {children}
+        {showArrow && (
+          <ArrowRight
+            className="w-4 h-4 transition-transform duration-300"
+            style={{
+              transform: isHovered ? "translateX(4px)" : "translateX(0)",
+            }}
+          />
+        )}
+      </span>
+    </button>
+  );
+};
+
+// Premium Card Component with Cursor-aware Spotlight Spotlight and 3D Tilt
+const PricingCard: React.FC<{
+  plan: Plan;
+  isYearly: boolean;
+  onCtaClick: () => void;
+}> = ({ plan, isYearly, onCtaClick }) => {
+  const { name, priceMonthly, priceYearly, periodMonthly, periodYearly, description, features, ctaText, isPopular = false, yearlySaving } = plan;
+  const price = isYearly ? priceYearly : priceMonthly;
+  const period = isYearly ? periodYearly : periodMonthly;
+
+  const [coords, setCoords] = useState({ x: 0, y: 0 });
+  const [isHovered, setIsHovered] = useState(false);
+  const [tilt, setTilt] = useState({ x: 0, y: 0 });
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    setCoords({ x, y });
+
+    if (!prefersReducedMotion()) {
+      const centerX = rect.width / 2;
+      const centerY = rect.height / 2;
+      // limit tilt to max 2.5 degrees for premium feel
+      const tiltX = ((y - centerY) / centerY) * -2.5;
+      const tiltY = ((x - centerX) / centerX) * 2.5;
+      setTilt({ x: tiltX, y: tiltY });
+    }
+  };
+
+  const handleMouseLeave = () => {
+    setIsHovered(false);
+    setTilt({ x: 0, y: 0 });
+  };
+
+  return (
+    <div
+      onMouseMove={handleMouseMove}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={handleMouseLeave}
+      style={{
+        transform: `perspective(1000px) rotateX(${tilt.x}deg) rotateY(${tilt.y}deg) translateZ(0)`,
+        transition: isHovered ? "transform 0.05s linear" : "transform 0.4s ease",
+      }}
+      className={`gsap-reveal-card relative rounded-[28px] p-6 sm:p-8 flex flex-col justify-between overflow-hidden transition-all duration-500 w-full select-none
         ${
           isPopular
-            ? "bg-gradient-to-b from-[#0e1428] to-[#080b14] border border-brand-accent/30 shadow-[0_20px_50px_rgba(212,175,110,0.06)]"
-            : "bg-[#0c1020]/60 backdrop-blur-xl border border-brand-border/40 hover:border-brand-accent/20"
+            ? "bg-[#0b0f20]/90 border border-brand-accent/30 shadow-[0_20px_50px_rgba(212,175,110,0.06)]"
+            : "bg-[#0c1020]/60 backdrop-blur-xl border border-brand-border/40 hover:border-brand-accent/20 shadow-[0_20px_50px_rgba(0,0,0,0.3)]"
         }
       `}
     >
-      {/* Decorative Gold Radial Light behind popular card */}
+      {/* Custom spotlight glow */}
+      {isHovered && (
+        <div
+          className="pointer-events-none absolute -translate-x-1/2 -translate-y-1/2 rounded-full blur-[90px] z-10"
+          style={{
+            left: `${coords.x}px`,
+            top: `${coords.y}px`,
+            width: "250px",
+            height: "250px",
+            background: isPopular
+              ? "radial-gradient(circle, rgba(212,175,110,0.15) 0%, transparent 80%)"
+              : "radial-gradient(circle, rgba(255,255,255,0.05) 0%, transparent 80%)",
+          }}
+        />
+      )}
+
+      {/* Running Border Shimmer for Popular Plan */}
       {isPopular && (
-        <div className="absolute -top-[120px] -right-[120px] w-[240px] h-[240px] rounded-full bg-brand-accent/10 blur-[60px] pointer-events-none" />
+        <svg className="absolute inset-0 w-full h-full pointer-events-none rounded-[28px] z-20" fill="none">
+          <rect
+            x="0.5"
+            y="0.5"
+            width="calc(100% - 1px)"
+            height="calc(100% - 1px)"
+            rx="27.5"
+            stroke="url(#popularBorderShimmer)"
+            strokeWidth="1.5"
+            strokeDasharray="100 250"
+            className="stroke-shimmer-anim"
+          />
+          <defs>
+            <linearGradient id="popularBorderShimmer" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stopColor="#D4AF6E" stopOpacity="0.05"/>
+              <stop offset="50%" stopColor="#F5F0E8" stopOpacity="0.7"/>
+              <stop offset="100%" stopColor="#B8934A" stopOpacity="0.05"/>
+            </linearGradient>
+          </defs>
+        </svg>
       )}
 
       <div>
         {/* Popular Badge */}
         {isPopular && (
-          <div className="absolute top-5 right-5 flex items-center gap-1.5 px-3 py-1 rounded-full bg-brand-accent/15 border border-brand-accent/30 text-brand-accent text-[11px] font-mono tracking-wider uppercase font-medium">
+          <div className="absolute top-5 right-5 flex items-center gap-1.5 px-3 py-1 rounded-full bg-brand-accent/15 border border-brand-accent/30 text-brand-accent text-[11px] font-mono tracking-wider uppercase font-medium shadow-[0_0_12px_rgba(212,175,110,0.15)] animate-pulse">
             <Star className="w-3.5 h-3.5 fill-current" />
             Most Popular
           </div>
         )}
 
         {/* Plan Header */}
-        <div className="mb-6">
+        <div className="mb-6 pr-24">
           <h3 className="text-xl sm:text-2xl font-display font-medium text-white tracking-wide mb-2">
             {name}
           </h3>
@@ -160,7 +340,7 @@ const PricingCard: React.FC<PlanProps> = ({
           </div>
 
           {/* Savings Badge */}
-          {yearlySaving && (
+          {isYearly && yearlySaving && (
             <motion.div
               initial={{ opacity: 0, y: 5 }}
               animate={{ opacity: 1, y: 0 }}
@@ -191,19 +371,13 @@ const PricingCard: React.FC<PlanProps> = ({
       </div>
 
       {/* Button */}
-      <button
+      <PremiumButton
+        variant={isPopular ? "primary" : "secondary"}
         onClick={onCtaClick}
-        className={`w-full py-3.5 px-6 rounded-xl font-mono text-xs uppercase tracking-widest font-semibold transition-all duration-300 relative overflow-hidden cursor-pointer
-          ${
-            isPopular
-              ? "btn-premium-cta cta-shine text-brand-accent border-brand-accent/40 shadow-lg hover:scale-[1.01]"
-              : "bg-white/5 border border-white/10 hover:border-brand-accent/40 text-brand-secondary hover:text-white active:scale-[0.99]"
-          }
-        `}
       >
-        <span className="relative z-10">{ctaText}</span>
-      </button>
-    </motion.div>
+        {ctaText}
+      </PremiumButton>
+    </div>
   );
 };
 
@@ -216,7 +390,111 @@ export default function PricingPage() {
     return params.get("error") === "payment_expired";
   });
 
-  // Navigate back to Home
+  // GSAP animations for elegant reveal transitions on scroll
+  useEffect(() => {
+    if (prefersReducedMotion()) return;
+
+    // 1. Hero Reveal
+    gsap.fromTo(
+      ".gsap-reveal-hero",
+      { opacity: 0, y: 30, filter: "blur(6px)" },
+      {
+        opacity: 1,
+        y: 0,
+        filter: "blur(0px)",
+        duration: 1.1,
+        stagger: 0.15,
+        ease: "power3.out",
+      }
+    );
+
+    // 2. Pricing Toggle Reveal
+    gsap.fromTo(
+      ".gsap-reveal-toggle",
+      { opacity: 0, scale: 0.96, y: 15 },
+      {
+        opacity: 1,
+        scale: 1,
+        y: 0,
+        duration: 0.8,
+        delay: 0.35,
+        ease: "power3.out",
+      }
+    );
+
+    // 3. Pricing Cards Reveal
+    gsap.fromTo(
+      ".gsap-reveal-card",
+      { opacity: 0, y: 40, filter: "blur(4px)" },
+      {
+        scrollTrigger: {
+          trigger: ".gsap-cards-container",
+          start: "top 85%",
+        },
+        opacity: 1,
+        y: 0,
+        filter: "blur(0px)",
+        duration: 1,
+        stagger: 0.18,
+        ease: "power3.out",
+      }
+    );
+
+    // 4. Feature Table Reveal
+    gsap.fromTo(
+      ".gsap-reveal-table",
+      { opacity: 0, y: 30 },
+      {
+        scrollTrigger: {
+          trigger: ".gsap-reveal-table",
+          start: "top 85%",
+        },
+        opacity: 1,
+        y: 0,
+        duration: 1,
+        ease: "power2.out",
+      }
+    );
+
+    // 5. FAQ Reveal
+    gsap.fromTo(
+      ".gsap-reveal-faq",
+      { opacity: 0, y: 25 },
+      {
+        scrollTrigger: {
+          trigger: ".gsap-reveal-faq",
+          start: "top 85%",
+        },
+        opacity: 1,
+        y: 0,
+        duration: 0.9,
+        stagger: 0.08,
+        ease: "power2.out",
+      }
+    );
+
+    // 6. CTA Reveal
+    gsap.fromTo(
+      ".gsap-reveal-cta",
+      { opacity: 0, scale: 0.96, y: 20 },
+      {
+        scrollTrigger: {
+          trigger: ".gsap-reveal-cta",
+          start: "top 90%",
+        },
+        opacity: 1,
+        scale: 1,
+        y: 0,
+        duration: 1.2,
+        ease: "power4.out",
+      }
+    );
+
+    return () => {
+      ScrollTrigger.getAll().forEach((t) => t.kill());
+    };
+  }, []);
+
   const handleNavigateHome = () => {
     navigate("/");
   };
@@ -269,14 +547,36 @@ export default function PricingPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-brand-bg text-brand-text flex flex-col relative overflow-hidden select-none pb-16 sm:pb-24">
+    <div className="min-h-screen bg-brand-bg text-brand-text flex flex-col relative overflow-hidden select-none pb-16 sm:pb-24 radial-vignette">
+      {/* ── CUSTOM STYLE BLOCKS FOR MICRO-INTERACTIONS ─────────────────────── */}
+      <style>{`
+        .radial-vignette {
+          background: radial-gradient(circle at 50% 30%, #0d1222 0%, #080B14 70%);
+        }
+        @keyframes borderStroke {
+          0% { stroke-dashoffset: 0; }
+          100% { stroke-dashoffset: -700; }
+        }
+        .stroke-shimmer-anim {
+          animation: borderStroke 8s linear infinite;
+        }
+      `}</style>
+
+      {/* Subtle Matte/Noise Overlay */}
+      <div
+        className="fixed inset-0 pointer-events-none z-50 opacity-[0.015] mix-blend-overlay"
+        style={{
+          backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")`,
+        }}
+      />
+
       {/* ── BACKGROUND ORNAMENTATION ─────────────────────────────────────────── */}
       {/* Ambient background glows */}
-      <div className="absolute top-[10%] left-1/2 -translate-x-1/2 w-[80vw] max-w-[1200px] h-[500px] bg-brand-accent/5 rounded-full blur-[140px] pointer-events-none z-0" />
+      <div className="absolute top-[8%] left-1/2 -translate-x-1/2 w-[90vw] max-w-[1200px] h-[550px] bg-brand-accent/5 rounded-full blur-[140px] pointer-events-none z-0" />
       <div className="absolute bottom-[20%] right-[-10vw] w-[40vw] h-[40vw] bg-brand-accent/3 rounded-full blur-[120px] pointer-events-none z-0" />
 
       {/* Elegant floating chess pieces for page specific design */}
-      <div className="absolute top-[20%] left-[8%] w-24 h-24 pointer-events-none opacity-40 md:block hidden z-0">
+      <div className="absolute top-[20%] left-[8%] w-24 h-24 pointer-events-none opacity-20 md:block hidden z-0">
         <motion.div
           animate={{
             y: [0, -18, 0],
@@ -292,7 +592,7 @@ export default function PricingPage() {
         </motion.div>
       </div>
 
-      <div className="absolute top-[15%] right-[10%] w-28 h-28 pointer-events-none opacity-30 md:block hidden z-0">
+      <div className="absolute top-[15%] right-[10%] w-28 h-28 pointer-events-none opacity-15 md:block hidden z-0">
         <motion.div
           animate={{
             y: [0, 22, 0],
@@ -308,7 +608,7 @@ export default function PricingPage() {
         </motion.div>
       </div>
 
-      <div className="absolute bottom-[35%] left-[5%] w-28 h-28 pointer-events-none opacity-30 md:block hidden z-0">
+      <div className="absolute bottom-[35%] left-[5%] w-28 h-28 pointer-events-none opacity-15 md:block hidden z-0">
         <motion.div
           animate={{
             y: [0, 20, 0],
@@ -325,7 +625,7 @@ export default function PricingPage() {
         </motion.div>
       </div>
 
-      <div className="absolute bottom-[10%] right-[8%] w-24 h-24 pointer-events-none opacity-40 md:block hidden z-0">
+      <div className="absolute bottom-[10%] right-[8%] w-24 h-24 pointer-events-none opacity-20 md:block hidden z-0">
         <motion.div
           animate={{
             y: [0, -16, 0],
@@ -394,79 +694,67 @@ export default function PricingPage() {
         )}
 
         {/* ── HERO SECTION ────────────────────────────────────────────────────── */}
-        <section className="text-center pt-16 sm:pt-20 pb-12 sm:pb-16 max-w-3xl flex flex-col items-center">
+        <section className="text-center pt-20 sm:pt-24 pb-14 sm:pb-18 max-w-3xl flex flex-col items-center">
           {/* Badge */}
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.5 }}
-            className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#0c1020]/80 border border-brand-border backdrop-blur-sm text-brand-accent text-xs font-sans tracking-wide mb-6 shadow-sm"
-          >
+          <div className="gsap-reveal-hero inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#0c1020]/90 border border-brand-border backdrop-blur-sm text-brand-accent text-xs font-sans tracking-wide mb-8 shadow-sm">
             <Sparkles className="w-3.5 h-3.5" />
             <span>Trusted by thousands of chess players</span>
-          </motion.div>
+          </div>
 
           {/* Heading */}
-          <motion.h1
-            initial={{ opacity: 0, y: 15 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.1 }}
-            className="text-4xl sm:text-5xl md:text-6xl font-display font-medium tracking-tight text-white mb-6 leading-[1.05]"
-          >
+          <h1 className="gsap-reveal-hero text-4xl sm:text-5xl md:text-6xl font-display font-medium tracking-tight text-white mb-6 leading-[1.05]">
             Unlock Your Full <br className="sm:block hidden" />
             <span className="text-gold-gradient font-bold italic">
               Chess Potential
             </span>
-          </motion.h1>
+          </h1>
 
           {/* Subtitle */}
-          <motion.p
-            initial={{ opacity: 0, y: 15 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.2 }}
-            className="text-base sm:text-lg text-brand-secondary font-sans leading-relaxed max-w-2xl px-2"
-          >
+          <p className="gsap-reveal-hero text-base sm:text-lg text-brand-secondary font-sans leading-relaxed max-w-2xl px-2">
             Take your game to the next level with deep Stockfish engine
             analysis, unlimited game reviews, personalized accuracy reports, and
             comprehensive puzzles.
-          </motion.p>
+          </p>
         </section>
 
         {/* ── PRICING TOGGLE ─────────────────────────────────────────────────── */}
-        <section className="mb-14 sm:mb-18 z-20">
-          <div className="bg-[#0c1020]/90 border border-brand-border p-1.5 rounded-2xl flex items-center relative shadow-xl">
-            <button
-              onClick={() => setIsYearly(false)}
-              className={`relative z-10 px-6 py-2.5 rounded-xl font-mono text-xs uppercase tracking-wider font-semibold transition-all duration-300 cursor-pointer min-w-[120px] text-center
-                ${!isYearly ? "text-[#080b14]" : "text-brand-secondary hover:text-white"}
-              `}
-            >
-              {/* Animated active BG slider */}
-              {!isYearly && (
-                <motion.div
-                  layoutId="activeToggle"
-                  className="absolute inset-0 bg-brand-accent rounded-xl -z-10 shadow-lg shadow-brand-accent/20"
-                  transition={{ type: "spring", stiffness: 350, damping: 28 }}
-                />
-              )}
-              Monthly
-            </button>
+        <section className="mb-16 sm:mb-20 z-20 gsap-reveal-toggle">
+          <div className="bg-[#0b0e1a]/95 border border-brand-border/60 p-1.5 rounded-2xl flex items-center relative shadow-[0_15px_30px_rgba(0,0,0,0.65)]">
+            <div className="relative flex items-center">
+              <button
+                onClick={() => setIsYearly(false)}
+                aria-pressed={!isYearly}
+                className={`relative z-10 px-6 py-2.5 rounded-xl font-mono text-xs uppercase tracking-wider font-bold transition-colors duration-300 cursor-pointer min-w-[120px] text-center ${
+                  !isYearly ? "text-[#080b14]" : "text-brand-secondary hover:text-white"
+                }`}
+              >
+                Monthly
+              </button>
 
-            <button
-              onClick={() => setIsYearly(true)}
-              className={`relative z-10 px-6 py-2.5 rounded-xl font-mono text-xs uppercase tracking-wider font-semibold transition-all duration-300 cursor-pointer min-w-[120px] text-center flex items-center justify-center gap-1.5
-                ${isYearly ? "text-[#080b14]" : "text-brand-secondary hover:text-white"}
-              `}
-            >
-              {isYearly && (
-                <motion.div
-                  layoutId="activeToggle"
-                  className="absolute inset-0 bg-brand-accent rounded-xl -z-10 shadow-lg shadow-brand-accent/20"
-                  transition={{ type: "spring", stiffness: 350, damping: 28 }}
-                />
-              )}
-              Yearly
-            </button>
+              <button
+                onClick={() => setIsYearly(true)}
+                aria-pressed={isYearly}
+                className={`relative z-10 px-6 py-2.5 rounded-xl font-mono text-xs uppercase tracking-wider font-bold transition-colors duration-300 cursor-pointer min-w-[120px] text-center flex items-center justify-center gap-1.5 ${
+                  isYearly ? "text-[#080b14]" : "text-brand-secondary hover:text-white"
+                }`}
+              >
+                Yearly
+              </button>
+
+              {/* Single background slider for perfect spring transition */}
+              <motion.div
+                className="absolute top-0 bottom-0 left-0 bg-gradient-to-r from-[#E8C88A] to-[#D4AF6E] rounded-xl -z-0 shadow-[0_4px_12px_rgba(212,175,110,0.25)]"
+                animate={{
+                  x: isYearly ? 120 : 0,
+                  width: 120,
+                }}
+                transition={{
+                  type: "spring",
+                  stiffness: 350,
+                  damping: 26,
+                }}
+              />
+            </div>
 
             {/* Save 20% indicator */}
             <div className="absolute left-[calc(100%+14px)] top-1/2 -translate-y-1/2 whitespace-nowrap bg-brand-accent/15 border border-brand-accent/30 text-brand-accent text-[10px] font-mono tracking-wider uppercase px-2 py-0.5 rounded-md flex items-center gap-1">
@@ -476,58 +764,23 @@ export default function PricingPage() {
         </section>
 
         {/* ── PRICING CARDS ──────────────────────────────────────────────────── */}
-        <section className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl w-full px-4 mb-20 sm:mb-24 z-10">
-          {/* FREE PLAN */}
-          <PricingCard
-            name="Free Plan"
-            price="Free"
-            period=""
-            description="Perfect for casual players looking to play online and solve daily puzzles."
-            features={[
-              "Unlimited Online Games",
-              "Play Against Stockfish",
-              "Daily Puzzles",
-              "Game History",
-              "Public Leaderboards",
-              "Basic Analysis",
-              "Community Access",
-            ]}
-            ctaText="Current Plan"
-            onCtaClick={() =>
-              alert("You are already enjoying our free features!")
-            }
-          />
-
-          {/* PREMIUM PLAN */}
-          <PricingCard
-            name="Premium Plan"
-            price={isYearly ? "$119.99" : "$14.99"}
-            period={isYearly ? "/ year" : "/ month"}
-            yearlySaving={
-              isYearly ? "Save $60 (Equivalent to $9.99/mo)" : undefined
-            }
-            description="Built for ambitious chess players who want unlimited reviews, deep analysis, and tracking."
-            features={[
-              "Unlimited Engine Analysis",
-              "Unlimited Game Reviews",
-              "Advanced Opening Explorer",
-              "Deep Position Evaluation",
-              "Unlimited Puzzle Training",
-              "Performance Insights",
-              "Accuracy Reports",
-              "Premium Themes",
-              "Early Access Features",
-              "Priority Support",
-              "No Ads",
-            ]}
-            ctaText="Upgrade to Premium"
-            isPopular={true}
-            onCtaClick={() => handleUpgrade(isYearly ? "Yearly" : "Monthly")}
-          />
+        <section className="gsap-cards-container grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl w-full px-4 mb-20 sm:mb-24 z-10">
+          {PLANS.map((plan) => (
+            <PricingCard
+              key={plan.id}
+              plan={plan}
+              isYearly={isYearly}
+              onCtaClick={
+                plan.id === "free"
+                  ? () => alert("You are already enjoying our free features!")
+                  : () => handleUpgrade(isYearly ? "Yearly" : "Monthly")
+              }
+            />
+          ))}
         </section>
 
         {/* ── FEATURE COMPARISON ─────────────────────────────────────────────── */}
-        <section className="w-full max-w-4xl px-4 mb-20 sm:mb-28 z-10">
+        <section className="w-full max-w-4xl px-4 mb-24 sm:mb-32 z-10 gsap-reveal-table">
           <div className="text-center mb-10">
             <h2 className="text-2xl sm:text-3xl font-display font-medium text-white mb-3">
               Compare Features
@@ -537,8 +790,7 @@ export default function PricingPage() {
             </p>
           </div>
 
-          <div className="bg-[#0c1020]/60 backdrop-blur-xl border border-brand-border rounded-2xl overflow-hidden shadow-2xl">
-            {/* Desktop Table view */}
+          <div className="bg-[#0c1020]/60 backdrop-blur-xl border border-brand-border rounded-2xl overflow-hidden shadow-[0_24px_60px_rgba(0,0,0,0.5)]">
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse">
                 <thead>
@@ -549,7 +801,7 @@ export default function PricingPage() {
                     <th className="py-5 px-6 text-sm font-mono tracking-wider text-brand-secondary uppercase text-center w-1/4">
                       Free
                     </th>
-                    <th className="py-5 px-6 text-sm font-mono tracking-wider text-brand-accent uppercase text-center w-1/4">
+                    <th className="py-5 px-6 text-sm font-mono tracking-wider text-brand-accent uppercase text-center w-1/4 bg-brand-accent/[0.02] border-l border-brand-border/40">
                       Premium
                     </th>
                   </tr>
@@ -558,12 +810,12 @@ export default function PricingPage() {
                   {featuresList.map((feature, index) => (
                     <tr
                       key={index}
-                      className="hover:bg-white/[0.01] transition-colors duration-150"
+                      className="group/row hover:bg-white/[0.015] transition-all duration-300"
                     >
-                      <td className="py-2 px-6 text-sm font-sans font-medium text-[#e5dfd5]">
+                      <td className="py-4.5 px-6 text-sm font-sans font-medium text-[#e5dfd5] transition-transform duration-300 group-hover/row:translate-x-1.5">
                         {feature.name}
                       </td>
-                      <td className="py-2 px-6 text-center text-sm font-sans text-brand-secondary">
+                      <td className="py-4.5 px-6 text-center text-sm font-sans text-brand-secondary">
                         {typeof feature.free === "boolean" ? (
                           feature.free ? (
                             <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-emerald-500/10 text-emerald-400">
@@ -578,7 +830,7 @@ export default function PricingPage() {
                           </span>
                         )}
                       </td>
-                      <td className="py-4.5 px-6 text-center text-sm font-sans text-brand-accent font-semibold">
+                      <td className="py-4.5 px-6 text-center text-sm font-sans text-brand-accent font-semibold bg-brand-accent/[0.015] border-l border-brand-border/40">
                         {typeof feature.premium === "boolean" ? (
                           feature.premium ? (
                             <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-emerald-500/10 text-emerald-400">
@@ -588,7 +840,7 @@ export default function PricingPage() {
                             <span className="text-brand-secondary/40">—</span>
                           )
                         ) : (
-                          <span className="font-mono text-xs bg-brand-accent/10 border border-brand-accent/20 px-2 py-0.5 rounded text-brand-accent">
+                          <span className="font-mono text-xs bg-brand-accent/10 border border-brand-accent/20 px-2.5 py-1 rounded text-brand-accent">
                             {feature.premium}
                           </span>
                         )}
@@ -602,7 +854,7 @@ export default function PricingPage() {
         </section>
 
         {/* ── FAQ ACCORDION ─────────────────────────────────────────────────── */}
-        <section className="w-full max-w-3xl px-4 mb-20 sm:mb-28 z-10">
+        <section className="w-full max-w-3xl px-4 mb-24 sm:mb-32 z-10">
           <div className="text-center mb-10">
             <h2 className="text-2xl sm:text-3xl font-display font-medium text-white mb-3">
               Frequently Asked Questions
@@ -618,16 +870,18 @@ export default function PricingPage() {
               return (
                 <div
                   key={index}
-                  className="bg-[#0c1020]/60 backdrop-blur-xl border border-brand-border rounded-2xl overflow-hidden transition-all duration-300 hover:border-brand-accent/20"
+                  className="gsap-reveal-faq bg-[#0c1020]/60 backdrop-blur-xl border border-brand-border rounded-2xl overflow-hidden transition-all duration-300 hover:border-brand-accent/20"
                 >
                   <button
                     onClick={() => setOpenFaqIndex(isOpen ? null : index)}
-                    className="w-full flex items-center justify-between text-left py-5 px-6 font-display font-medium text-base sm:text-lg text-white hover:text-brand-accent transition-colors duration-200 cursor-pointer"
+                    aria-expanded={isOpen}
+                    aria-controls={`faq-answer-${index}`}
+                    className="w-full flex items-center justify-between text-left py-5 px-6 font-display font-medium text-base sm:text-lg text-white hover:text-brand-accent transition-colors duration-200 cursor-pointer outline-none focus:ring-1 focus:ring-brand-accent/30"
                   >
                     <span>{faq.q}</span>
                     <motion.span
                       animate={{ rotate: isOpen ? 180 : 0 }}
-                      transition={{ duration: 0.2 }}
+                      transition={{ duration: 0.25, ease: "easeInOut" }}
                       className="text-brand-secondary"
                     >
                       <ChevronDown className="w-5 h-5" />
@@ -637,12 +891,13 @@ export default function PricingPage() {
                   <AnimatePresence initial={false}>
                     {isOpen && (
                       <motion.div
+                        id={`faq-answer-${index}`}
                         initial={{ height: 0, opacity: 0 }}
                         animate={{ height: "auto", opacity: 1 }}
                         exit={{ height: 0, opacity: 0 }}
-                        transition={{ duration: 0.25, ease: "easeInOut" }}
+                        transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
                       >
-                        <div className="px-6 pb-5 pt-1 text-sm sm:text-base text-brand-secondary font-sans leading-relaxed border-t border-brand-border/20">
+                        <div className="px-6 pb-5 pt-1 text-sm sm:text-base text-brand-secondary font-sans leading-relaxed border-t border-brand-border/20 bg-white/[0.005]">
                           {faq.a}
                         </div>
                       </motion.div>
@@ -655,53 +910,67 @@ export default function PricingPage() {
         </section>
 
         {/* ── FINAL CTA SECTION ──────────────────────────────────────────────── */}
-        <section className="w-full max-w-4xl px-4 z-10">
-          <motion.div
-            initial={{ opacity: 0, scale: 0.96 }}
-            whileInView={{ opacity: 1, scale: 1 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6 }}
-            className="rounded-3xl p-8 sm:p-12 text-center relative overflow-hidden bg-gradient-to-b from-[#0e1428]/90 to-[#080b14]/95 border border-brand-accent/20 shadow-[0_20px_50px_rgba(212,175,110,0.04)]"
-          >
+        <section className="w-full max-w-4xl px-4 z-10 gsap-reveal-cta">
+          <div className="rounded-[32px] p-8 sm:p-14 text-center relative overflow-hidden bg-gradient-to-b from-[#0e1428]/95 via-[#080b14]/98 to-[#0b0e1a]/95 border border-brand-accent/20 shadow-[0_24px_60px_rgba(212,175,110,0.04)]">
             {/* Background elements */}
             <div className="absolute top-[-100px] left-[-100px] w-[200px] h-[200px] bg-brand-accent/5 rounded-full blur-3xl pointer-events-none" />
             <div className="absolute bottom-[-100px] right-[-100px] w-[200px] h-[200px] bg-brand-accent/5 rounded-full blur-3xl pointer-events-none" />
 
-            <Trophy className="w-12 h-12 text-brand-accent mx-auto mb-6 drop-shadow-[0_0_10px_rgba(212,175,110,0.3)] animate-pulse" />
+            {/* Floating ambient glowing center spot */}
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[350px] h-[350px] bg-brand-accent/[0.02] rounded-full blur-3xl pointer-events-none" />
+
+            {/* Pulsing Trophy with floating animation */}
+            <motion.div
+              animate={{
+                y: [0, -6, 0],
+                scale: [1, 1.02, 1],
+              }}
+              transition={{
+                duration: 4,
+                repeat: Infinity,
+                ease: "easeInOut",
+              }}
+              className="relative w-16 h-16 mx-auto mb-6 flex items-center justify-center"
+            >
+              <div className="absolute inset-0 rounded-full bg-brand-accent/10 blur-xl animate-pulse" />
+              <Trophy className="w-12 h-12 text-brand-accent relative z-10 drop-shadow-[0_0_15px_rgba(212,175,110,0.4)]" />
+            </motion.div>
 
             <h2 className="text-3xl sm:text-4xl md:text-5xl font-display font-medium text-white mb-4 tracking-tight">
               Ready to Level Up Your Chess?
             </h2>
 
-            <p className="text-sm sm:text-base text-brand-secondary font-sans max-w-xl mx-auto mb-8 leading-relaxed">
+            <p className="text-sm sm:text-base text-brand-secondary font-sans max-w-xl mx-auto mb-10 leading-relaxed">
               Join thousands of chess players analyzing, learning, and improving
               their play daily. Elevate your tactical edge now.
             </p>
 
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-              <button
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 max-w-md mx-auto sm:max-w-none">
+              <PremiumButton
+                variant="primary"
+                showArrow={true}
                 onClick={() => handleUpgrade(isYearly ? "Yearly" : "Monthly")}
-                className="w-full sm:w-auto px-8 py-4 rounded-xl font-mono text-xs uppercase tracking-widest font-semibold btn-premium-cta btn-glow-container btn-glow-accent cta-shine cursor-pointer shadow-lg hover:scale-[1.02] flex items-center justify-center gap-2"
+                className="w-full sm:w-auto px-8 py-4 text-xs font-mono tracking-widest"
               >
-                <span>Start Premium</span>
-                <ArrowRight className="w-4 h-4" />
-              </button>
+                Start Premium
+              </PremiumButton>
 
-              <button
+              <PremiumButton
+                variant="secondary"
                 onClick={handleNavigateHome}
-                className="w-full sm:w-auto px-8 py-4 rounded-xl font-mono text-xs uppercase tracking-widest font-semibold bg-white/5 border border-white/10 hover:border-brand-accent/40 text-brand-secondary hover:text-white transition-all duration-300 cursor-pointer active:scale-[0.99]"
+                className="w-full sm:w-auto px-8 py-4 text-xs font-mono tracking-widest bg-white/5 border border-white/10 hover:border-brand-accent/40 text-brand-secondary hover:text-white"
               >
                 Continue Free
-              </button>
+              </PremiumButton>
             </div>
 
             {/* Micro-guarantees */}
-            <div className="flex items-center justify-center gap-6 mt-8 flex-wrap">
+            <div className="flex items-center justify-center gap-6 mt-10 flex-wrap border-t border-brand-border/30 pt-8">
               <div className="flex items-center gap-1.5 text-xs text-brand-secondary">
                 <ShieldCheck className="w-4 h-4 text-brand-accent" />
                 Secure Payments
               </div>
-              <div className="flex items-center gap-1.5 text-xs text-[#8e8b82]">
+              <div className="flex items-center gap-1.5 text-xs text-brand-secondary">
                 <Gamepad2 className="w-4 h-4 text-brand-accent" />
                 Cancel Anytime
               </div>
@@ -710,9 +979,10 @@ export default function PricingPage() {
                 No Hidden Fees
               </div>
             </div>
-          </motion.div>
+          </div>
         </section>
       </main>
     </div>
   );
 }
+
