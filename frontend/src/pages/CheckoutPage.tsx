@@ -13,7 +13,7 @@ import {
   Info,
   AlertCircle
 } from 'lucide-react';
-import { navigate } from '../hooks/useRoute';
+import { useNavigate, useLocation } from 'react-router';
 import { useSession } from '../hooks/useSession';
 import { AuthModal } from '../components/AuthModal';
 
@@ -44,6 +44,8 @@ const MethodIcon: React.FC<{ type: string }> = ({ type }) => {
 };
 
 export default function CheckoutPage() {
+  const navigate = useNavigate();
+  const location = useLocation();
   const { session, status } = useSession();
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [authModalMode, setAuthModalMode] = useState<'login' | 'register'>('login');
@@ -69,14 +71,14 @@ export default function CheckoutPage() {
 
   useEffect(() => {
     // Detect plan selection from URL query parameter
-    const params = new URLSearchParams(window.location.search);
+    const params = new URLSearchParams(location.search);
     const planParam = params.get('plan');
     if (planParam === 'yearly') {
       setIsYearly(true);
     } else {
       setIsYearly(false);
     }
-  }, [window.location.search]);
+  }, [location.search]);
 
   // Handle open auth modal
   const handleOpenAuth = (mode: 'login' | 'register') => {

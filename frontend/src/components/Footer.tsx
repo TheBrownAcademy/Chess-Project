@@ -1,16 +1,28 @@
 import { useRef } from 'react';
 import { useScrollReveal } from '../hooks/useScrollReveal';
+import { useNavigate, useLocation } from 'react-router';
 
 export default function Footer() {
   const footerRef = useRef<HTMLElement>(null);
   useScrollReveal(footerRef as React.RefObject<Element | null>, { y: 40, duration: 0.7 });
+  const navigate = useNavigate();
+  const location = useLocation();
 
   const handlePlayClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
     e.preventDefault();
-    const demoSection = document.getElementById('interactive-demo');
-    if (demoSection) {
-      demoSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    if (location.pathname === '/') {
+      const demoSection = document.getElementById('interactive-demo');
+      if (demoSection) {
+        demoSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    } else {
+      navigate('/?scroll=interactive-demo');
     }
+  };
+
+  const handlePuzzlesClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    e.preventDefault();
+    navigate('/puzzles');
   };
 
   return (
@@ -59,6 +71,7 @@ export default function Footer() {
             <span style={{ color: 'var(--marble-line)', margin: '0 6px' }}>|</span>
             <a
               href="/puzzles"
+              onClick={handlePuzzlesClick}
               className="nav-link transition-colors duration-300"
               style={{ color: 'var(--text-secondary)' }}
               onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--gold-bright)')}

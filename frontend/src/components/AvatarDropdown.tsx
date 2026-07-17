@@ -1,12 +1,13 @@
 import React, { useState, useEffect, useRef } from "react";
 import { User, LogOut } from "lucide-react";
 import { useSession } from "../hooks/useSession";
-import { navigate } from "../hooks/useRoute";
+import { useNavigate } from "react-router";
 
 export const AvatarDropdown: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
   const { session, signOut } = useSession();
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const navigate = useNavigate();
 
   // Toggle dropdown visibility
   const toggleDropdown = () => setIsOpen((prev) => !prev);
