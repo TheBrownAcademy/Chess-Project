@@ -13,7 +13,7 @@ import { useScrollReveal } from '../hooks/useScrollReveal';
 
 export default function BuiltFor() {
   const headerRef = useRef<HTMLDivElement>(null);
-  const gridRef   = useRef<HTMLDivElement>(null);
+  const gridRef = useRef<HTMLDivElement>(null);
 
   useScrollReveal(headerRef as React.RefObject<Element | null>, { y: 50, duration: 0.8 });
 
@@ -67,7 +67,7 @@ export default function BuiltFor() {
   return (
     <section id="built-for" className="py-20 md:py-28 relative overflow-hidden" style={{ background: 'rgba(8, 11, 20, 0.7)' }}>
       <div className="section-divider absolute top-0 left-0 right-0" aria-hidden="true" />
-      
+
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
 
         {/* Section Header */}
