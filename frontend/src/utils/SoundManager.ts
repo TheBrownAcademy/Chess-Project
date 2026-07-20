@@ -8,6 +8,7 @@ export type SoundName =
   | "illegal"
   | "game-start"
   | "game-end"
+  | "lose"
   | "applause"
   | "button-click";
 
@@ -27,6 +28,9 @@ const SOUND_CONFIG: Record<SoundName, SoundConfig> = {
   illegal: { src: "/sounds/illegal.mp3" },
   "game-start": { src: "/sounds/game-start.mp3" },
   "game-end": { src: "/sounds/game-end.mp3" },
+  // Subtle lose sfx: same file as game-end but played at a noticeably lower
+  // volume so it feels quiet and understated compared to the win celebration.
+  lose: { src: "/sounds/game-end.mp3", volume: 0.35 },
   applause: { src: "/sounds/applause.mp3", allowOverlap: true },
   "button-click": { src: "/sounds/button-click.mp3", allowOverlap: true },
 };
@@ -131,6 +135,11 @@ class SoundManager {
 
   playGameEnd() {
     this.play("game-end");
+  }
+
+  /** Subtle lose sound — played when the player is checkmated in a puzzle. */
+  playLose() {
+    this.play("lose");
   }
 
   playApplause() {
