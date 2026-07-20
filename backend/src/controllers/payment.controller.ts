@@ -77,4 +77,32 @@ export class PaymentController {
       next(error);
     }
   }
+
+  /**
+   * Retrieves checkout session details for the logged-in user to verify success.
+   * GET /api/payments/checkout-session/:sessionId
+   */
+  static async getCheckoutSession(req: Request, res: Response, next: NextFunction) {
+    try {
+      const userId = req.user?.id;
+      const { sessionId } = req.params;
+
+      if (!userId) {
+        return res.status(401).json({ status: "fail", message: "Unauthorized. Session not found." });
+      }
+
+      if (!sessionId) {
+        return res.status(400).json({ status: "fail", message: "Missing checkout session ID." });
+      }
+
+      const details = await PaymentService.getCheckoutSessionDetails(sessionId, userId);
+
+      return res.status(200).json({
+        status: "success",
+        data: details,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
 }

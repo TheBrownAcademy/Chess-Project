@@ -3,6 +3,8 @@ import { motion } from 'framer-motion';
 import { ArrowRight, Mail, Check, Award } from 'lucide-react';
 import { navigate } from '../hooks/useRoute';
 import { Confetti } from '../components/Confetti';
+import { useSession } from '../hooks/useSession';
+import { PaymentService } from '../services/payment';
 
 interface UpgradeDetails {
   billingCycle: 'Monthly' | 'Yearly';
@@ -19,16 +21,83 @@ interface UpgradeDetails {
 }
 
 export default function SuccessfulPage() {
+  const { session } = useSession();
   const [details, setDetails] = useState<UpgradeDetails | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const sessionId = params.get('session_id');
+
+    if (sessionId) {
+      let attempts = 0;
+      const maxAttempts = 15; // 30 seconds max
+      
+      const checkSession = async () => {
+        try {
+          const res = await PaymentService.getCheckoutSession(sessionId);
+          if (res.status === 'success' && res.data) {
+            const data = res.data;
+            
+            if (data.isSubscribed && data.subscription) {
+              const upgradeDetails: UpgradeDetails = {
+                billingCycle: data.subscription.billingInterval === 'year' ? 'Yearly' : 'Monthly',
+                purchaseDate: new Date().toLocaleDateString('en-US', { day: 'numeric', month: 'long', year: 'numeric' }),
+                txnId: data.session.id,
+                selectedPlan: data.subscription.productName,
+                totalPaid: `$${(data.session.amountTotal / 100).toFixed(2)}`,
+                renewalDate: new Date(data.subscription.currentPeriodEnd).toLocaleDateString('en-US', { day: 'numeric', month: 'long', year: 'numeric' }),
+                username: session?.user?.name || 'Grandmaster',
+                email: data.session.customerEmail || session?.user?.email || '',
+                currency: data.session.currency.toUpperCase(),
+                tax: '$0.00',
+                discount: '$0.00'
+              };
+              setDetails(upgradeDetails);
+              setLoading(false);
+              return true;
+            }
+          }
+        } catch (err) {
+          console.error("Error fetching checkout status:", err);
+        }
+        return false;
+      };
+
+      const poll = async () => {
+        const success = await checkSession();
+        if (success) return;
+        
+        attempts++;
+        if (attempts < maxAttempts) {
+          setTimeout(poll, 2000); // Check every 2 seconds
+        } else {
+          setDetails({
+            billingCycle: 'Monthly',
+            purchaseDate: new Date().toLocaleDateString('en-US', { day: 'numeric', month: 'long', year: 'numeric' }),
+            txnId: sessionId,
+            selectedPlan: 'Premium Membership',
+            totalPaid: 'Processing...',
+            renewalDate: 'Pending Verification',
+            username: session?.user?.name || 'Member',
+            email: session?.user?.email || '',
+            currency: 'NZD',
+            tax: '$0.00',
+            discount: '$0.00'
+          });
+          setLoading(false);
+        }
+      };
+      
+      poll();
+      return;
+    }
+
     // Verify payment completion flags (both sessionStorage and in-memory window flag)
-    const isCompleted = sessionStorage.getItem('xlchess_payment_completed') === 'true' && (window as any).xlchess_payment_completed === true;
+    const isCompleted = sessionStorage.getItem('xlchess_payment_completed') === 'true' || (window as any).xlchess_payment_completed === true;
     const stored = sessionStorage.getItem('xlchess_upgrade_success_data');
 
     if (!isCompleted || !stored) {
-      // Redirect unauthorized direct access back to pricing page with error parameter
       navigate('/pricing?error=payment_expired');
       return;
     }
@@ -41,7 +110,7 @@ export default function SuccessfulPage() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [session]);
 
   if (loading) {
     return (

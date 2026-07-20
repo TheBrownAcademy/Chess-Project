@@ -3,7 +3,7 @@ import { env } from "../../config/env.js";
 import { PaymentGateway, WebhookEventPayload } from "./payment-gateway.interface.js";
 
 const stripe = new Stripe(env.STRIPE_SECRET_KEY || "", {
-  apiVersion: "2025-01-16.acacia" as any,
+  apiVersion: "2026-06-24.dahlia" as any,
 });
 
 export class StripeGateway implements PaymentGateway {
@@ -61,5 +61,10 @@ export class StripeGateway implements PaymentGateway {
       eventType: event.type,
       payload: event.data.object,
     };
+  }
+
+  async retrieveCheckoutSession(sessionId: string): Promise<any> {
+    console.log(`[StripeGateway]: Retrieving checkout session details for session ID: ${sessionId}`);
+    return await stripe.checkout.sessions.retrieve(sessionId);
   }
 }

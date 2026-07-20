@@ -197,4 +197,58 @@ export class PaymentService {
 
     return { received: true, eventId: gatewayEventId, type: eventType, status: "processed" };
   }
+
+  /**
+   * Retrieves secure details of a checkout session for verification.
+   */
+  static async getCheckoutSessionDetails(sessionId: string, userId: string): Promise<any> {
+    const gateway = this.getGateway();
+    const session = await gateway.retrieveCheckoutSession(sessionId);
+
+    if (!session) {
+      throw new Error("Billing session not found.");
+    }
+
+    // Security check: ensure metadata belongs to the authenticated user
+    if (session.metadata?.userId !== userId) {
+      const user = await prisma.user.findUnique({
+        where: { id: userId },
+        select: { gatewayCustomerId: true },
+      });
+      if (!user || user.gatewayCustomerId !== session.customer) {
+        throw new Error("Access denied. Transaction profile mismatch.");
+      }
+    }
+
+    // Retrieve active subscription from the database (synced by webhooks)
+    const subscription = await prisma.subscription.findFirst({
+      where: {
+        userId,
+        status: { in: ["ACTIVE", "TRIALING"] },
+      },
+      include: {
+        product: true,
+      },
+      orderBy: { createdAt: "desc" },
+    });
+
+    return {
+      session: {
+        id: session.id,
+        paymentStatus: session.payment_status,
+        amountTotal: session.amount_total,
+        currency: session.currency,
+        customerEmail: session.customer_details?.email || null,
+      },
+      isSubscribed: !!subscription,
+      subscription: subscription ? {
+        id: subscription.id,
+        status: subscription.status,
+        currentPeriodEnd: subscription.currentPeriodEnd,
+        productName: subscription.product.name,
+        priceAmount: subscription.product.priceAmount,
+        billingInterval: subscription.product.billingInterval,
+      } : null,
+    };
+  }
 }

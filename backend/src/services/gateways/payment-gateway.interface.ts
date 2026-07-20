@@ -35,4 +35,9 @@ export interface PaymentGateway {
     signature: string,
     webhookSecret: string
   ): Promise<WebhookEventPayload>;
+
+  /**
+   * Retrieves full checkout session details from the provider.
+   */
+  retrieveCheckoutSession(sessionId: string): Promise<any>;
 }

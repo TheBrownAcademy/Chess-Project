@@ -27,6 +27,7 @@ import PuzzlePage from './pages/PuzzlePage';
 import ProfilePage from './pages/ProfilePage';
 import PricingPage from './pages/PricingPage';
 import SuccessfulPage from './pages/SuccessfulPage';
+import FailedPage from './pages/FailedPage';
 import CheckoutPage from './pages/CheckoutPage';
 import { useRoute } from './hooks/useRoute';
 
@@ -61,7 +62,8 @@ function App() {
   const isPuzzlesPage = normalizedPath === '/puzzles' || window.location.hash.startsWith('#/puzzles');
   const isProfilePage = normalizedPath === '/profile';
   const isPricingPage = normalizedPath === '/pricing' || window.location.hash.startsWith('#/pricing');
-  const isSuccessfulPage = normalizedPath === '/successful' || window.location.hash.startsWith('#/successful');
+  const isSuccessfulPage = normalizedPath === '/successful' || normalizedPath === '/payment/success' || window.location.hash.startsWith('#/successful') || window.location.hash.startsWith('#/payment/success');
+  const isFailedPage = normalizedPath === '/payment/failed' || window.location.hash.startsWith('#/payment/failed');
   const isCheckoutPage = normalizedPath === '/payment' || window.location.hash.startsWith('#/payment');
 
   useEffect(() => {
@@ -97,6 +99,8 @@ function App() {
             <PricingPage />
           ) : isSuccessfulPage ? (
             <SuccessfulPage />
+          ) : isFailedPage ? (
+            <FailedPage />
           ) : isCheckoutPage ? (
             <CheckoutPage />
           ) : (

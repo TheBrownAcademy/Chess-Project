@@ -39,4 +39,15 @@ export class PayPalGateway implements PaymentGateway {
       }
     };
   }
+
+  async retrieveCheckoutSession(sessionId: string): Promise<any> {
+    console.log(`[PayPalGateway]: Stub retrieveCheckoutSession for session ${sessionId}`);
+    return {
+      id: sessionId,
+      payment_status: "paid",
+      amount_total: 1000,
+      currency: "nzd",
+      metadata: { userId: "mock-user-id" },
+    };
+  }
 }
