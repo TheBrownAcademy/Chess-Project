@@ -12,21 +12,24 @@ import { useButtonGlow } from '../hooks/useButtonGlow';
 import { gsap, dur, ease } from '../utils/gsapConfig';
 import HeroPuzzle from './HeroPuzzle';
 import { AuthModal } from './AuthModal';
+import { useSearchParams } from 'react-router';
 
 export default function Hero() {
   // Authentication states
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalMode, setModalMode] = useState<"login" | "register">("login");
+  const [searchParams, setSearchParams] = useSearchParams();
 
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    if (params.get("login") === "true") {
+    if (searchParams.get("login") === "true") {
       setModalMode("login");
       setIsModalOpen(true);
-      const cleanUrl = window.location.pathname;
-      window.history.replaceState({}, "", cleanUrl);
+      
+      const newParams = new URLSearchParams(searchParams);
+      newParams.delete("login");
+      setSearchParams(newParams, { replace: true });
     }
-  }, []);
+  }, [searchParams, setSearchParams]);
 
   // ── Animation refs ────────────────────────────────────────────────────────
   const heroRef = useRef<HTMLElement>(null);

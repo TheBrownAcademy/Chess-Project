@@ -1,5 +1,6 @@
 import React, { createContext, useState, useEffect } from "react";
 import type { Session } from "@auth/core/types";
+import { useNavigate } from "react-router";
 
 export type AuthStatus = "authenticated" | "unauthenticated" | "loading";
 
@@ -22,6 +23,7 @@ export const SessionContext = createContext<SessionContextType | undefined>(unde
 export const SessionProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [session, setSession] = useState<Session | null>(null);
   const [status, setStatus] = useState<AuthStatus>("loading");
+  const navigate = useNavigate();
 
   const fetchSession = async (): Promise<Session | null> => {
     try {
@@ -120,11 +122,12 @@ export const SessionProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
       setSession(null);
       setStatus("unauthenticated");
-      window.location.href = "/";
+      navigate("/", { replace: true });
     } catch (error) {
       console.error("Error during sign out:", error);
-      // Fallback redirect if fetch fails
-      window.location.href = "/api/auth/signout";
+      setSession(null);
+      setStatus("unauthenticated");
+      navigate("/", { replace: true });
     }
   };
 

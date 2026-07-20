@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { ArrowRight, Mail, Check, Award } from 'lucide-react';
-import { navigate } from '../hooks/useRoute';
+import { useNavigate } from 'react-router';
 import { Confetti } from '../components/Confetti';
 
 interface UpgradeDetails {
@@ -19,6 +19,7 @@ interface UpgradeDetails {
 }
 
 export default function SuccessfulPage() {
+  const navigate = useNavigate();
   const [details, setDetails] = useState<UpgradeDetails | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -41,7 +42,16 @@ export default function SuccessfulPage() {
     } finally {
       setLoading(false);
     }
-  }, []);
+
+    return () => {
+      // Clean up payment status on navigate away (unmount)
+      try {
+        sessionStorage.removeItem('xlchess_payment_completed');
+        sessionStorage.removeItem('xlchess_upgrade_success_data');
+      } catch (e) {}
+      (window as any).xlchess_payment_completed = false;
+    };
+  }, [navigate]);
 
   if (loading) {
     return (
