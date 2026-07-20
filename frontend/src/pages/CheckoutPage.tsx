@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Lock, 
-  CreditCard, 
   Tag, 
   Check, 
   Trophy,
@@ -18,32 +17,6 @@ import { useSession } from '../hooks/useSession';
 import { AuthModal } from '../components/AuthModal';
 import { PaymentService } from '../services/payment';
 
-// Professional flat payment method icons
-const MethodIcon: React.FC<{ type: string }> = ({ type }) => {
-  switch (type) {
-    case 'card':
-      return <CreditCard className="w-5 h-5" />;
-    case 'paypal':
-      return (
-        <span className="font-sans font-bold text-xs italic text-blue-400">PayPal</span>
-      );
-    case 'gpay':
-      return (
-        <span className="font-sans font-bold text-xs tracking-tight text-white bg-white/10 px-1.5 py-0.5 rounded">GPay</span>
-      );
-    case 'applepay':
-      return (
-        <span className="font-sans font-bold text-xs tracking-tight text-white bg-white/10 px-1.5 py-0.5 rounded"> Pay</span>
-      );
-    case 'stripe':
-      return (
-        <span className="font-sans font-extrabold text-xs tracking-wide text-indigo-400">stripe</span>
-      );
-    default:
-      return null;
-  }
-};
-
 export default function CheckoutPage() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -55,16 +28,9 @@ export default function CheckoutPage() {
   const [isYearly, setIsYearly] = useState(false);
   
   // Checkout States
-  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<'card' | 'paypal' | 'gpay' | 'applepay' | 'stripe'>('card');
   const [couponCode, setCouponCode] = useState('');
   const [couponStatus, setCouponStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const [isProcessing, setIsProcessing] = useState(false);
-
-  // Form Inputs
-  const [cardName, setCardName] = useState('');
-  const [cardNumber, setCardNumber] = useState('');
-  const [cardExpiry, setCardExpiry] = useState('');
-  const [cardCvv, setCardCvv] = useState('');
 
   // Order Details
   const [orderNumber] = useState(() => `ORD-${Math.random().toString(36).substr(2, 9).toUpperCase()}`);
@@ -134,16 +100,11 @@ export default function CheckoutPage() {
 
   // Complete checkout flow
   const handleProceedToPayment = async () => {
-    if (selectedPaymentMethod === 'paypal') {
-      alert("PayPal integration is coming soon. Please select Card or Stripe to proceed.");
-      return;
-    }
-
     setIsProcessing(true);
     
     try {
-      const planId = isYearly ? "pro_yearly" : "pro_monthly";
-      const response = await PaymentService.createCheckoutSession(planId);
+      const plan = isYearly ? "pro_yearly" : "pro_monthly";
+      const response = await PaymentService.createCheckoutSession(plan);
       
       if (response.status === "success" && response.checkoutUrl) {
         // Securely redirect customer to Stripe hosted checkout page
@@ -318,7 +279,7 @@ export default function CheckoutPage() {
               
               <div className="flex justify-between items-center mb-6">
                 <h3 className="text-base sm:text-lg font-display font-medium text-white tracking-wide">
-                  1. Account Information
+                   Account Information
                 </h3>
                 <button
                   onClick={() => navigate('/profile')}
@@ -379,7 +340,7 @@ export default function CheckoutPage() {
             {/* 2. Membership Details Card */}
             <div className="bg-[#0c1020]/60 backdrop-blur-xl border border-brand-border rounded-2xl p-6 text-left">
               <h3 className="text-base sm:text-lg font-display font-medium text-white tracking-wide mb-5">
-                2. Membership Details
+                 Membership Details
               </h3>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 border-b border-brand-border/40 pb-5 mb-4">
@@ -418,109 +379,11 @@ export default function CheckoutPage() {
               </div>
             </div>
 
-            {/* 3. Payment Method Card */}
-            <div className="bg-[#0c1020]/60 backdrop-blur-xl border border-brand-border rounded-2xl p-6 text-left">
-              <h3 className="text-base sm:text-lg font-display font-medium text-white tracking-wide mb-5">
-                3. Payment Method
-              </h3>
 
-              {/* Selectable Tabs */}
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3 mb-6">
-                {(['card', 'stripe', 'paypal', 'gpay', 'applepay'] as const).map((method) => (
-                  <button
-                    key={method}
-                    onClick={() => setSelectedPaymentMethod(method)}
-                    className={`p-3.5 rounded-xl border flex flex-col items-center justify-center gap-2 text-center transition-all duration-300 cursor-pointer group hover:scale-[1.02]
-                      ${selectedPaymentMethod === method 
-                        ? 'border-brand-accent bg-brand-accent/5 text-white shadow-[0_0_12px_rgba(212,175,110,0.08)]' 
-                        : 'border-brand-border bg-white/[0.02] text-brand-secondary hover:border-brand-border/80 hover:text-white'
-                      }
-                    `}
-                  >
-                    <MethodIcon type={method} />
-                    <span className="text-[10px] font-mono uppercase tracking-wide group-hover:text-white capitalize">
-                      {method === 'card' ? 'Card' : method}
-                    </span>
-                  </button>
-                ))}
-              </div>
-
-              {/* Interactive payment form depending on method */}
-              <div className="bg-brand-surface/40 border border-brand-border rounded-xl p-5 sm:p-6">
-                {selectedPaymentMethod === 'card' ? (
-                  <div className="space-y-4">
-                    <div>
-                      <label className="text-[10px] font-mono text-brand-secondary uppercase tracking-wider block mb-1">Cardholder Name</label>
-                      <input
-                        type="text"
-                        placeholder="Grandmaster Magnus"
-                        value={cardName}
-                        onChange={(e) => setCardName(e.target.value)}
-                        className="w-full bg-[#080b14]/80 border border-brand-border rounded-lg py-2.5 px-3 text-sm text-white placeholder-brand-secondary/40 focus:outline-none focus:border-brand-accent/60 font-sans transition-all duration-200"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="text-[10px] font-mono text-brand-secondary uppercase tracking-wider block mb-1">Card Number</label>
-                      <div className="relative">
-                        <input
-                          type="text"
-                          placeholder="••••  ••••  ••••  ••••"
-                          value={cardNumber}
-                          onChange={(e) => setCardNumber(e.target.value)}
-                          maxLength={19}
-                          className="w-full bg-[#080b14]/80 border border-brand-border rounded-lg py-2.5 pl-10 pr-3 text-sm text-white placeholder-brand-secondary/40 focus:outline-none focus:border-brand-accent/60 font-mono transition-all duration-200"
-                        />
-                        <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-brand-secondary/50">
-                          <CreditCard className="w-4 h-4" />
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <label className="text-[10px] font-mono text-brand-secondary uppercase tracking-wider block mb-1">Expiration Date</label>
-                        <input
-                          type="text"
-                          placeholder="MM / YY"
-                          value={cardExpiry}
-                          onChange={(e) => setCardExpiry(e.target.value)}
-                          maxLength={5}
-                          className="w-full bg-[#080b14]/80 border border-brand-border rounded-lg py-2.5 px-3 text-sm text-white placeholder-brand-secondary/40 focus:outline-none focus:border-brand-accent/60 font-mono text-center transition-all duration-200"
-                        />
-                      </div>
-
-                      <div>
-                        <label className="text-[10px] font-mono text-brand-secondary uppercase tracking-wider block mb-1">CVV / CVC</label>
-                        <input
-                          type="password"
-                          placeholder="•••"
-                          value={cardCvv}
-                          onChange={(e) => setCardCvv(e.target.value)}
-                          maxLength={4}
-                          className="w-full bg-[#080b14]/80 border border-brand-border rounded-lg py-2.5 px-3 text-sm text-white placeholder-brand-secondary/40 focus:outline-none focus:border-brand-accent/60 font-mono text-center transition-all duration-200"
-                        />
-                      </div>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="py-6 text-center space-y-4">
-                    <p className="text-sm font-sans text-brand-secondary max-w-sm mx-auto">
-                      Clicking "Proceed to Payment" will open the secure sandbox for <span className="font-semibold text-white capitalize">{selectedPaymentMethod}</span>.
-                    </p>
-                    <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded bg-white/5 border border-white/10 text-white font-mono text-xs capitalize">
-                      <ShieldCheck className="w-4 h-4 text-brand-accent" />
-                      {selectedPaymentMethod} integration active
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* 4. Coupon Section Card */}
+            {/* 3. Coupon Section Card */}
             <div className="bg-[#0c1020]/60 backdrop-blur-xl border border-brand-border rounded-2xl p-6 text-left">
               <h3 className="text-base sm:text-lg font-display font-medium text-white tracking-wide mb-4">
-                4. Promo Code
+                 Promo Code
               </h3>
 
               <form onSubmit={handleApplyCoupon} className="flex gap-3 max-w-md w-full items-start">
@@ -673,7 +536,7 @@ export default function CheckoutPage() {
 
               <div className="text-center text-[10px] font-mono text-brand-secondary flex items-center justify-center gap-1.5 mb-6">
                 <Lock className="w-3 h-3 text-brand-accent" />
-                🔒 Secure payment powered by Stripe
+                Secure payment powered by Stripe
               </div>
 
               {/* Accepted Payments Grid */}
@@ -685,7 +548,6 @@ export default function CheckoutPage() {
                   <span className="text-[10px] font-mono tracking-tight font-extrabold">VISA</span>
                   <span className="text-[10px] font-mono tracking-tight font-extrabold">mastercard</span>
                   <span className="text-[10px] font-mono tracking-tight font-extrabold">AMEX</span>
-                  <span className="text-[10px] font-mono tracking-tight font-extrabold">PayPal</span>
                   <span className="text-[10px] font-mono tracking-tight font-extrabold font-sans">GPay</span>
                   <span className="text-[10px] font-mono tracking-tight font-extrabold font-sans">Apple Pay</span>
                 </div>

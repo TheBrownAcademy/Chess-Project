@@ -10,17 +10,18 @@ export class PaymentController {
   static async createCheckoutSession(req: Request, res: Response, next: NextFunction) {
     try {
       const userId = req.user?.id;
-      const { planId } = req.body as { planId: SubscriptionTier };
+      const { plan, planId } = req.body as { plan?: string; planId?: string };
+      const selectedPlan = plan || planId;
 
       if (!userId) {
         return res.status(401).json({ status: "fail", message: "Unauthorized. Session not found." });
       }
 
-      if (!planId || !["pro_monthly", "pro_yearly"].includes(planId)) {
+      if (!selectedPlan || !["pro_monthly", "pro_yearly"].includes(selectedPlan)) {
         return res.status(400).json({ status: "fail", message: "Invalid or missing billing plan ID." });
       }
 
-      const checkoutUrl = await PaymentService.createCheckoutSession(userId, planId);
+      const checkoutUrl = await PaymentService.createCheckoutSession(userId, selectedPlan);
 
       return res.status(200).json({
         status: "success",

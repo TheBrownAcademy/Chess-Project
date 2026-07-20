@@ -31,7 +31,6 @@ export const env = {
   CLIENT_ORIGIN: process.env.CLIENT_ORIGIN || "http://localhost:5173",
   
   // Payment variables (placeholders/infrastructure)
-  PAYMENT_PROVIDER: process.env.PAYMENT_PROVIDER || "stripe",
   STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY,
   STRIPE_PUBLISHABLE_KEY: process.env.STRIPE_PUBLISHABLE_KEY,
   STRIPE_WEBHOOK_SECRET: process.env.STRIPE_WEBHOOK_SECRET,
