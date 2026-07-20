@@ -2169,61 +2169,95 @@ export default function HeroPuzzle() {
                         <MoveAnnotation activeAnnotation={activeAnnotation} />
                       )}
 
-                      {/* Board coordinate letters & numbers */}
-                      {isActive &&
-                        ["a", "b", "c", "d", "e", "f", "g", "h"].map(
-                          (file, fi) => (
+                      {/* ── Board coordinate notation (Chess.com style) ───────────────────
+                           • File letters (a–h): bottom-right corner of each square
+                             in the bottom rank only.
+                           • Rank numbers (8–1): top-left corner of each square
+                             in the leftmost file only.
+                           • Color alternates with the square background:
+                               dark square  → light label  (#e8eec9 / cream)
+                               light square → dark label   (#769656 / green)
+                           • Engraved text-shadow: inset shadow with no glow.
+                           • squareSize is available from the outer scope.
+                      ──────────────────────────────────────────────────────────────── */}
+                      {isActive && (() => {
+                        // Board is always White's perspective for these puzzles
+                        // (a=col0, h=col7; rank8=row0, rank1=row7)
+                        const FILES = ["a", "b", "c", "d", "e", "f", "g", "h"];
+                        const RANKS = ["8", "7", "6", "5", "4", "3", "2", "1"];
+
+                        // ── Colors ──────────────────────────────────────────────────────────
+                        // Light/cream squares → rich green label (contrasts the pale square)
+                        // Dark/green squares  → warm cream label (contrasts the dark square)
+                        const ON_LIGHT = "#5C7D3A"; // deep green on cream square
+                        const ON_DARK = "#FFF8E5"; // warm cream on green square
+
+                        // ── Engraved shadows ─────────────────────────────────────────────────
+                        // For text on a LIGHT square: stamp it down with a dark undercut
+                        const engraveOnLight =
+                          "0 2px 1px rgba(0,0,0,.45), 0 -1px 0 rgba(255,255,255,.75)";
+
+                        const engraveOnDark =
+                          "0 2px 1px rgba(0,0,0,.85), 0 -1px 0 rgba(255,255,255,.35)";
+
+                        const baseStyle: React.CSSProperties = {
+                          position: "absolute",
+                          fontFamily: "Inter, system-ui, sans-serif",
+                          fontSize: "9.5px",
+                          fontWeight: 700,
+                          lineHeight: 1,
+                          pointerEvents: "none",
+                          userSelect: "none",
+                          zIndex: 25,
+                        };
+
+                        const nodes: React.ReactNode[] = [];
+
+                        const isDarkSquare = (row: number, col: number) => (row + col) % 2 === 0;
+                        // ── File letters: bottom-right of each square on bottom rank ────────
+                        // Row 7 = rank 1: a1 = light, b1 = dark, c1 = light …
+                        FILES.forEach((file, col) => {
+                          const isDark = ((7 + col) % 2) === 1;
+                          nodes.push(
                             <span
                               key={`file-${file}`}
                               aria-hidden="true"
                               style={{
-                                position: "absolute",
+                                ...baseStyle,
                                 bottom: "2px",
-                                left: `calc(${fi * 12.5}% + 2px)`,
-                                fontFamily: "Inter, system-ui, sans-serif",
-                                fontSize: "15px",
-                                fontWeight: 700,
-                                color: fi % 2 === 0 ? "#5e7a44" : "#c8c8a6",
-                                textShadow:
-                                  "0px -1px 1px rgba(0,0,0,0.35), 0px 1px 1px rgba(255,255,255,0.4)",
-                                opacity: 0.92,
-                                pointerEvents: "none",
-                                userSelect: "none",
-                                zIndex: 25,
-                                lineHeight: 1,
+                                right: `calc(${(7 - col) * 12.5}% + 2px)`,
+                                color: isDark ? ON_DARK : ON_LIGHT,
+                                // textShadow: isDark ? engraveOnDark : engraveOnLight,
                               }}
                             >
                               {file}
                             </span>
-                          ),
-                        )}
-                      {isActive &&
-                        ["8", "7", "6", "5", "4", "3", "2", "1"].map(
-                          (rank, ri) => (
+                          );
+                        });
+
+                        // ── Rank numbers: top-left of each square on left file ───────────────
+                        // Col 0 = file a: a8=dark(row0), a7=light(row1), a6=dark(row2) …
+                        RANKS.forEach((rank, row) => {
+                          const isDark = (row + 0) % 2 !== 0;
+                          nodes.push(
                             <span
                               key={`rank-${rank}`}
                               aria-hidden="true"
                               style={{
-                                position: "absolute",
-                                top: `calc(${ri * 12.5}% + 2px)`,
+                                ...baseStyle,
+                                top: `calc(${row * 12.5}% + 2px)`,
                                 left: "2px",
-                                fontFamily: "Inter, system-ui, sans-serif",
-                                fontSize: "15px",
-                                fontWeight: 700,
-                                color: ri % 2 === 0 ? "#c8c8a6" : "#5e7a44",
-                                textShadow:
-                                  "0px -1px 1px rgba(0,0,0,0.35), 0px 1px 1px rgba(255,255,255,0.4)",
-                                opacity: 0.92,
-                                pointerEvents: "none",
-                                userSelect: "none",
-                                zIndex: 25,
-                                lineHeight: 1,
+                                color: isDark ? ON_DARK : ON_LIGHT,
+                                // textShadow: isDark ? engraveOnDark : engraveOnLight,
                               }}
                             >
                               {rank}
                             </span>
-                          ),
-                        )}
+                          );
+                        });
+
+                        return nodes;
+                      })()}
                     </div>
                   </div>
                 </motion.div>
@@ -2248,11 +2282,10 @@ export default function HeroPuzzle() {
               <button
                 key={i}
                 onClick={() => toSlide(i)}
-                className={`rounded-full transition-all duration-300 ${
-                  activeIndex === i
-                    ? "w-5 h-1.5 bg-[#D4AF6E]"
-                    : "w-1.5 h-1.5 bg-brand-secondary/40 hover:bg-brand-secondary"
-                }`}
+                className={`rounded-full transition-all duration-300 ${activeIndex === i
+                  ? "w-5 h-1.5 bg-[#D4AF6E]"
+                  : "w-1.5 h-1.5 bg-brand-secondary/40 hover:bg-brand-secondary"
+                  }`}
               />
             ))}
           </div>
@@ -2285,11 +2318,10 @@ export default function HeroPuzzle() {
             className={`
               flex flex-col items-center px-4 py-1 rounded-xl border
               transition-all duration-500
-              ${
-                (activeIndex === 0 && phase0 === "SUCCESS") ||
+              ${(activeIndex === 0 && phase0 === "SUCCESS") ||
                 (activeIndex === 1 && phase1 === "solved")
-                  ? "border-[rgba(212,175,110,0.5)] text-[#D4AF6E] shadow-lg shadow-[rgba(212,175,110,0.15)]"
-                  : "bg-[#0C1020] border-[rgba(212,175,110,0.12)] text-white"
+                ? "border-[rgba(212,175,110,0.5)] text-[#D4AF6E] shadow-lg shadow-[rgba(212,175,110,0.15)]"
+                : "bg-[#0C1020] border-[rgba(212,175,110,0.12)] text-white"
               }
             `}
           >
@@ -2414,13 +2446,13 @@ export default function HeroPuzzle() {
               phase1 === "black_responding" ||
               phase1 === "awaiting_mate" ||
               phase1 === "failed") && (
-              <>
-                <button
-                  onClick={() => {
-                    cleanupGame();
-                    initGame(1);
-                  }}
-                  className="
+                <>
+                  <button
+                    onClick={() => {
+                      cleanupGame();
+                      initGame(1);
+                    }}
+                    className="
                     flex-1 flex items-center justify-center gap-2
                     px-4 py-2.5 rounded-lg
                     font-sans text-sm font-semibold
@@ -2430,13 +2462,13 @@ export default function HeroPuzzle() {
                     transition-all duration-200
                     btn-glow-container btn-glow-surface
                   "
-                >
-                  <RotateCcw className="w-4 h-4 text-[#D4AF6E]" />
-                  Reset Puzzle
-                </button>
-                <button
-                  onClick={handleSolve1}
-                  className="
+                  >
+                    <RotateCcw className="w-4 h-4 text-[#D4AF6E]" />
+                    Reset Puzzle
+                  </button>
+                  <button
+                    onClick={handleSolve1}
+                    className="
                     flex-1 flex items-center justify-center gap-2
                     px-4 py-2.5 rounded-lg
                     font-sans text-sm font-semibold
@@ -2446,12 +2478,12 @@ export default function HeroPuzzle() {
                     transition-all duration-200
                     btn-glow-container btn-glow-surface
                   "
-                >
-                  <Play className="w-4 h-4 text-[#D4AF6E]" />
-                  Solve Puzzle
-                </button>
-              </>
-            )}
+                  >
+                    <Play className="w-4 h-4 text-[#D4AF6E]" />
+                    Solve Puzzle
+                  </button>
+                </>
+              )}
             {phase1 === "solved" && (
               <button
                 onClick={handleReplayOriginal}
@@ -2493,13 +2525,13 @@ export default function HeroPuzzle() {
             {(phase2 === "idle" ||
               phase2 === "awaiting_move" ||
               phase2 === "failed") && (
-              <>
-                <button
-                  onClick={() => {
-                    cleanupGame();
-                    initGame(2);
-                  }}
-                  className="
+                <>
+                  <button
+                    onClick={() => {
+                      cleanupGame();
+                      initGame(2);
+                    }}
+                    className="
                     flex-1 flex items-center justify-center gap-2
                     px-4 py-2.5 rounded-lg
                     font-sans text-sm font-semibold
@@ -2509,12 +2541,12 @@ export default function HeroPuzzle() {
                     transition-all duration-200
                     btn-glow-container btn-glow-surface
                   "
-                >
-                  <RotateCcw className="w-4 h-4 text-[#D4AF6E]" />
-                  Reset Puzzle
-                </button>
-              </>
-            )}
+                  >
+                    <RotateCcw className="w-4 h-4 text-[#D4AF6E]" />
+                    Reset Puzzle
+                  </button>
+                </>
+              )}
             {phase2 === "solved" && (
               <button
                 onClick={() => {
@@ -2559,13 +2591,13 @@ export default function HeroPuzzle() {
             {(phase3 === "idle" ||
               phase3 === "awaiting_move" ||
               phase3 === "failed") && (
-              <>
-                <button
-                  onClick={() => {
-                    cleanupGame();
-                    initGame(3);
-                  }}
-                  className="
+                <>
+                  <button
+                    onClick={() => {
+                      cleanupGame();
+                      initGame(3);
+                    }}
+                    className="
                     flex-1 flex items-center justify-center gap-2
                     px-4 py-2.5 rounded-lg
                     font-sans text-sm font-semibold
@@ -2575,12 +2607,12 @@ export default function HeroPuzzle() {
                     transition-all duration-200
                     btn-glow-container btn-glow-surface
                   "
-                >
-                  <RotateCcw className="w-4 h-4 text-[#D4AF6E]" />
-                  Reset Puzzle
-                </button>
-              </>
-            )}
+                  >
+                    <RotateCcw className="w-4 h-4 text-[#D4AF6E]" />
+                    Reset Puzzle
+                  </button>
+                </>
+              )}
             {phase3 === "solved" && (
               <button
                 onClick={() => {
