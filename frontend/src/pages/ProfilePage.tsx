@@ -17,6 +17,7 @@ import {
 import { useSession } from "../hooks/useSession";
 import { navigate } from "../hooks/useRoute";
 import { AvatarDropdown } from "../components/AvatarDropdown";
+import { PaymentService } from "../services/payment";
 
 interface PlatformButtonProps {
   name: string;
@@ -114,6 +115,15 @@ interface UserProfile {
   image: string | null;
   createdAt: string;
   accounts: Array<{ provider: string }>;
+  subscriptions?: Array<{
+    id: string;
+    status: string;
+    currentPeriodEnd: string;
+    product: {
+      name: string;
+      billingInterval: string;
+    };
+  }>;
 }
 
 export default function ProfilePage() {
@@ -122,6 +132,24 @@ export default function ProfilePage() {
   const [loadingProfile, setLoadingProfile] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [loggingOutAll, setLoggingOutAll] = useState(false);
+  const [managingBilling, setManagingBilling] = useState(false);
+
+  const handleManageSubscription = async () => {
+    setManagingBilling(true);
+    try {
+      const res = await PaymentService.createBillingPortalSession();
+      if (res.status === "success" && res.portalUrl) {
+        window.location.href = res.portalUrl;
+      } else {
+        alert(res.message || "Failed to load customer billing portal. Please try again later.");
+      }
+    } catch (e) {
+      console.error("[ProfilePage] Customer billing portal load error:", e);
+      alert("An unexpected error occurred while loading billing portal. Please try again.");
+    } finally {
+      setManagingBilling(false);
+    }
+  };
 
   const handleLogoutAll = async () => {
     if (window.confirm("Are you sure you want to sign out from all devices? This will invalidate all your active sessions.")) {
@@ -321,9 +349,17 @@ export default function ProfilePage() {
 
               {/* User detail lines */}
               <div className="flex-1 text-center md:text-left mt-2 select-text">
-                <h2 className="text-3xl sm:text-4xl font-sans font-extrabold text-white tracking-tight leading-none">
-                  {profile.name || "Anonymous Player"}
-                </h2>
+                <div className="flex flex-col md:flex-row items-center justify-center md:justify-start gap-3">
+                  <h2 className="text-3xl sm:text-4xl font-sans font-extrabold text-white tracking-tight leading-none">
+                    {profile.name || "Anonymous Player"}
+                  </h2>
+                  {profile.subscriptions?.[0] && (profile.subscriptions[0].status === "ACTIVE" || profile.subscriptions[0].status === "TRIALING") && (
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-brand-accent/20 border border-brand-accent/40 text-brand-accent text-[10px] font-mono font-bold tracking-wider uppercase select-none shadow-[0_0_15px_rgba(212,175,110,0.15)] mt-2 md:mt-0">
+                      <Award className="w-3.5 h-3.5 fill-current" />
+                      Premium
+                    </span>
+                  )}
+                </div>
                 
                 <div className="flex flex-col sm:flex-row items-center gap-3 sm:gap-6 mt-4 justify-center md:justify-start">
                   <div className="flex items-center gap-2 text-brand-secondary font-sans text-sm">
@@ -349,6 +385,66 @@ export default function ProfilePage() {
               </h3>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                
+                {/* Membership & Billing Status Card */}
+                <div className="bg-brand-surface/30 border border-brand-border/40 hover:border-brand-border/80 transition-all duration-200 rounded-xl p-5 relative overflow-hidden group select-none">
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="w-9 h-9 rounded-lg bg-brand-accent/10 flex items-center justify-center text-brand-accent">
+                      <Award className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h4 className="text-xs font-sans font-semibold text-brand-secondary uppercase tracking-wider">Membership</h4>
+                      <p className="text-xs text-brand-secondary/50 font-sans mt-0.5">
+                        {profile.subscriptions?.[0] && (profile.subscriptions[0].status === "ACTIVE" || profile.subscriptions[0].status === "TRIALING") 
+                          ? `${profile.subscriptions[0].product.name}`
+                          : "Free Plan"}
+                      </p>
+                    </div>
+                  </div>
+                  
+                  {profile.subscriptions?.[0] && (profile.subscriptions[0].status === "ACTIVE" || profile.subscriptions[0].status === "TRIALING") ? (
+                    <div className="space-y-3 mt-4">
+                      <div className="flex items-center justify-between text-xs font-sans">
+                        <span className="text-brand-secondary">Status</span>
+                        <span className="font-semibold text-emerald-400 font-mono uppercase bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20 text-[10px]">
+                          {profile.subscriptions[0].status.toLowerCase()}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between text-xs font-sans">
+                        <span className="text-brand-secondary">Renews on</span>
+                        <span className="text-white font-mono text-[10px]">
+                          {new Date(profile.subscriptions[0].currentPeriodEnd).toLocaleDateString("en-US", {
+                            day: "numeric",
+                            month: "short",
+                            year: "numeric",
+                          })}
+                        </span>
+                      </div>
+                      <button
+                        onClick={handleManageSubscription}
+                        disabled={managingBilling}
+                        className="w-full mt-2 py-2 px-3 bg-brand-accent/15 hover:bg-brand-accent/25 border border-brand-accent/30 text-brand-accent hover:text-white rounded-lg font-mono text-[9px] uppercase tracking-widest font-bold transition-all duration-200 cursor-pointer disabled:opacity-50 text-center"
+                      >
+                        {managingBilling ? "Loading Portal..." : "Manage Billing"}
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="space-y-3 mt-4">
+                      <div className="flex items-center justify-between text-xs font-sans">
+                        <span className="text-brand-secondary">Status</span>
+                        <span className="font-semibold text-brand-secondary/60 font-mono uppercase bg-white/5 px-2 py-0.5 rounded border border-white/5 text-[10px]">
+                          Free Tier
+                        </span>
+                      </div>
+                      <button
+                        onClick={() => navigate("/pricing")}
+                        className="w-full mt-4 py-2.5 px-3 bg-brand-accent text-brand-bg hover:bg-brand-accent/90 rounded-lg font-mono text-[9px] uppercase tracking-widest font-bold transition-all duration-200 cursor-pointer text-center"
+                      >
+                        Upgrade to Premium
+                      </button>
+                    </div>
+                  )}
+                </div>
                 
                 {/* Rating Placeholder */}
                 <div className="bg-brand-surface/30 border border-brand-border/40 hover:border-brand-border/80 transition-all duration-200 rounded-xl p-5 relative overflow-hidden group select-none">
