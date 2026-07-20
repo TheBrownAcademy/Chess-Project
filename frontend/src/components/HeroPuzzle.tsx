@@ -43,7 +43,7 @@ import { Chessboard } from "react-chessboard";
 import { Chess } from "chess.js";
 import { parseUciMove } from "../utils/chessHelpers";
 import { useStockfish } from "../hooks/useStockfish";
-import { RotateCcw, Play, Zap, ChevronLeft, ChevronRight } from "lucide-react";
+import { RotateCcw, Play, Zap, ChevronLeft, ChevronRight, Volume2, VolumeX } from "lucide-react";
 import { useConfetti } from "../hooks/useConfetti";
 import { useBoardCursorGlow } from "../hooks/useBoardCursorGlow";
 import { useMoveTrail } from "../hooks/useMoveTrail";
@@ -53,7 +53,7 @@ import { useMoveAnnotation } from "../hooks/useMoveAnnotation";
 import { MoveAnnotation } from "./MoveAnnotation";
 import ChessAnimationLayer from "./ChessAnimationLayer";
 import { motion } from "framer-motion";
-import { soundManager } from "../utils/SoundManager";
+import { SoundManager } from "../utils/SoundManager";
 interface ActiveMove {
   startX: number;
   startY: number;
@@ -236,6 +236,8 @@ const historicalBlackMoves = [
 
 const START_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
 const PUZZLE3_FEN = "7k/5p1P/5ppK/6P1/8/8/1q6/BQ6 w - - 4 1";
+
+
 const getKingSquares = (fen: string) => {
   const tempGame = new Chess(fen);
   let losingKingSq: string | null = null;
@@ -260,6 +262,11 @@ const getKingSquares = (fen: string) => {
   return { losingKingSq, winningKingSq };
 };
 export default function HeroPuzzle() {
+
+  const soundManagerRef = useRef<SoundManager>(SoundManager.createInstance());
+  const soundManager = soundManagerRef.current;
+  const [isMuted, setIsMuted] = useState<boolean>(true);
+
   const { getEngineMove } = useStockfish();
   const { fireConfetti } = useConfetti();
   const glowRef = useBoardCursorGlow<HTMLDivElement>();
@@ -277,6 +284,14 @@ export default function HeroPuzzle() {
   const [gameFen0, setGameFen0] = useState<string>(START_FEN);
   const [currentMoveIndex0, setCurrentMoveIndex0] = useState<number>(-1);
   const currentMoveIndex0Ref = useRef<number>(-1);
+  useEffect(() => {
+    soundManager.setMuted(isMuted);
+  }, [isMuted]);
+
+  const toggleMute = useCallback(() => {
+    setIsMuted((prev) => !prev);
+  }, []);
+
   useEffect(() => {
     currentMoveIndex0Ref.current = currentMoveIndex0;
   }, [currentMoveIndex0]);
@@ -2300,6 +2315,19 @@ export default function HeroPuzzle() {
             <ChevronRight className="w-4 h-4" />
           </button>
         </div>
+        <button
+          onClick={toggleMute}
+          aria-label={isMuted ? "Unmute sound" : "Mute sound"}
+          className="p-2 rounded-full border text-[#8E8B82]
+             hover:text-white hover:border-[rgba(212,175,110,0.5)] hover:bg-white/5
+             transition-all duration-200"
+        >
+          {isMuted ? (
+            <VolumeX className="w-4 h-4" />
+          ) : (
+            <Volume2 className="w-4 h-4 text-[#D4AF6E]" />
+          )}
+        </button>
       </div>
       {/* Below-board Info Panel */}
       <div className="flex items-center justify-between px-0 mt-1">

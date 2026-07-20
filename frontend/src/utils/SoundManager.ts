@@ -31,23 +31,34 @@ const SOUND_CONFIG: Record<SoundName, SoundConfig> = {
   "button-click": { src: "/sounds/button-click.mp3", allowOverlap: true },
 };
 
-class SoundManager {
-  private static instance: SoundManager;
+export class SoundManager {
+  private static sharedInstance: SoundManager;
   private sounds = new Map<SoundName, HTMLAudioElement>();
   private activeClones = new Set<HTMLAudioElement>();
   private muted = false;
   private globalVolume = 1;
   private readonly isBrowser = typeof window !== "undefined";
 
-  private constructor() {
+  constructor() {
     if (this.isBrowser) this.preload();
   }
 
+  /** The shared, site-wide instance. Use this for boards that should follow the global mute preference. */
   static getInstance(): SoundManager {
-    if (!SoundManager.instance) {
-      SoundManager.instance = new SoundManager();
+    if (!SoundManager.sharedInstance) {
+      SoundManager.sharedInstance = new SoundManager();
     }
-    return SoundManager.instance;
+    return SoundManager.sharedInstance;
+  }
+
+  /**
+   * Creates a brand-new, independent SoundManager instance with its own
+   * mute/volume state, isolated from the shared singleton and from any
+   * other instance. Use this for a specific widget (e.g. HeroPuzzle) whose
+   * mute toggle should NOT affect sound on the rest of the site.
+   */
+  static createInstance(): SoundManager {
+    return new SoundManager();
   }
 
   private preload() {
@@ -96,7 +107,6 @@ class SoundManager {
     });
   }
 
-  // Explicit helpers matching project requirements
   playMove() {
     this.play("move");
   }
@@ -176,13 +186,11 @@ class SoundManager {
   setVolume(volume: number) {
     this.globalVolume = Math.min(1, Math.max(0, volume));
 
-    // Update already preloaded instances immediately
     this.sounds.forEach((audio, name) => {
       const config = SOUND_CONFIG[name];
       audio.volume = (config.volume ?? 1) * this.globalVolume;
     });
 
-    // Update any currently playing overlap clones too
     this.activeClones.forEach((clone) => {
       clone.volume = this.globalVolume;
     });
@@ -194,18 +202,18 @@ class SoundManager {
 
   /**
    * Reads the stored sound preference from localStorage and applies it.
-   * Call once at application startup (e.g. in main.tsx or a top-level hook).
+   * Only meaningful for the shared instance — call once at application
+   * startup (e.g. in main.tsx or a top-level hook).
    * Defaults to sound ENABLED when no preference has been saved yet.
    */
   initFromStorage() {
     if (!this.isBrowser) return;
     const stored = localStorage.getItem(SoundManager.STORAGE_KEY);
-    // "false" means the user explicitly disabled sound; anything else → enabled
-    this.muted = stored === 'false';
+    this.muted = stored === "false";
   }
 
-  /** The localStorage key used to persist the sound-enabled preference. */
-  static readonly STORAGE_KEY = 'sound-enabled';
+  static readonly STORAGE_KEY = "sound-enabled";
 }
 
+// Shared, site-wide instance — used by anything that should follow the global mute preference.
 export const soundManager = SoundManager.getInstance();
