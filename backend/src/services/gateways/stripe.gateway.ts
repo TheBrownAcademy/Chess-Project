@@ -1,14 +1,19 @@
+import Stripe from "stripe";
+import { env } from "../../config/env.js";
 import { PaymentGateway, WebhookEventPayload } from "./payment-gateway.interface.js";
+
+const stripe = new Stripe(env.STRIPE_SECRET_KEY || "", {
+  apiVersion: "2026-06-24.dahlia" as any,
+});
 
 export class StripeGateway implements PaymentGateway {
   async createCustomer(email: string, name?: string): Promise<string> {
-    console.log(`[StripeGateway]: Mock registering customer ${email} (${name || ""})`);
-    
-    // Stripe SDK logic stub:
-    // const customer = await stripe.customers.create({ email, name });
-    // return customer.id;
-
-    return `cus_stripe_${Math.random().toString(36).substring(7)}`;
+    console.log(`[StripeGateway]: Registering customer ${email} (${name || ""})`);
+    const customer = await stripe.customers.create({
+      email,
+      name,
+    });
+    return customer.id;
   }
 
   async createCheckoutSession(
@@ -18,33 +23,30 @@ export class StripeGateway implements PaymentGateway {
     cancelUrl: string,
     metadata: Record<string, string>
   ): Promise<string> {
-    console.log(`[StripeGateway]: Mock creating checkout for customer: ${customerId}, price: ${priceId}`);
-    
-    // Stripe SDK logic stub:
-    // const session = await stripe.checkout.sessions.create({
-    //   customer: customerId,
-    //   line_items: [{ price: priceId, quantity: 1 }],
-    //   mode: 'subscription',
-    //   success_url: successUrl,
-    //   cancel_url: cancelUrl,
-    //   metadata,
-    // });
-    // return session.url;
+    console.log(`[StripeGateway]: Creating checkout for customer: ${customerId}, price: ${priceId}`);
+    const session = await stripe.checkout.sessions.create({
+      customer: customerId,
+      line_items: [{ price: priceId, quantity: 1 }],
+      mode: "subscription",
+      success_url: successUrl,
+      cancel_url: cancelUrl,
+      metadata,
+      allow_promotion_codes: true,
+    });
 
-    return `https://checkout.stripe.com/c/pay/mock_session_${Math.random().toString(36).substring(7)}`;
+    if (!session.url) {
+      throw new Error("Stripe checkout session creation failed to return a redirect URL.");
+    }
+    return session.url;
   }
 
   async createBillingPortalSession(customerId: string, returnUrl: string): Promise<string> {
-    console.log(`[StripeGateway]: Mock creating portal session for customer: ${customerId}`);
-    
-    // Stripe SDK logic stub:
-    // const session = await stripe.billingPortal.sessions.create({
-    //   customer: customerId,
-    //   return_url: returnUrl,
-    // });
-    // return session.url;
-
-    return `https://billing.stripe.com/p/session/mock_portal_${customerId}`;
+    console.log(`[StripeGateway]: Creating billing portal session for customer: ${customerId}`);
+    const session = await stripe.billingPortal.sessions.create({
+      customer: customerId,
+      return_url: returnUrl,
+    });
+    return session.url;
   }
 
   async constructWebhookEvent(
@@ -52,42 +54,17 @@ export class StripeGateway implements PaymentGateway {
     signature: string,
     webhookSecret: string
   ): Promise<WebhookEventPayload> {
-    console.log("[StripeGateway]: Mock verifying signature and decoding webhook payload");
-    
-    // Stripe SDK logic stub:
-    // const event = stripe.webhooks.constructEvent(rawBody, signature, webhookSecret);
-    // return { gatewayEventId: event.id, eventType: event.type, payload: event.data.object };
-
-    const mockEventId = `evt_stripe_${Math.random().toString(36).substring(7)}`;
+    console.log("[StripeGateway]: Verifying Stripe webhook signature");
+    const event = stripe.webhooks.constructEvent(rawBody, signature, webhookSecret);
     return {
-      gatewayEventId: mockEventId,
-      eventType: "invoice.payment_succeeded",
-      payload: {
-        id: "in_stripe_mock_invoice",
-        customer: "cus_mock_customer",
-        subscription: "sub_stripe_mock_sub",
-        amount_paid: 999,
-        currency: "usd",
-        payment_intent: "pi_stripe_mock_intent",
-        charge: "ch_stripe_mock_charge",
-        lines: {
-          data: [
-            {
-              price: { id: priceIdPlaceholder() },
-            }
-          ]
-        },
-        period_start: Math.floor(Date.now() / 1000),
-        period_end: Math.floor(Date.now() / 1000) + 30 * 24 * 60 * 60,
-        metadata: {
-          userId: "mock-user-id",
-          planIdentifier: "pro_monthly",
-        }
-      }
+      gatewayEventId: event.id,
+      eventType: event.type,
+      payload: event.data.object,
     };
   }
-}
 
-function priceIdPlaceholder(): string {
-  return "price_stripe_placeholder_monthly";
+  async retrieveCheckoutSession(sessionId: string): Promise<any> {
+    console.log(`[StripeGateway]: Retrieving checkout session details for session ID: ${sessionId}`);
+    return await stripe.checkout.sessions.retrieve(sessionId);
+  }
 }

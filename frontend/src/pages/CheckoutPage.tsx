@@ -16,6 +16,7 @@ import {
 import { useNavigate, useLocation } from 'react-router';
 import { useSession } from '../hooks/useSession';
 import { AuthModal } from '../components/AuthModal';
+import { PaymentService } from '../services/payment';
 
 // Professional flat payment method icons
 const MethodIcon: React.FC<{ type: string }> = ({ type }) => {
@@ -133,34 +134,29 @@ export default function CheckoutPage() {
 
   // Complete checkout flow
   const handleProceedToPayment = async () => {
+    if (selectedPaymentMethod === 'paypal') {
+      alert("PayPal integration is coming soon. Please select Card or Stripe to proceed.");
+      return;
+    }
+
     setIsProcessing(true);
     
-    // Simulate API delay for Stripe authorization
-    setTimeout(() => {
+    try {
+      const planId = isYearly ? "pro_yearly" : "pro_monthly";
+      const response = await PaymentService.createCheckoutSession(planId);
+      
+      if (response.status === "success" && response.checkoutUrl) {
+        // Securely redirect customer to Stripe hosted checkout page
+        window.location.href = response.checkoutUrl;
+      } else {
+        alert(response.message || "Failed to initialize secure checkout session. Please try again.");
+        setIsProcessing(false);
+      }
+    } catch (error: any) {
+      console.error("[CheckoutPage] Payment redirect error:", error);
+      alert("An unexpected error occurred while establishing a secure billing session. Please try again.");
       setIsProcessing(false);
-
-      // Write completion state flags
-      sessionStorage.setItem('xlchess_payment_completed', 'true');
-      (window as any).xlchess_payment_completed = true;
-
-      // Write payload into sessionStorage
-      sessionStorage.setItem('xlchess_upgrade_success_data', JSON.stringify({
-        billingCycle: isYearly ? 'Yearly' : 'Monthly',
-        purchaseDate: purchaseDate,
-        txnId: orderNumber,
-        selectedPlan: billingCycleLabel,
-        totalPaid: `$${grandTotal.toFixed(2)}`,
-        renewalDate: nextRenewalDate(),
-        username: session?.user?.name || 'Grandmaster',
-        email: session?.user?.email || 'chess.champion@xlchess.com',
-        currency: 'USD',
-        tax: `$${estimatedTax.toFixed(2)}`,
-        discount: `$${(planDiscount + couponDiscountAmount).toFixed(2)}`
-      }));
-
-      // Navigate to Payment Successful page
-      navigate('/successful');
-    }, 2200);
+    }
   };
 
   // ──────────────────────────────────────────────────────────────────────────

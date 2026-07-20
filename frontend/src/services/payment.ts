@@ -55,4 +55,31 @@ export class PaymentService {
       };
     }
   }
+
+  /**
+   * Retrieves checkout session details from the backend for success verification.
+   */
+  static async getCheckoutSession(sessionId: string): Promise<any> {
+    try {
+      const response = await fetch(`/api/payments/checkout-session/${sessionId}`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || "Failed to retrieve checkout session details.");
+      }
+
+      return await response.json();
+    } catch (error: any) {
+      console.error("[PaymentService.getCheckoutSession] Error:", error);
+      return {
+        status: "fail",
+        message: error.message || "An unexpected error occurred.",
+      };
+    }
+  }
 }

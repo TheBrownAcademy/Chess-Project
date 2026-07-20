@@ -4,6 +4,7 @@ import ProfilePage from '../pages/ProfilePage';
 import PricingPage from '../pages/PricingPage';
 import CheckoutPage from '../pages/CheckoutPage';
 import SuccessfulPage from '../pages/SuccessfulPage';
+import FailedPage from '../pages/FailedPage';
 import { ProtectedRoute } from '../components/ProtectedRoute';
 
 export interface RouteConfig {
@@ -23,4 +24,6 @@ export const mainRoutes: RouteConfig[] = [
 export const minimalRoutes: RouteConfig[] = [
   { path: '/payment', element: <CheckoutPage /> },
   { path: '/successful', element: <SuccessfulPage /> },
+  { path: '/payment/success', element: <SuccessfulPage /> },
+  { path: '/payment/failed', element: <FailedPage /> },
 ];

@@ -43,6 +43,7 @@ function App() {
     setLoaderDone(true);
   };
 
+
   return (
     <ParticlesProvider init={initParticles}>
 
