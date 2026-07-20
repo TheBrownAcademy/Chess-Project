@@ -5,6 +5,7 @@
  *
  * Menu items:
  *   Settings  → navigates to /profile (existing page)
+ *   Theme     → disabled, "Coming Soon" tooltip
  *   ─── divider ───
  *   Sound     → full-row clickable toggle (reuses SoundManager, no SoundToggle sub-button)
  *
@@ -15,7 +16,7 @@
  */
 
 import { useState, useEffect, useRef } from 'react';
-import { MoreVertical, Settings, Volume2, VolumeX } from 'lucide-react';
+import { MoreVertical, Settings, Palette, Volume2, VolumeX } from 'lucide-react';
 import { navigate } from '../hooks/useRoute';
 import { soundManager } from '../utils/SoundManager';
 
@@ -115,6 +116,21 @@ export const MoreMenu: React.FC = () => {
             <Settings className="w-4 h-4 text-brand-accent/70 group-hover:text-brand-accent shrink-0 transition-colors duration-150" />
             <span className="flex-1">Settings</span>
           </button>
+
+          {/* ── Theme — disabled / coming soon ───────────────────────────── */}
+          <div
+            id="more-menu-theme"
+            role="menuitem"
+            aria-disabled="true"
+            title="Coming Soon"
+            className="w-full flex items-center gap-3 px-4 py-2.5 text-sm font-sans text-brand-secondary/40 text-left cursor-not-allowed select-none opacity-50"
+          >
+            <Palette className="w-4 h-4 text-brand-accent/30 shrink-0" />
+            <span className="flex-1">Theme</span>
+            <span className="text-[10px] font-mono px-1.5 py-0.5 rounded-full border border-brand-border/30 text-brand-secondary/40 bg-white/[0.03]">
+              Soon
+            </span>
+          </div>
 
           {/* ── Divider ───────────────────────────────────────────────────── */}
           <div className="my-1.5 border-t border-brand-border/40" role="separator" />
