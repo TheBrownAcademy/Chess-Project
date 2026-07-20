@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { User, LogOut } from "lucide-react";
+import { User, CircleUserRound, LogOut, CreditCard } from "lucide-react";
 import { useSession } from "../hooks/useSession";
 import { navigate } from "../hooks/useRoute";
 
@@ -93,8 +93,25 @@ export const AvatarDropdown: React.FC = () => {
             className="w-full flex items-center gap-3 px-4 py-2 text-sm font-sans text-brand-secondary hover:text-white hover:bg-white/5 text-left transition-colors duration-150 cursor-pointer"
             role="menuitem"
           >
-            <User className="w-4 h-4 text-brand-accent" />
+            {/* <User className="w-4 h-4 text-brand-accent" /> */}
+            <CircleUserRound
+              className="w-5 h-5 text-[#5EA1FF]"
+              strokeWidth={1.8}
+            />
             Profile
+          </button>
+
+          {/* Membership option */}
+          <button
+            onClick={() => {
+              navigate("/pricing");
+              setIsOpen(false);
+            }}
+            className="w-full flex items-center gap-3 px-4 py-2 text-sm font-sans text-brand-secondary hover:text-white hover:bg-white/5 text-left transition-colors duration-150 cursor-pointer"
+            role="menuitem"
+          >
+            <CreditCard className="w-4 h-4 text-brand-accent" />
+            Membership
           </button>
 
           {/* Sign Out option */}
