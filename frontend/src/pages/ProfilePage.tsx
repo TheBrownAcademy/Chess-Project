@@ -9,7 +9,6 @@ import {
   Settings,
   Link2,
   AlertCircle,
-  Loader2,
   Lock,
   ChevronRight,
   Share2
@@ -117,7 +116,7 @@ interface UserProfile {
 
 export default function ProfilePage() {
   const navigate = useNavigate();
-  const { status, signOut } = useSession();
+  const { signOut } = useSession();
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loadingProfile, setLoadingProfile] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -148,14 +147,6 @@ export default function ProfilePage() {
     }
   };
 
-  // Protected Route: Redirect unauthenticated users
-  useEffect(() => {
-    if (status === "unauthenticated") {
-      window.history.replaceState({}, "", "/?login=true");
-      window.dispatchEvent(new Event("pushstate"));
-    }
-  }, [status]);
-
   const fetchProfile = async () => {
     setLoadingProfile(true);
     setError(null);
@@ -182,10 +173,8 @@ export default function ProfilePage() {
   };
 
   useEffect(() => {
-    if (status === "authenticated") {
-      fetchProfile();
-    }
-  }, [status]);
+    fetchProfile();
+  }, []);
 
   // Clean date formatter
   const formatJoinDate = (isoString?: string) => {
@@ -201,16 +190,6 @@ export default function ProfilePage() {
       return "Joined July 2026";
     }
   };
-
-  // If unauthenticated or loading main session, we prevent page flash
-  if (status === "loading" || (status === "unauthenticated" && !profile)) {
-    return (
-      <div className="min-h-screen text-brand-text flex flex-col justify-center items-center bg-transparent">
-        <Loader2 className="w-10 h-10 text-brand-accent animate-spin" />
-        <p className="mt-4 font-sans text-brand-secondary text-sm">Synchronizing session...</p>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen text-brand-text flex flex-col bg-transparent selection:bg-brand-accent selection:text-white">

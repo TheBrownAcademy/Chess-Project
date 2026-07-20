@@ -4,6 +4,7 @@ import ProfilePage from '../pages/ProfilePage';
 import PricingPage from '../pages/PricingPage';
 import CheckoutPage from '../pages/CheckoutPage';
 import SuccessfulPage from '../pages/SuccessfulPage';
+import { ProtectedRoute } from '../components/ProtectedRoute';
 
 export interface RouteConfig {
   path: string;
@@ -14,7 +15,7 @@ export interface RouteConfig {
 export const mainRoutes: RouteConfig[] = [
   { path: '/', element: <HomePage /> },
   { path: '/puzzles', element: <PuzzlePage /> },
-  { path: '/profile', element: <ProfilePage /> },
+  { path: '/profile', element: <ProtectedRoute><ProfilePage /></ProtectedRoute> },
   { path: '/pricing', element: <PricingPage /> },
 ];
 

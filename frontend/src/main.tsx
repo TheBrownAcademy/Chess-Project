@@ -1,5 +1,6 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
+import { BrowserRouter } from 'react-router'
 import './index.css'
 import App from './App.tsx'
 import { soundManager } from './utils/SoundManager'
@@ -11,8 +12,10 @@ soundManager.initFromStorage();
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <SessionProvider>
-      <App />
-    </SessionProvider>
+    <BrowserRouter>
+      <SessionProvider>
+        <App />
+      </SessionProvider>
+    </BrowserRouter>
   </StrictMode>,
 )
