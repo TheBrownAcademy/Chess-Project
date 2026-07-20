@@ -15,6 +15,7 @@ dist-ssr
 Answers.txt
 MigrationPlan.md
 relocate.ps1
+package-lock.json
 
 # Editor directories and files
 .vscode/*

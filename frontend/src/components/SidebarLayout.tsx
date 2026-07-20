@@ -1,0 +1,165 @@
+import { useState } from "react";
+import { X, Home, Puzzle, CreditCard, User } from "lucide-react";
+import { soundManager } from "../utils/SoundManager";
+import Navbar from "./Navbar";
+import { useNavigate, useLocation } from "react-router";
+
+export default function SidebarLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  const [isExpanded, setIsExpanded] = useState(true);
+  const [isMobileOpen, setIsMobileOpen] = useState(false);
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  const menuItems = [
+    { name: "Home", href: "/", icon: Home },
+    { name: "Puzzles", href: "/puzzles", icon: Puzzle },
+    { name: "Pricing", href: "/pricing", icon: CreditCard },
+    { name: "Profile", href: "/profile", icon: User },
+  ];
+
+  const handleLinkClick = (href: string, e: React.MouseEvent) => {
+    e.preventDefault();
+    soundManager.playButtonClick();
+    setIsMobileOpen(false);
+
+    if (href === "/" && location.pathname === "/") {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    } else {
+      navigate(href);
+    }
+  };
+
+  const handleToggle = () => {
+    soundManager.playButtonClick();
+    if (window.innerWidth < 768) {
+      setIsMobileOpen(!isMobileOpen);
+    } else {
+      setIsExpanded(!isExpanded);
+    }
+  };
+
+  return (
+    <div className="min-h-screen text-brand-text bg-brand-bg flex flex-col relative select-none">
+      {/* ── TOP HEADER ──────────────────────────────────────────────────────── */}
+      <Navbar onToggleSidebar={handleToggle} />
+
+      {/* ── MAIN CONTENT CONTAINER ─────────────────────────────────────────── */}
+      <div className="flex flex-1 pt-16">
+        {/* Desktop Sidebar (Fixed) */}
+        <aside
+          className={`fixed top-16 left-0 bottom-0 z-30 bg-[#080B14]/90 backdrop-blur-md border-r border-brand-border flex flex-col py-4 transition-all duration-300 hidden md:flex ${
+            isExpanded ? "w-64" : "w-20"
+          }`}
+        >
+          <nav className="flex-1 space-y-1">
+            {menuItems.map((item) => {
+              const Icon = item.icon;
+              const isActive = location.pathname === item.href;
+
+              return (
+                <a
+                  key={item.name}
+                  href={item.href}
+                  onClick={(e) => handleLinkClick(item.href, e)}
+                  className={`group relative flex transition-all duration-200 cursor-pointer ${
+                    isExpanded
+                      ? `items-center gap-4 px-4 py-3 mx-3 rounded-xl ${
+                          isActive
+                            ? "text-brand-accent bg-brand-accent/10 font-medium shadow-[inset_1px_0_0_rgba(212,175,110,0.1)]"
+                            : "text-brand-secondary hover:text-white hover:bg-white/5"
+                        }`
+                      : `flex-col items-center justify-center py-2.5 mx-2 rounded-lg text-center ${
+                          isActive
+                            ? "text-brand-accent bg-brand-accent/10 border-brand-accent font-medium"
+                            : "text-brand-secondary hover:text-white hover:bg-white/5"
+                        }`
+                  }`}
+                >
+                  <Icon
+                    className={`w-5 h-5 transition-transform duration-200 group-hover:scale-105 ${isActive ? "text-brand-accent" : "text-brand-secondary group-hover:text-white"}`}
+                  />
+                  <span
+                    className={`font-sans tracking-wide transition-all ${
+                      isExpanded ? "text-sm" : "text-[10px] mt-1"
+                    }`}
+                  >
+                    {item.name}
+                  </span>
+                </a>
+              );
+            })}
+          </nav>
+        </aside>
+
+        {/* Mobile Sidebar (Slide-out Overlay Drawer) */}
+        {/* Backdrop overlay */}
+        <div
+          className={`fixed inset-0 z-40 bg-black/60 backdrop-blur-sm transition-opacity duration-300 md:hidden ${
+            isMobileOpen ? "opacity-100" : "opacity-0 pointer-events-none"
+          }`}
+          onClick={() => setIsMobileOpen(false)}
+        />
+
+        {/* Drawer itself */}
+        <aside
+          className={`fixed top-0 left-0 bottom-0 w-64 z-50 bg-[#080B14] border-r border-brand-border flex flex-col py-4 transition-transform duration-300 ease-in-out md:hidden ${
+            isMobileOpen ? "translate-x-0" : "-translate-x-full"
+          }`}
+        >
+          {/* Drawer Header */}
+          <div className="flex items-center justify-between px-4 pb-4 border-b border-brand-border/40">
+            <span className="font-display font-medium text-lg text-brand-accent tracking-wide">
+              Navigation
+            </span>
+            <button
+              onClick={() => setIsMobileOpen(false)}
+              className="p-2 text-brand-secondary hover:text-white rounded-lg hover:bg-white/5 transition-colors cursor-pointer"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+
+          <nav className="flex-1 mt-4 space-y-1">
+            {menuItems.map((item) => {
+              const Icon = item.icon;
+              const isActive = location.pathname === item.href;
+
+              return (
+                <a
+                  key={item.name}
+                  href={item.href}
+                  onClick={(e) => handleLinkClick(item.href, e)}
+                  className={`group flex items-center gap-4 px-4 py-3 mx-3 rounded-xl transition-all duration-200 cursor-pointer ${
+                    isActive
+                      ? "text-brand-accent bg-brand-accent/10 font-medium"
+                      : "text-brand-secondary hover:text-white hover:bg-white/5"
+                  }`}
+                >
+                  <Icon
+                    className={`w-5 h-5 ${isActive ? "text-brand-accent" : "text-brand-secondary group-hover:text-white"}`}
+                  />
+                  <span className="font-sans text-sm tracking-wide">
+                    {item.name}
+                  </span>
+                </a>
+              );
+            })}
+          </nav>
+        </aside>
+
+        {/* ── MAIN CONTENT WORKSPACE ─────────────────────────────────────────── */}
+        <div
+          className={`flex-1 flex flex-col min-w-0 transition-all duration-300 ${
+            isExpanded ? "md:pl-64" : "md:pl-20"
+          }`}
+        >
+          {children}
+        </div>
+      </div>
+    </div>
+  );
+}

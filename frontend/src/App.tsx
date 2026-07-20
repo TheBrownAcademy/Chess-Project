@@ -7,29 +7,15 @@
  *
  * Premium additions:
  *   - PremiumLoader: cinematic rook loader that dissolves into the page
- *   - Navbar: luxury glassmorphism gold navigation
  */
 
 // ── GSAP: register plugins immediately (before any component renders) ──────
 import './utils/gsapConfig';
 
-import { useState, useEffect } from 'react';
-
-import Hero from './components/Hero';
-import BrandSection from './components/BrandSection';
-import ProductDemo from './components/ProductDemo';
-import PartnerCTA from './components/PartnerCTA';
-import Footer from './components/Footer';
+import { useState } from 'react';
 import GlobalBackground from './components/GlobalBackground';
-import Navbar from './components/Navbar';
 import PremiumLoader from './components/PremiumLoader';
-import PuzzlePage from './pages/PuzzlePage';
-import ProfilePage from './pages/ProfilePage';
-import PricingPage from './pages/PricingPage';
-import SuccessfulPage from './pages/SuccessfulPage';
-import FailedPage from './pages/FailedPage';
-import CheckoutPage from './pages/CheckoutPage';
-import { useRoute } from './hooks/useRoute';
+import AppRouter from './router/AppRouter';
 
 import { ParticlesProvider } from '@tsparticles/react';
 import { loadConfettiCannonPreset } from '@tsparticles/preset-confetti-cannon';
@@ -57,24 +43,6 @@ function App() {
     setLoaderDone(true);
   };
 
-  const path = useRoute();
-  const normalizedPath = path.replace(/\/+$/, '') || '/';
-  const isPuzzlesPage = normalizedPath === '/puzzles' || window.location.hash.startsWith('#/puzzles');
-  const isProfilePage = normalizedPath === '/profile';
-  const isPricingPage = normalizedPath === '/pricing' || window.location.hash.startsWith('#/pricing');
-  const isSuccessfulPage = normalizedPath === '/successful' || normalizedPath === '/payment/success' || window.location.hash.startsWith('#/successful') || window.location.hash.startsWith('#/payment/success');
-  const isFailedPage = normalizedPath === '/payment/failed' || window.location.hash.startsWith('#/payment/failed');
-  const isCheckoutPage = normalizedPath === '/payment' || window.location.hash.startsWith('#/payment');
-
-  useEffect(() => {
-    if (normalizedPath !== '/successful') {
-      try {
-        sessionStorage.removeItem('xlchess_payment_completed');
-        sessionStorage.removeItem('xlchess_upgrade_success_data');
-      } catch (e) {}
-      (window as any).xlchess_payment_completed = false;
-    }
-  }, [normalizedPath]);
 
   return (
     <ParticlesProvider init={initParticles}>
@@ -90,46 +58,7 @@ function App() {
       {/* smooth-wrapper + smooth-content: ScrollSmoother-ready DOM structure. */}
       <div id="smooth-wrapper">
         <div id="smooth-content">
-
-          {isPuzzlesPage ? (
-            <PuzzlePage />
-          ) : isProfilePage ? (
-            <ProfilePage />
-          ) : isPricingPage ? (
-            <PricingPage />
-          ) : isSuccessfulPage ? (
-            <SuccessfulPage />
-          ) : isFailedPage ? (
-            <FailedPage />
-          ) : isCheckoutPage ? (
-            <CheckoutPage />
-          ) : (
-            /* Landing Page Content */
-            <div className="min-h-screen text-brand-text flex flex-col">
-              {/* Premium Navigation */}
-              <Navbar />
-
-              <main className="flex-1">
-
-                {/* Section 1: Hero Visual and Brand Statement */}
-                <Hero />
-
-                {/* Section 2: Build More Than Subscribers */}
-                <BrandSection />
-
-                {/* Section 3: Interactive Product Demo (Chessboard + Stockfish) */}
-                <ProductDemo />
-
-                {/* Section 4: Partner Call to Action */}
-                <PartnerCTA />
-
-              </main>
-
-              {/* Footer Summary */}
-              <Footer />
-            </div>
-          )}
-
+          <AppRouter />
         </div>
       </div>
     </ParticlesProvider>

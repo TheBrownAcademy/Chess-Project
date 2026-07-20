@@ -12,7 +12,7 @@ import {
   Info,
   AlertCircle,
 } from "lucide-react";
-import { navigate } from "../hooks/useRoute";
+import { useNavigate, useLocation } from "react-router";
 
 // Custom SVG Chess Pieces for premium decorative background
 const PieceSvg: React.FC<{
@@ -208,11 +208,13 @@ const PricingCard: React.FC<PlanProps> = ({
 };
 
 export default function PricingPage() {
+  const navigate = useNavigate();
+  const location = useLocation();
   const [isYearly, setIsYearly] = useState(false);
   const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(null);
 
   const [showSessionError, setShowSessionError] = useState(() => {
-    const params = new URLSearchParams(window.location.search);
+    const params = new URLSearchParams(location.search);
     return params.get("error") === "payment_expired";
   });
 
@@ -342,9 +344,10 @@ export default function PricingPage() {
         </motion.div>
       </div>
 
-      {/* ── HEADER / LOGO BAR ───────────────────────────────────────────────── */}
-      <header className="relative z-10 w-full bg-brand-bg/85 backdrop-blur-md border-b border-brand-border px-4 py-4 sm:py-5 lg:px-8">
-        <div className="max-w-7xl mx-auto flex items-center justify-between">
+      {/* SidebarLayout handles header globally */}
+
+      <main className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex-1 flex flex-col items-center w-full pt-8">
+        <div className="w-full flex justify-start mb-6">
           <button
             onClick={handleNavigateHome}
             className="flex items-center gap-2.5 text-xs sm:text-sm text-brand-secondary hover:text-white transition-all duration-300 cursor-pointer uppercase tracking-wider font-mono font-medium"
@@ -354,18 +357,7 @@ export default function PricingPage() {
             </span>
             Back to Home
           </button>
-
-          <img
-            src="/final%20logo.png"
-            alt="XLChess logo"
-            className="h-[38px] sm:h-[48px] w-auto object-contain cursor-pointer"
-            onClick={handleNavigateHome}
-          />
-          <div className="w-[110px]" />
         </div>
-      </header>
-
-      <main className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex-1 flex flex-col items-center">
         {showSessionError && (
           <motion.div
             initial={{ opacity: 0, y: -10 }}
@@ -382,9 +374,7 @@ export default function PricingPage() {
             <button
               onClick={() => {
                 setShowSessionError(false);
-                try {
-                  window.history.replaceState({}, "", window.location.pathname);
-                } catch (e) {}
+                navigate(location.pathname, { replace: true });
               }}
               className="text-amber-400 hover:text-white font-mono text-xs uppercase font-bold cursor-pointer flex-shrink-0"
             >

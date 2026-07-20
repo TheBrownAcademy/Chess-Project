@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router';
 import { 
   getRandomPuzzle, 
   getRandomPuzzleExcluding, 
@@ -13,7 +14,6 @@ import {
   CircleDot,
   CheckCircle2} from 'lucide-react';
 import { Chess } from 'chess.js';
-import Navbar from '../components/Navbar';
 
 function formatPuzzleNumber(id: string): string {
   if (!id) return '';
@@ -33,6 +33,7 @@ function formatDifficulty(rating?: number): string {
 }
 
 export default function PuzzlePage() {
+  const navigate = useNavigate();
   const [currentPuzzle, setCurrentPuzzle] = useState<ChessPuzzle | null>(null);
   const [difficulty] = useState<'any' | 'easy' | 'medium' | 'hard'>('any');
   const [] = useState('');
@@ -115,9 +116,8 @@ export default function PuzzlePage() {
   // Direct puzzle search by ID or Rating
 
   const handleNavigateHome = useCallback(() => {
-    window.location.pathname = '/';
-    window.location.hash = '';
-  }, []);
+    navigate('/');
+  }, [navigate]);
 
   if (!currentPuzzle) {
     return (
@@ -142,15 +142,13 @@ export default function PuzzlePage() {
   return (
     <div className="min-h-screen bg-brand-bg text-brand-text flex flex-col relative select-none pb-16">
       
-      {/* Premium Navigation Header */}
-      <Navbar />
 
       {/* Ambient background glows */}
       <div className="absolute top-[20%] left-1/2 -translate-x-1/2 w-[80vw] max-w-[1000px] h-[400px] bg-brand-accent/3 rounded-full blur-[140px] pointer-events-none z-0" />
       <div className="absolute bottom-[20%] left-[10%] w-[300px] h-[300px] bg-brand-accent/3 rounded-full blur-[120px] pointer-events-none z-0" />
 
       {/* Spacing wrapper for fixed navbar */}
-      <div className="pt-24 sm:pt-28" />
+      <div className="pt-24 sm:pt-8" />
 
       {/* Main Container */}
       <main className="relative z-10 flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full flex flex-col justify-center">

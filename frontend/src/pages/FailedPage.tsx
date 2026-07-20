@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { ArrowRight, AlertCircle, RefreshCw, XCircle } from 'lucide-react';
-import { navigate } from '../hooks/useRoute';
+import { useNavigate } from 'react-router';
 
 export default function FailedPage() {
+  const navigate = useNavigate();
   const [errorReason, setErrorReason] = useState<string>('Payment cancelled or declined.');
 
   useEffect(() => {

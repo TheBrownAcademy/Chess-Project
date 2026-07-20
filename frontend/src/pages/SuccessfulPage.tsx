@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { ArrowRight, Mail, Check, Award } from 'lucide-react';
-import { navigate } from '../hooks/useRoute';
+import { useNavigate } from 'react-router';
 import { Confetti } from '../components/Confetti';
 import { useSession } from '../hooks/useSession';
 import { PaymentService } from '../services/payment';
@@ -22,6 +22,7 @@ interface UpgradeDetails {
 
 export default function SuccessfulPage() {
   const { session } = useSession();
+  const navigate = useNavigate();
   const [details, setDetails] = useState<UpgradeDetails | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -110,7 +111,16 @@ export default function SuccessfulPage() {
     } finally {
       setLoading(false);
     }
-  }, [session]);
+
+    return () => {
+      // Clean up payment status on navigate away (unmount)
+      try {
+        sessionStorage.removeItem('xlchess_payment_completed');
+        sessionStorage.removeItem('xlchess_upgrade_success_data');
+      } catch (e) {}
+      (window as any).xlchess_payment_completed = false;
+    };
+  }, [session, navigate]);
 
   if (loading) {
     return (
@@ -143,17 +153,7 @@ export default function SuccessfulPage() {
       <div className="absolute top-[10%] left-1/2 -translate-x-1/2 w-[80vw] max-w-[900px] h-[400px] bg-emerald-500/5 rounded-full blur-[140px] pointer-events-none z-0" />
       <div className="absolute top-[30%] left-[20%] w-[300px] h-[300px] bg-brand-accent/5 rounded-full blur-[100px] pointer-events-none z-0" />
 
-      {/* Page Header (Simple branding check) */}
-      <header className="relative z-10 w-full bg-brand-bg/80 backdrop-blur-md border-b border-brand-border px-4 py-4 sm:py-5 lg:px-8">
-        <div className="max-w-5xl mx-auto flex items-center justify-center">
-          <img
-            src="/final%20logo.png"
-            alt="XLChess logo"
-            className="h-[36px] w-auto object-contain cursor-pointer"
-            onClick={() => navigate('/')}
-          />
-        </div>
-      </header>
+      {/* SidebarLayout handles header globally */}
 
       {/* Main content wrapper */}
       <main className="relative z-10 flex-1 flex flex-col items-center justify-center max-w-2xl mx-auto px-4 py-12 w-full text-center">

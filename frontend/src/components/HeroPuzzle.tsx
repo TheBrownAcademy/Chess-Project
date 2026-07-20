@@ -270,6 +270,21 @@ export default function HeroPuzzle() {
   const boardCardRef = useRef<HTMLDivElement>(null);
   const boardInnerRef = useRef<HTMLDivElement>(null);
   const checkmateRef = useRef<HTMLDivElement>(null);
+  // ── Viewport-aware sound gate ────────────────────────────────────────────────────────
+  // Hero puzzle sounds are silenced whenever the section scrolls out of
+  // the viewport so they don’t bleed into the demo board below the fold.
+  const isHeroVisibleRef = useRef<boolean>(true);
+  // Stable proxy – methods read isHeroVisibleRef.current at call-time, so
+  // stale closures inside useCallbacks are never a concern.
+  const heroSoundRef = useRef({
+    playMove: () => { if (isHeroVisibleRef.current) soundManager.playMove(); },
+    playCapture: () => { if (isHeroVisibleRef.current) soundManager.playCapture(); },
+    playCheck: () => { if (isHeroVisibleRef.current) soundManager.playCheck(); },
+    playCheckmate: () => { if (isHeroVisibleRef.current) soundManager.playCheckmate(); },
+    playApplause: () => { if (isHeroVisibleRef.current) soundManager.playApplause(); },
+    playLose: () => { if (isHeroVisibleRef.current) soundManager.playLose(); },
+    playGameEnd: () => { if (isHeroVisibleRef.current) soundManager.playGameEnd(); },
+  });
   // â”€â”€ State variables for Puzzle 0 (Evergreen Game Autoplay & Puzzle) â”€â”€â”€â”€â”€â”€â”€â”€
   const [phase0, setPhase0] = useState<
     "AUTOPLAY" | "PUZZLE" | "SUCCESS" | "REPLAY"
@@ -491,6 +506,18 @@ export default function HeroPuzzle() {
     window.addEventListener("resize", updateSize);
     return () => window.removeEventListener("resize", updateSize);
   }, []);
+  // Observe hero section visibility – fires whenever boardCardRef enters/leaves
+  // the viewport. Threshold 0.1 means sounds stop as soon as 90 %+ is hidden.
+  useEffect(() => {
+    const el = boardCardRef.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => { isHeroVisibleRef.current = entry.isIntersecting; },
+      { threshold: 0.1 },
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
   const abortRef = useRef<boolean>(false);
   const autoplayInstanceRef = useRef<number>(0);
   // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
@@ -633,13 +660,13 @@ export default function HeroPuzzle() {
         return;
       // Play appropriate sound after the move
       if (move.isCheckmate) {
-        soundManager.playCheckmate();
+        heroSoundRef.current.playCheckmate();
       } else if (move.isCheck) {
-        soundManager.playCheck();
+        heroSoundRef.current.playCheck();
       } else if (move.isCapture) {
-        soundManager.playCapture();
+        heroSoundRef.current.playCapture();
       } else {
-        soundManager.playMove();
+        heroSoundRef.current.playMove();
       }
       // Pulse checked king's square if checked
       if (move.isCheck || move.isCheckmate) {
@@ -892,17 +919,32 @@ export default function HeroPuzzle() {
     if (hasCelebratedOriginalRef.current) return;
     hasCelebratedOriginalRef.current = true;
     const checkmateFen = gameRef1.current.fen();
+    const tempGame = new Chess(checkmateFen);
+    const losingColor = tempGame.turn(); // the side that is in checkmate
+    const playerWon = losingColor === "b"; // white (player) wins when black is mated
     const { losingKingSq } = getKingSquares(checkmateFen);
 
-    setPhase1("solved");
+    if (playerWon) {
+      setPhase1("solved");
+    } else {
+      setPhase1("failed");
+    }
     setIsCheckmateGlow1(true);
 
-    soundManager.playCheckmate();
+    heroSoundRef.current.playCheckmate();
     await runCheckmateImpact(losingKingSq);
     await safeDelay(900);
     if (solveAbortRef.current) return;
-    soundManager.playApplause();
-    fireConfetti();
+
+    if (playerWon) {
+      // AI checkmated — celebrate!
+      heroSoundRef.current.playApplause();
+      fireConfetti();
+    } else {
+      // Player checkmated — subtle lose sfx, no confetti
+      heroSoundRef.current.playLose();
+    }
+
     if (checkmateRef.current) {
       gsap.to(checkmateRef.current, {
         opacity: 0,
@@ -940,13 +982,13 @@ export default function HeroPuzzle() {
         const game = gameRef1.current;
         // Play sound based on move result
         if (game.isCheckmate()) {
-          soundManager.playCheckmate();
+          heroSoundRef.current.playCheckmate();
         } else if (game.inCheck()) {
-          soundManager.playCheck();
+          heroSoundRef.current.playCheck();
         } else if (isCapture) {
-          soundManager.playCapture();
+          heroSoundRef.current.playCapture();
         } else {
-          soundManager.playMove();
+          heroSoundRef.current.playMove();
         }
         // const history = game.history({ verbose: true });
         // const lastEntry = history[history.length - 1];
@@ -982,9 +1024,9 @@ export default function HeroPuzzle() {
                 ).then(() => {
                   // Black's response sound
                   if (!!moveResult.captured) {
-                    soundManager.playCapture();
+                    heroSoundRef.current.playCapture();
                   } else {
-                    soundManager.playMove();
+                    heroSoundRef.current.playMove();
                   }
                   setPhase1("awaiting_mate");
                 });
@@ -1024,9 +1066,9 @@ export default function HeroPuzzle() {
                   ).then(() => {
                     // Black's response sound
                     if (!!moveResult.captured) {
-                      soundManager.playCapture();
+                      heroSoundRef.current.playCapture();
                     } else {
-                      soundManager.playMove();
+                      heroSoundRef.current.playMove();
                     }
                     setPhase1("awaiting_mate");
                   });
@@ -1071,7 +1113,7 @@ export default function HeroPuzzle() {
       },
     );
     if (solveAbortRef.current) return;
-    soundManager.playMove();
+    heroSoundRef.current.playMove();
     setMovesLeftOriginal(1);
     triggerAnnotation(step1.to, "!!");
     await safeDelay(900);
@@ -1088,7 +1130,7 @@ export default function HeroPuzzle() {
       },
     );
     if (solveAbortRef.current) return;
-    soundManager.playCapture();
+    heroSoundRef.current.playCapture();
     await safeDelay(900);
     if (solveAbortRef.current) return;
     const step3 = PUZZLE_ORIGINAL.solution[2];
@@ -1121,16 +1163,30 @@ export default function HeroPuzzle() {
   // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
   const celebrate0 = useCallback(
     async (kingSq: string | null) => {
+      // Determine who was mated by inspecting the current game position
+      const checkmateFen = gameRef0.current.fen();
+      const tempGame0 = new Chess(checkmateFen);
+      // tempGame0.turn() is the side that cannot move (the losing side)
+      const playerWon0 = tempGame0.turn() === "b"; // white (player) wins when black is mated
+
       setPhase0("SUCCESS");
       setIsCheckmateGlow0(true);
-      soundManager.playCheckmate();
+      heroSoundRef.current.playCheckmate();
       // Show CHECKMATE popup
       await runCheckmateImpact(kingSq);
       // Hold the checkmate text for a brief pause before fading it out
       await safeDelay(900);
       if (abortRef.current) return;
-      soundManager.playApplause();
-      fireConfetti();
+
+      if (playerWon0) {
+        // AI checkmated — celebrate!
+        heroSoundRef.current.playApplause();
+        fireConfetti();
+      } else {
+        // Player checkmated — subtle lose sfx, no confetti
+        heroSoundRef.current.playLose();
+      }
+
       // Fade checkmate badge overlay out smoothly
       if (checkmateRef.current) {
         gsap.to(checkmateRef.current, {
@@ -1168,16 +1224,16 @@ export default function HeroPuzzle() {
     if (whiteWon) {
       setPhase2("solved");
       setIsCheckmateGlow2(true);
-      soundManager.playCheckmate();
+      heroSoundRef.current.playCheckmate();
       await runCheckmateImpact(losingKingSq);
       await safeDelay(900);
       if (solveAbortRef.current) return;
-      soundManager.playApplause();
+      heroSoundRef.current.playApplause();
       fireConfetti();
     } else {
       // Black won (White checkmated)
       setPhase2("failed");
-      soundManager.playGameEnd();
+      heroSoundRef.current.playLose();
       await runCheckmateImpact(losingKingSq);
       await safeDelay(900);
       if (solveAbortRef.current) return;
@@ -1218,15 +1274,15 @@ export default function HeroPuzzle() {
     if (whiteWon) {
       setPhase3("solved");
       setIsCheckmateGlow3(true);
-      soundManager.playCheckmate();
+      heroSoundRef.current.playCheckmate();
       await runCheckmateImpact(losingKingSq);
       await safeDelay(900);
       if (solveAbortRef.current) return;
-      soundManager.playApplause();
+      heroSoundRef.current.playApplause();
       fireConfetti();
     } else {
       setPhase3("failed");
-      soundManager.playGameEnd();
+      heroSoundRef.current.playLose();
       await runCheckmateImpact(losingKingSq);
       await safeDelay(900);
       if (solveAbortRef.current) return;
@@ -1278,11 +1334,11 @@ export default function HeroPuzzle() {
           return;
         }
         if (game.inCheck()) {
-          soundManager.playCheck();
+          heroSoundRef.current.playCheck();
         } else if (isCapture) {
-          soundManager.playCapture();
+          heroSoundRef.current.playCapture();
         } else {
-          soundManager.playMove();
+          heroSoundRef.current.playMove();
         }
 
         setPhase3("black_responding");
@@ -1312,9 +1368,9 @@ export default function HeroPuzzle() {
               ).then(() => {
                 // Play sound for engine's response
                 if (!!engineMove.captured) {
-                  soundManager.playCapture();
+                  heroSoundRef.current.playCapture();
                 } else {
-                  soundManager.playMove();
+                  heroSoundRef.current.playMove();
                 }
                 if (game.isGameOver()) {
                   celebrate3();
@@ -1374,11 +1430,11 @@ export default function HeroPuzzle() {
           return;
         }
         if (game.inCheck()) {
-          soundManager.playCheck();
+          heroSoundRef.current.playCheck();
         } else if (isCapture) {
-          soundManager.playCapture();
+          heroSoundRef.current.playCapture();
         } else {
-          soundManager.playMove();
+          heroSoundRef.current.playMove();
         }
 
         // Trigger Stockfish response for Black
@@ -1409,9 +1465,9 @@ export default function HeroPuzzle() {
               ).then(() => {
                 // Play sound for engine's response
                 if (!!engineMove.captured) {
-                  soundManager.playCapture();
+                  heroSoundRef.current.playCapture();
                 } else {
-                  soundManager.playMove();
+                  heroSoundRef.current.playMove();
                 }
                 if (game.isGameOver()) {
                   celebrate2();
@@ -1499,11 +1555,11 @@ export default function HeroPuzzle() {
             if (game.isCheckmate()) {
               // celebrate0 will play checkmate sound
             } else if (game.inCheck()) {
-              soundManager.playCheck();
+              heroSoundRef.current.playCheck();
             } else if (isCapture) {
-              soundManager.playCapture();
+              heroSoundRef.current.playCapture();
             } else {
-              soundManager.playMove();
+              heroSoundRef.current.playMove();
             }
 
             if (game.isGameOver()) {
@@ -1541,9 +1597,9 @@ export default function HeroPuzzle() {
                 if (abortRef.current) return;
                 // Play sound for scripted black's move
                 if (expectedBlackMove.isCapture) {
-                  soundManager.playCapture();
+                  heroSoundRef.current.playCapture();
                 } else {
-                  soundManager.playMove();
+                  heroSoundRef.current.playMove();
                 }
                 setPuzzleMoveIndex0((prev) => prev + 1);
                 setPuzzleStep0((prev) => prev + 1);
@@ -1586,11 +1642,11 @@ export default function HeroPuzzle() {
             if (game.isCheckmate()) {
               // celebrate0 will play checkmate sound
             } else if (game.inCheck()) {
-              soundManager.playCheck();
+              heroSoundRef.current.playCheck();
             } else if (isCapture) {
-              soundManager.playCapture();
+              heroSoundRef.current.playCapture();
             } else {
-              soundManager.playMove();
+              heroSoundRef.current.playMove();
             }
 
             if (game.isGameOver()) {
@@ -1629,9 +1685,9 @@ export default function HeroPuzzle() {
                     setIsStockfishThinking0(false);
                     // Play sound for engine's response
                     if (!!engineMove.captured) {
-                      soundManager.playCapture();
+                      heroSoundRef.current.playCapture();
                     } else {
-                      soundManager.playMove();
+                      heroSoundRef.current.playMove();
                     }
                     setPuzzleMoveIndex0((prev) => prev + 1);
                     setPuzzleStep0((prev) => prev + 1);
@@ -1675,11 +1731,11 @@ export default function HeroPuzzle() {
           if (game.isCheckmate()) {
             // celebrate0 will play checkmate sound
           } else if (game.inCheck()) {
-            soundManager.playCheck();
+            heroSoundRef.current.playCheck();
           } else if (isCapture) {
-            soundManager.playCapture();
+            heroSoundRef.current.playCapture();
           } else {
-            soundManager.playMove();
+            heroSoundRef.current.playMove();
           }
 
           if (game.isGameOver()) {
@@ -1718,9 +1774,9 @@ export default function HeroPuzzle() {
                   setIsStockfishThinking0(false);
                   // Play sound for engine's response
                   if (!!engineMove.captured) {
-                    soundManager.playCapture();
+                    heroSoundRef.current.playCapture();
                   } else {
-                    soundManager.playMove();
+                    heroSoundRef.current.playMove();
                   }
                   setPuzzleMoveIndex0((prev) => prev + 1);
                   setPuzzleStep0((prev) => prev + 1);
@@ -2248,11 +2304,10 @@ export default function HeroPuzzle() {
               <button
                 key={i}
                 onClick={() => toSlide(i)}
-                className={`rounded-full transition-all duration-300 ${
-                  activeIndex === i
-                    ? "w-5 h-1.5 bg-[#D4AF6E]"
-                    : "w-1.5 h-1.5 bg-brand-secondary/40 hover:bg-brand-secondary"
-                }`}
+                className={`rounded-full transition-all duration-300 ${activeIndex === i
+                  ? "w-5 h-1.5 bg-[#D4AF6E]"
+                  : "w-1.5 h-1.5 bg-brand-secondary/40 hover:bg-brand-secondary"
+                  }`}
               />
             ))}
           </div>
@@ -2285,11 +2340,10 @@ export default function HeroPuzzle() {
             className={`
               flex flex-col items-center px-4 py-1 rounded-xl border
               transition-all duration-500
-              ${
-                (activeIndex === 0 && phase0 === "SUCCESS") ||
+              ${(activeIndex === 0 && phase0 === "SUCCESS") ||
                 (activeIndex === 1 && phase1 === "solved")
-                  ? "border-[rgba(212,175,110,0.5)] text-[#D4AF6E] shadow-lg shadow-[rgba(212,175,110,0.15)]"
-                  : "bg-[#0C1020] border-[rgba(212,175,110,0.12)] text-white"
+                ? "border-[rgba(212,175,110,0.5)] text-[#D4AF6E] shadow-lg shadow-[rgba(212,175,110,0.15)]"
+                : "bg-[#0C1020] border-[rgba(212,175,110,0.12)] text-white"
               }
             `}
           >
@@ -2414,13 +2468,13 @@ export default function HeroPuzzle() {
               phase1 === "black_responding" ||
               phase1 === "awaiting_mate" ||
               phase1 === "failed") && (
-              <>
-                <button
-                  onClick={() => {
-                    cleanupGame();
-                    initGame(1);
-                  }}
-                  className="
+                <>
+                  <button
+                    onClick={() => {
+                      cleanupGame();
+                      initGame(1);
+                    }}
+                    className="
                     flex-1 flex items-center justify-center gap-2
                     px-4 py-2.5 rounded-lg
                     font-sans text-sm font-semibold
@@ -2430,13 +2484,13 @@ export default function HeroPuzzle() {
                     transition-all duration-200
                     btn-glow-container btn-glow-surface
                   "
-                >
-                  <RotateCcw className="w-4 h-4 text-[#D4AF6E]" />
-                  Reset Puzzle
-                </button>
-                <button
-                  onClick={handleSolve1}
-                  className="
+                  >
+                    <RotateCcw className="w-4 h-4 text-[#D4AF6E]" />
+                    Reset Puzzle
+                  </button>
+                  <button
+                    onClick={handleSolve1}
+                    className="
                     flex-1 flex items-center justify-center gap-2
                     px-4 py-2.5 rounded-lg
                     font-sans text-sm font-semibold
@@ -2446,12 +2500,12 @@ export default function HeroPuzzle() {
                     transition-all duration-200
                     btn-glow-container btn-glow-surface
                   "
-                >
-                  <Play className="w-4 h-4 text-[#D4AF6E]" />
-                  Solve Puzzle
-                </button>
-              </>
-            )}
+                  >
+                    <Play className="w-4 h-4 text-[#D4AF6E]" />
+                    Solve Puzzle
+                  </button>
+                </>
+              )}
             {phase1 === "solved" && (
               <button
                 onClick={handleReplayOriginal}
@@ -2493,13 +2547,13 @@ export default function HeroPuzzle() {
             {(phase2 === "idle" ||
               phase2 === "awaiting_move" ||
               phase2 === "failed") && (
-              <>
-                <button
-                  onClick={() => {
-                    cleanupGame();
-                    initGame(2);
-                  }}
-                  className="
+                <>
+                  <button
+                    onClick={() => {
+                      cleanupGame();
+                      initGame(2);
+                    }}
+                    className="
                     flex-1 flex items-center justify-center gap-2
                     px-4 py-2.5 rounded-lg
                     font-sans text-sm font-semibold
@@ -2509,12 +2563,12 @@ export default function HeroPuzzle() {
                     transition-all duration-200
                     btn-glow-container btn-glow-surface
                   "
-                >
-                  <RotateCcw className="w-4 h-4 text-[#D4AF6E]" />
-                  Reset Puzzle
-                </button>
-              </>
-            )}
+                  >
+                    <RotateCcw className="w-4 h-4 text-[#D4AF6E]" />
+                    Reset Puzzle
+                  </button>
+                </>
+              )}
             {phase2 === "solved" && (
               <button
                 onClick={() => {
@@ -2559,13 +2613,13 @@ export default function HeroPuzzle() {
             {(phase3 === "idle" ||
               phase3 === "awaiting_move" ||
               phase3 === "failed") && (
-              <>
-                <button
-                  onClick={() => {
-                    cleanupGame();
-                    initGame(3);
-                  }}
-                  className="
+                <>
+                  <button
+                    onClick={() => {
+                      cleanupGame();
+                      initGame(3);
+                    }}
+                    className="
                     flex-1 flex items-center justify-center gap-2
                     px-4 py-2.5 rounded-lg
                     font-sans text-sm font-semibold
@@ -2575,12 +2629,12 @@ export default function HeroPuzzle() {
                     transition-all duration-200
                     btn-glow-container btn-glow-surface
                   "
-                >
-                  <RotateCcw className="w-4 h-4 text-[#D4AF6E]" />
-                  Reset Puzzle
-                </button>
-              </>
-            )}
+                  >
+                    <RotateCcw className="w-4 h-4 text-[#D4AF6E]" />
+                    Reset Puzzle
+                  </button>
+                </>
+              )}
             {phase3 === "solved" && (
               <button
                 onClick={() => {
