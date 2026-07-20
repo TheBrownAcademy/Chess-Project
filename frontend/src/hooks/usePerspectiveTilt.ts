@@ -120,15 +120,6 @@ export function usePerspectiveTilt<T extends HTMLElement>(
           ease: quickToEase,
         });
 
-        // Shadow tweens — animate a CSS variable for the drop-shadow
-        // restAlpha: resting glow; hoverAlpha: peak glow on hover
-        const restAlpha  = +(0.15 * shadowStrength).toFixed(3);
-        const hoverAlpha = +(0.28 * shadowStrength).toFixed(3);
-
-        gsap.set(el, {
-          filter: `drop-shadow(0 16px 40px rgba(99,102,241,${restAlpha}))`,
-        });
-
         // AbortController lets us remove all listeners in one call on cleanup
         const ac = new AbortController();
         const { signal } = ac;
@@ -147,15 +138,6 @@ export function usePerspectiveTilt<T extends HTMLElement>(
             setRotateY( nx * maxRotate);
             setScale(scalePeak);
 
-            // Dynamic shadow — shift opposite to tilt direction for depth illusion
-            const shadowX = nx * 12;
-            const shadowY = ny * 12 + 24;
-            const blur    = 40 + Math.abs(nx + ny) * 10;
-            gsap.to(el, {
-              filter: `drop-shadow(${shadowX}px ${shadowY}px ${blur}px rgba(99,102,241,${hoverAlpha}))`,
-              duration: 0.3,
-              overwrite: 'auto',
-            });
           },
           { signal }
         );
@@ -167,11 +149,6 @@ export function usePerspectiveTilt<T extends HTMLElement>(
             setRotateX(0);
             setRotateY(0);
             setScale(1);
-            gsap.to(el, {
-              filter: `drop-shadow(0 16px 40px rgba(99,102,241,${restAlpha}))`,
-              duration: 0.5,
-              overwrite: 'auto',
-            });
           },
           { signal }
         );

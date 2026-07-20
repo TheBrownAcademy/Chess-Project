@@ -43,9 +43,8 @@ import { Chessboard } from "react-chessboard";
 import { Chess } from "chess.js";
 import { parseUciMove } from "../utils/chessHelpers";
 import { useStockfish } from "../hooks/useStockfish";
-import { RotateCcw, Play, Zap, ChevronLeft, ChevronRight, Volume2, VolumeX } from "lucide-react";
+import { RotateCcw, Play, SkipForward, Zap, ChevronLeft, ChevronRight, Volume2, VolumeX } from "lucide-react";
 import { useConfetti } from "../hooks/useConfetti";
-import { useBoardCursorGlow } from "../hooks/useBoardCursorGlow";
 import { useMoveTrail } from "../hooks/useMoveTrail";
 import { gsap } from "../utils/gsapConfig";
 import { prefersReducedMotion } from "../utils/gsapConfig";
@@ -125,7 +124,6 @@ const TIMING = {
 // â”€â”€ Board theme â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const BOARD_DARK = "#769656";
 const BOARD_LIGHT = "#EEEED2";
-// â”€â”€ The Evergreen Game Moves (Moves 1 to 20 for autoplay, 21 to 24 for puzzle)
 const PGN_MOVES = [
   "e4",
   "e5",
@@ -269,7 +267,6 @@ export default function HeroPuzzle() {
 
   const { getEngineMove } = useStockfish();
   const { fireConfetti } = useConfetti();
-  const glowRef = useBoardCursorGlow<HTMLDivElement>();
   const { showTrail, clearTrail } = useMoveTrail();
   const { activeAnnotation, triggerAnnotation, clearAnnotation } =
     useMoveAnnotation();
@@ -341,9 +338,7 @@ export default function HeroPuzzle() {
   const gameRef1 = useRef<Chess>(new Chess(PUZZLE_ORIGINAL.fen));
   const [gameFen1, setGameFen1] = useState<string>(PUZZLE_ORIGINAL.fen);
   const [phase1, setPhase1] = useState<PuzzlePhaseOriginal>("idle");
-  const [movesLeftOriginal, setMovesLeftOriginal] = useState<number>(
-    PUZZLE_ORIGINAL.totalMoves,
-  );
+
   const [solveAnnotationOriginal, setSolveAnnotationOriginal] =
     useState<string>("");
   const [lastMove1, setLastMove1] = useState<{
@@ -469,24 +464,24 @@ export default function HeroPuzzle() {
           "+=0.1",
         );
         // d) Glow expansion ring around board card
-        tl.fromTo(
-          card,
-          { boxShadow: "0 0 0px 0px rgba(99,102,241,0)" },
-          {
-            boxShadow: "0 0 80px 24px rgba(99,102,241,0.6)",
-            duration: 0.5,
-            ease: "power2.out",
-            yoyo: true,
-            repeat: 2,
-            onComplete: () => {
-              gsap.to(card, {
-                boxShadow: "0 0 30px 8px rgba(99,102,241,0.25)",
-                duration: 0.8,
-              });
-            },
-          },
-          "<",
-        );
+        // tl.fromTo(
+        //   card,
+        //   { boxShadow: "0 0 0px 0px rgba(99,102,241,0)" },
+        //   {
+        //     boxShadow: "0 0 80px 24px rgba(99,102,241,0.6)",
+        //     duration: 0.5,
+        //     ease: "power2.out",
+        //     yoyo: true,
+        //     repeat: 2,
+        //     onComplete: () => {
+        //       gsap.to(card, {
+        //         boxShadow: "0 0 30px 8px rgba(99,102,241,0.25)",
+        //         duration: 0.8,
+        //       });
+        //     },
+        //   },
+        //   "<",
+        // );
       });
     },
     [safeSetTimeout],
@@ -823,7 +818,6 @@ export default function HeroPuzzle() {
         gameRef1.current = new Chess(PUZZLE_ORIGINAL.fen);
         setGameFen1(PUZZLE_ORIGINAL.fen);
         setPhase1("idle");
-        setMovesLeftOriginal(PUZZLE_ORIGINAL.totalMoves);
         setSolveAnnotationOriginal("");
         hasCelebratedOriginalRef.current = false;
       } else if (index === 2) {
@@ -930,7 +924,6 @@ export default function HeroPuzzle() {
         },
       });
     }
-    setMovesLeftOriginal(0);
   }, [fireConfetti, runCheckmateImpact, safeDelay]);
   const onDrop1 = useCallback(
     (sourceSquare: string, targetSquare: string): boolean => {
@@ -968,12 +961,10 @@ export default function HeroPuzzle() {
         // const displaySan = lastEntry.san.replace('x', '');
         if (phase1 === "idle") {
           if (game.isCheckmate()) {
-            setMovesLeftOriginal(0);
             triggerAnnotation(targetSquare, "!!");
             celebrateOriginal();
             return;
           }
-          setMovesLeftOriginal(1);
           setPhase1("black_responding");
           triggerAnnotation(targetSquare, "!!");
           safeSetTimeout(() => {
@@ -1087,7 +1078,6 @@ export default function HeroPuzzle() {
     );
     if (solveAbortRef.current) return;
     soundManager.playMove();
-    setMovesLeftOriginal(1);
     triggerAnnotation(step1.to, "!!");
     await safeDelay(900);
     if (solveAbortRef.current) return;
@@ -1118,7 +1108,6 @@ export default function HeroPuzzle() {
       },
     );
     if (solveAbortRef.current) return;
-    setMovesLeftOriginal(0);
     await safeDelay(650);
     if (!solveAbortRef.current) {
       celebrateOriginal();
@@ -1808,53 +1797,31 @@ export default function HeroPuzzle() {
     clearAllTimeouts,
     safeSetTimeout,
   ]);
-  // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-  // RENDER SETUP & CAROUSEL CONFIG
-  // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-  const movesLeft =
-    activeIndex === 0
-      ? phase0 === "SUCCESS"
-        ? 0
-        : 4 - puzzleStep0
-      : phase1 === "solved"
-        ? 0
-        : movesLeftOriginal;
+
   // Compute text labels based on phase and active game
-  let topTitle = "THE EVERGREEN GAME";
-  let descTop = "THE EVERGREEN GAME";
   let descBottom = "Anderssen vs Dufresne, 1852";
   if (activeIndex === 0) {
     if (phase0 === "PUZZLE") {
-      descTop = "CAN YOU FINISH THE EVERGREEN GAME?";
       descBottom = "White to move.";
     } else if (phase0 === "SUCCESS") {
-      descTop = "BRILLIANT.";
-      descBottom = "Anderssen vs Dufresne, 1852 â€” The Evergreen Game.";
+      descBottom = "Anderssen vs Dufresne, 1852 â€”.";
     } else if (phase0 === "REPLAY") {
-      descTop = "RESETTING POSITION...";
       descBottom = "Restarting autoplay...";
     }
   } else if (activeIndex === 1) {
-    topTitle = "MATE IN TWO";
     if (phase1 === "solving") {
-      descTop = "SOLVING MATE-IN-TWO...";
       descBottom =
         solveAnnotationOriginal || "White to play and checkmate in two.";
     } else if (phase1 === "solved") {
-      descTop = "BRILLIANT.";
       descBottom = "Checkmate! The rook delivers the final blow.";
     } else {
-      descTop = "MATE IN TWO";
       descBottom = "White to play and checkmate in two.";
     }
   } else if (activeIndex === 2) {
-    topTitle = "WINNING MOVE";
     if (phase2 === "solved") {
-      descTop = "BRILLIANT.";
       descBottom = "Checkmate! The puzzle is solved.";
     } else if (phase2 === "failed") {
       const game = gameRef2.current;
-      descTop = "GAME OVER";
       if (game.isCheckmate()) {
         descBottom = "Checkmate! Black wins.";
       } else if (game.isDraw()) {
@@ -1863,17 +1830,13 @@ export default function HeroPuzzle() {
         descBottom = "Game over.";
       }
     } else {
-      descTop = "WINNING MOVE";
       descBottom = "Find the winning move for white.";
     }
   } else {
-    topTitle = "WINNING MOVE";
     if (phase3 === "solved") {
-      descTop = "BRILLIANT.";
       descBottom = "Checkmate! The puzzle is solved.";
     } else if (phase3 === "failed") {
       const game = gameRef3.current;
-      descTop = "GAME OVER";
       if (game.isCheckmate()) {
         descBottom = "Checkmate! Black wins.";
       } else if (game.isDraw()) {
@@ -1881,31 +1844,20 @@ export default function HeroPuzzle() {
       } else {
         descBottom = "Game over.";
       }
-    } else {
-      descTop = "WINNING MOVE";
-      descBottom = "Find the winning move for White.";
     }
   }
   // â”€â”€ Carousel definitions â”€â”€
   const CAROUSEL_ITEMS = [
     {
-      title: "THE EVERGREEN GAME",
-      subtitle: "Autoplay and finish\nthe evergreen game.",
       fen: START_FEN,
     },
     {
-      title: "MATE IN TWO",
-      subtitle: "White to play and\ncheckmate in two.",
       fen: PUZZLE_ORIGINAL.fen,
     },
     {
-      title: "WINNING MOVE",
-      subtitle: "Find the winning move\nfor white.",
       fen: "r5k1/6pp/r7/q3N1P1/3Q4/1Pp5/2P5/1K1R3R w - - 0 1",
     },
     {
-      title: "WINNING MOVE",
-      subtitle: "Find the winning move\nfor White.",
       fen: PUZZLE3_FEN,
     },
   ];
@@ -1924,12 +1876,6 @@ export default function HeroPuzzle() {
   }, [cleanupGame, initGame]);
   return (
     <div className="flex flex-col gap-0.5">
-      {/* Top Title fixed above the board inside the panel */}
-      <div className="text-center w-full">
-        <h2 className="text-[13px] font-sans font-bold tracking-[0.15em] text-[#D4AF6E] uppercase">
-          {topTitle}
-        </h2>
-      </div>
       {/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
           HORIZONTAL CAROUSEL STAGE
           The outer div clips to show only the active board + peeking previews.
@@ -1939,27 +1885,13 @@ export default function HeroPuzzle() {
           â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */}
       {/* Stage: clips the visible area so only the active board + partial previews show */}
       <div
-        ref={glowRef}
-        className="relative w-full board-cursor-glow"
+        className="relative w-full"
         style={{ overflow: "hidden" }}
       >
         {/* Outer glow for checkmate state */}
         <div
           className="absolute inset-0 rounded-xl pointer-events-none z-10"
-          style={{
-            transition: "box-shadow 0.4s ease",
-            boxShadow: (
-              activeIndex === 0
-                ? isCheckmateGlow0
-                : activeIndex === 1
-                  ? isCheckmateGlow1
-                  : activeIndex === 2
-                    ? isCheckmateGlow2
-                    : isCheckmateGlow3
-            )
-              ? "0 0 50px 10px rgba(212, 175, 110, 0.4), 0 0 20px 5px rgba(212, 175, 110, 0.2)"
-              : undefined,
-          }}
+
         />
         {/* CHECKMATE impact overlay â€” GSAP toggles display:flex */}
         <div
@@ -2150,9 +2082,6 @@ export default function HeroPuzzle() {
                           lightSquareStyle: { backgroundColor: BOARD_LIGHT },
                           boardStyle: {
                             borderRadius: "0px",
-                            boxShadow: isActive
-                              ? "0 8px 24px rgba(0, 0, 0, 0.6)"
-                              : "none",
                           },
                           showNotation: false,
                           squareStyles: boardSquareStyles,
@@ -2192,7 +2121,6 @@ export default function HeroPuzzle() {
                            • Color alternates with the square background:
                                dark square  → light label  (#e8eec9 / cream)
                                light square → dark label   (#769656 / green)
-                           • Engraved text-shadow: inset shadow with no glow.
                            • squareSize is available from the outer scope.
                       ──────────────────────────────────────────────────────────────── */}
                       {isActive && (() => {
@@ -2202,18 +2130,8 @@ export default function HeroPuzzle() {
                         const RANKS = ["8", "7", "6", "5", "4", "3", "2", "1"];
 
                         // ── Colors ──────────────────────────────────────────────────────────
-                        // Light/cream squares → rich green label (contrasts the pale square)
-                        // Dark/green squares  → warm cream label (contrasts the dark square)
                         const ON_LIGHT = "#5C7D3A"; // deep green on cream square
                         const ON_DARK = "#FFF8E5"; // warm cream on green square
-
-                        // ── Engraved shadows ─────────────────────────────────────────────────
-                        // For text on a LIGHT square: stamp it down with a dark undercut
-                        const engraveOnLight =
-                          "0 2px 1px rgba(0,0,0,.45), 0 -1px 0 rgba(255,255,255,.75)";
-
-                        const engraveOnDark =
-                          "0 2px 1px rgba(0,0,0,.85), 0 -1px 0 rgba(255,255,255,.35)";
 
                         const baseStyle: React.CSSProperties = {
                           position: "absolute",
@@ -2228,9 +2146,6 @@ export default function HeroPuzzle() {
 
                         const nodes: React.ReactNode[] = [];
 
-                        const isDarkSquare = (row: number, col: number) => (row + col) % 2 === 0;
-                        // ── File letters: bottom-right of each square on bottom rank ────────
-                        // Row 7 = rank 1: a1 = light, b1 = dark, c1 = light …
                         FILES.forEach((file, col) => {
                           const isDark = ((7 + col) % 2) === 1;
                           nodes.push(
@@ -2242,7 +2157,6 @@ export default function HeroPuzzle() {
                                 bottom: "2px",
                                 right: `calc(${(7 - col) * 12.5}% + 2px)`,
                                 color: isDark ? ON_DARK : ON_LIGHT,
-                                // textShadow: isDark ? engraveOnDark : engraveOnLight,
                               }}
                             >
                               {file}
@@ -2263,7 +2177,6 @@ export default function HeroPuzzle() {
                                 top: `calc(${row * 12.5}% + 2px)`,
                                 left: "2px",
                                 color: isDark ? ON_DARK : ON_LIGHT,
-                                // textShadow: isDark ? engraveOnDark : engraveOnLight,
                               }}
                             >
                               {rank}
@@ -2332,35 +2245,13 @@ export default function HeroPuzzle() {
       {/* Below-board Info Panel */}
       <div className="flex items-center justify-between px-0 mt-1">
         <div>
-          <p className="text-[11px] text-[#8E8B82] font-sans font-medium uppercase tracking-widest mb-1">
-            {descTop}
-          </p>
           <div className="flex flex-col gap-0.5 text-left">
             <span className="text-[15px] font-sans text-white font-bold leading-tight">
               {descBottom}
             </span>
           </div>
         </div>
-        {activeIndex !== 2 && activeIndex !== 3 && movesLeft > 0 && (
-          <div
-            className={`
-              flex flex-col items-center px-4 py-1 rounded-xl border
-              transition-all duration-500
-              ${(activeIndex === 0 && phase0 === "SUCCESS") ||
-                (activeIndex === 1 && phase1 === "solved")
-                ? "border-[rgba(212,175,110,0.5)] text-[#D4AF6E] shadow-lg shadow-[rgba(212,175,110,0.15)]"
-                : "bg-[#0C1020] border-[rgba(212,175,110,0.12)] text-white"
-              }
-            `}
-          >
-            <span className="text-xl font-mono font-bold leading-none">
-              {movesLeft}
-            </span>
-            <span className="text-[9px] font-sans text-[#8E8B82] uppercase tracking-widest mt-0.5">
-              moves left
-            </span>
-          </div>
-        )}
+
       </div>
       {/* Action Buttons */}
       <div className="flex gap-3 mt-1">
@@ -2380,7 +2271,7 @@ export default function HeroPuzzle() {
                   btn-glow-container btn-glow-surface
                 "
               >
-                <Play className="w-4 h-4 text-[#D4AF6E] animate-pulse" />
+                <SkipForward size={18} className="w-4 h-4 text-[#D4AF6E] animate-pulse" />
                 Skip Animation
               </button>
             )}
@@ -2412,7 +2303,7 @@ export default function HeroPuzzle() {
                   "
                 >
                   <RotateCcw className="w-4 h-4 text-[#D4AF6E]" />
-                  Reset Puzzle
+                  Reset
                 </button>
                 <button
                   onClick={handleReplay0}
@@ -2508,7 +2399,7 @@ export default function HeroPuzzle() {
                   "
                   >
                     <Play className="w-4 h-4 text-[#D4AF6E]" />
-                    Solve Puzzle
+                    Solve
                   </button>
                 </>
               )}
