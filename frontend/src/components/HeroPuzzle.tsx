@@ -43,9 +43,8 @@ import { Chessboard } from "react-chessboard";
 import { Chess } from "chess.js";
 import { parseUciMove } from "../utils/chessHelpers";
 import { useStockfish } from "../hooks/useStockfish";
-import { RotateCcw, Play, Zap, ChevronLeft, ChevronRight } from "lucide-react";
+import { RotateCcw, Play, SkipForward, Zap, ChevronLeft, ChevronRight, Volume2, VolumeX } from "lucide-react";
 import { useConfetti } from "../hooks/useConfetti";
-import { useBoardCursorGlow } from "../hooks/useBoardCursorGlow";
 import { useMoveTrail } from "../hooks/useMoveTrail";
 import { gsap } from "../utils/gsapConfig";
 import { prefersReducedMotion } from "../utils/gsapConfig";
@@ -53,7 +52,7 @@ import { useMoveAnnotation } from "../hooks/useMoveAnnotation";
 import { MoveAnnotation } from "./MoveAnnotation";
 import ChessAnimationLayer from "./ChessAnimationLayer";
 import { motion } from "framer-motion";
-import { soundManager } from "../utils/SoundManager";
+import { SoundManager } from "../utils/SoundManager";
 interface ActiveMove {
   startX: number;
   startY: number;
@@ -125,7 +124,6 @@ const TIMING = {
 // â”€â”€ Board theme â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const BOARD_DARK = "#769656";
 const BOARD_LIGHT = "#EEEED2";
-// â”€â”€ The Evergreen Game Moves (Moves 1 to 20 for autoplay, 21 to 24 for puzzle)
 const PGN_MOVES = [
   "e4",
   "e5",
@@ -236,6 +234,8 @@ const historicalBlackMoves = [
 
 const START_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
 const PUZZLE3_FEN = "7k/5p1P/5ppK/6P1/8/8/1q6/BQ6 w - - 4 1";
+
+
 const getKingSquares = (fen: string) => {
   const tempGame = new Chess(fen);
   let losingKingSq: string | null = null;
@@ -265,9 +265,13 @@ interface HeroPuzzleProps {
 }
 
 export default function HeroPuzzle({ onDragStart, onDragEnd }: HeroPuzzleProps) {
+
+  const soundManagerRef = useRef<SoundManager>(SoundManager.createInstance());
+  const soundManager = soundManagerRef.current;
+  const [isMuted, setIsMuted] = useState<boolean>(true);
+
   const { getEngineMove } = useStockfish();
   const { fireConfetti } = useConfetti();
-  const glowRef = useBoardCursorGlow<HTMLDivElement>();
   const { showTrail, clearTrail } = useMoveTrail();
   const { activeAnnotation, triggerAnnotation, clearAnnotation } =
     useMoveAnnotation();
@@ -275,21 +279,35 @@ export default function HeroPuzzle({ onDragStart, onDragEnd }: HeroPuzzleProps) 
   const boardCardRef = useRef<HTMLDivElement>(null);
   const boardInnerRef = useRef<HTMLDivElement>(null);
   const checkmateRef = useRef<HTMLDivElement>(null);
-  // ── Viewport-aware sound gate ────────────────────────────────────────────────────────
-  // Hero puzzle sounds are silenced whenever the section scrolls out of
-  // the viewport so they don’t bleed into the demo board below the fold.
-  const isHeroVisibleRef = useRef<boolean>(true);
-  // Stable proxy – methods read isHeroVisibleRef.current at call-time, so
-  // stale closures inside useCallbacks are never a concern.
-  const heroSoundRef = useRef({
-    playMove: () => { if (isHeroVisibleRef.current) soundManager.playMove(); },
-    playCapture: () => { if (isHeroVisibleRef.current) soundManager.playCapture(); },
-    playCheck: () => { if (isHeroVisibleRef.current) soundManager.playCheck(); },
-    playCheckmate: () => { if (isHeroVisibleRef.current) soundManager.playCheckmate(); },
-    playApplause: () => { if (isHeroVisibleRef.current) soundManager.playApplause(); },
-    playLose: () => { if (isHeroVisibleRef.current) soundManager.playLose(); },
-    playGameEnd: () => { if (isHeroVisibleRef.current) soundManager.playGameEnd(); },
-  });
+
+  const isHeroVisibleRef = useRef(true);
+
+const heroSoundRef = useRef({
+  playMove: () => {
+    if (isHeroVisibleRef.current) soundManager.playMove();
+  },
+  playCapture: () => {
+    if (isHeroVisibleRef.current) soundManager.playCapture();
+  },
+  playCheck: () => {
+    if (isHeroVisibleRef.current) soundManager.playCheck();
+  },
+  playCheckmate: () => {
+    if (isHeroVisibleRef.current) soundManager.playCheckmate();
+  },
+  playApplause: () => {
+    if (isHeroVisibleRef.current) soundManager.playApplause();
+  },
+
+  playLose: () => { 
+    if (isHeroVisibleRef.current) soundManager.playLose(); 
+
+  },
+  playGameEnd: () => {
+    if (isHeroVisibleRef.current) soundManager.playGameEnd();
+  },
+});
+
   // â”€â”€ State variables for Puzzle 0 (Evergreen Game Autoplay & Puzzle) â”€â”€â”€â”€â”€â”€â”€â”€
   const [phase0, setPhase0] = useState<
     "AUTOPLAY" | "PUZZLE" | "SUCCESS" | "REPLAY"
@@ -297,6 +315,14 @@ export default function HeroPuzzle({ onDragStart, onDragEnd }: HeroPuzzleProps) 
   const [gameFen0, setGameFen0] = useState<string>(START_FEN);
   const [currentMoveIndex0, setCurrentMoveIndex0] = useState<number>(-1);
   const currentMoveIndex0Ref = useRef<number>(-1);
+  useEffect(() => {
+    soundManager.setMuted(isMuted);
+  }, [isMuted]);
+
+  const toggleMute = useCallback(() => {
+    setIsMuted((prev) => !prev);
+  }, []);
+
   useEffect(() => {
     currentMoveIndex0Ref.current = currentMoveIndex0;
   }, [currentMoveIndex0]);
@@ -322,7 +348,7 @@ export default function HeroPuzzle({ onDragStart, onDragEnd }: HeroPuzzleProps) 
       img.src = src;
     });
   }, []);
-  const [puzzleStep0, setPuzzleStep0] = useState<number>(0);
+  const [, setPuzzleStep0] = useState<number>(0);
   const [lastMove0, setLastMove0] = useState<{
     from: string;
     to: string;
@@ -330,7 +356,7 @@ export default function HeroPuzzle({ onDragStart, onDragEnd }: HeroPuzzleProps) 
   const [checkedKingSquare0, setCheckedKingSquare0] = useState<string | null>(
     null,
   );
-  const [isCheckmateGlow0, setIsCheckmateGlow0] = useState<boolean>(false);
+  const [, setIsCheckmateGlow0] = useState<boolean>(false);
   const [isStockfishThinking0, setIsStockfishThinking0] =
     useState<boolean>(false);
   const [playMode0, setPlayMode0] = useState<"SCRIPTED" | "STOCKFISH">(
@@ -346,9 +372,7 @@ export default function HeroPuzzle({ onDragStart, onDragEnd }: HeroPuzzleProps) 
   const gameRef1 = useRef<Chess>(new Chess(PUZZLE_ORIGINAL.fen));
   const [gameFen1, setGameFen1] = useState<string>(PUZZLE_ORIGINAL.fen);
   const [phase1, setPhase1] = useState<PuzzlePhaseOriginal>("idle");
-  const [movesLeftOriginal, setMovesLeftOriginal] = useState<number>(
-    PUZZLE_ORIGINAL.totalMoves,
-  );
+
   const [solveAnnotationOriginal, setSolveAnnotationOriginal] =
     useState<string>("");
   const [lastMove1, setLastMove1] = useState<{
@@ -358,7 +382,7 @@ export default function HeroPuzzle({ onDragStart, onDragEnd }: HeroPuzzleProps) 
   const [checkedKingSquare1, setCheckedKingSquare1] = useState<string | null>(
     null,
   );
-  const [isCheckmateGlow1, setIsCheckmateGlow1] = useState<boolean>(false);
+  const [, setIsCheckmateGlow1] = useState<boolean>(false);
 
   const hasCelebratedOriginalRef = useRef<boolean>(false);
   // â”€â”€ State variables for Puzzle 2 (New Stockfish Puzzle) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -378,7 +402,6 @@ export default function HeroPuzzle({ onDragStart, onDragEnd }: HeroPuzzleProps) 
   const [checkedKingSquare2, setCheckedKingSquare2] = useState<string | null>(
     null,
   );
-  const [isCheckmateGlow2, setIsCheckmateGlow2] = useState<boolean>(false);
 
   const hasCelebrated2Ref = useRef<boolean>(false);
   const solveAbortRef = useRef<boolean>(false);
@@ -396,7 +419,7 @@ export default function HeroPuzzle({ onDragStart, onDragEnd }: HeroPuzzleProps) 
   const [checkedKingSquare3, setCheckedKingSquare3] = useState<string | null>(
     null,
   );
-  const [isCheckmateGlow3, setIsCheckmateGlow3] = useState<boolean>(false);
+  const [, setIsCheckmateGlow3] = useState<boolean>(false);
 
   const hasCelebrated3Ref = useRef<boolean>(false);
   // â”€â”€ Safe Timers Ref â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -474,24 +497,24 @@ export default function HeroPuzzle({ onDragStart, onDragEnd }: HeroPuzzleProps) 
           "+=0.1",
         );
         // d) Glow expansion ring around board card
-        tl.fromTo(
-          card,
-          { boxShadow: "0 0 0px 0px rgba(99,102,241,0)" },
-          {
-            boxShadow: "0 0 80px 24px rgba(99,102,241,0.6)",
-            duration: 0.5,
-            ease: "power2.out",
-            yoyo: true,
-            repeat: 2,
-            onComplete: () => {
-              gsap.to(card, {
-                boxShadow: "0 0 30px 8px rgba(99,102,241,0.25)",
-                duration: 0.8,
-              });
-            },
-          },
-          "<",
-        );
+        // tl.fromTo(
+        //   card,
+        //   { boxShadow: "0 0 0px 0px rgba(99,102,241,0)" },
+        //   {
+        //     boxShadow: "0 0 80px 24px rgba(99,102,241,0.6)",
+        //     duration: 0.5,
+        //     ease: "power2.out",
+        //     yoyo: true,
+        //     repeat: 2,
+        //     onComplete: () => {
+        //       gsap.to(card, {
+        //         boxShadow: "0 0 30px 8px rgba(99,102,241,0.25)",
+        //         duration: 0.8,
+        //       });
+        //     },
+        //   },
+        //   "<",
+        // );
       });
     },
     [safeSetTimeout],
@@ -511,18 +534,8 @@ export default function HeroPuzzle({ onDragStart, onDragEnd }: HeroPuzzleProps) 
     window.addEventListener("resize", updateSize);
     return () => window.removeEventListener("resize", updateSize);
   }, []);
-  // Observe hero section visibility – fires whenever boardCardRef enters/leaves
-  // the viewport. Threshold 0.1 means sounds stop as soon as 90 %+ is hidden.
-  useEffect(() => {
-    const el = boardCardRef.current;
-    if (!el) return;
-    const observer = new IntersectionObserver(
-      ([entry]) => { isHeroVisibleRef.current = entry.isIntersecting; },
-      { threshold: 0.1 },
-    );
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, []);
+
+
   const abortRef = useRef<boolean>(false);
   const autoplayInstanceRef = useRef<number>(0);
   // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
@@ -544,6 +557,25 @@ export default function HeroPuzzle({ onDragStart, onDragEnd }: HeroPuzzleProps) 
       },
     );
   }, []);
+
+
+  useEffect(() => {
+  const el = boardCardRef.current;
+  if (!el) return;
+
+  const observer = new IntersectionObserver(
+    ([entry]) => {
+      isHeroVisibleRef.current = entry.isIntersecting;
+    },
+    {
+      threshold: 0.1,
+    }
+  );
+
+  observer.observe(el);
+
+  return () => observer.disconnect();
+}, []);
   // Magnetic piece hover effect removed to allow standard react-chessboard drag without interference
   // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
   // PREMIUM PIECE ANIMATION SYSTEM
@@ -840,13 +872,11 @@ export default function HeroPuzzle({ onDragStart, onDragEnd }: HeroPuzzleProps) 
         gameRef1.current = new Chess(PUZZLE_ORIGINAL.fen);
         setGameFen1(PUZZLE_ORIGINAL.fen);
         setPhase1("idle");
-        setMovesLeftOriginal(PUZZLE_ORIGINAL.totalMoves);
         setSolveAnnotationOriginal("");
         hasCelebratedOriginalRef.current = false;
       } else if (index === 2) {
         setLastMove2(null);
         setCheckedKingSquare2(null);
-        setIsCheckmateGlow2(false);
         gameRef2.current = new Chess(
           "r5k1/6pp/r7/q3N1P1/3Q4/1Pp5/2P5/1K1R3R w - - 0 1",
         );
@@ -926,7 +956,7 @@ export default function HeroPuzzle({ onDragStart, onDragEnd }: HeroPuzzleProps) 
     const checkmateFen = gameRef1.current.fen();
     const tempGame = new Chess(checkmateFen);
     const losingColor = tempGame.turn(); // the side that is in checkmate
-    const playerWon = losingColor === "b"; // white (player) wins when black is mated
+    const playerWon = losingColor === "b"; 
     const { losingKingSq } = getKingSquares(checkmateFen);
 
     if (playerWon) {
@@ -962,7 +992,6 @@ export default function HeroPuzzle({ onDragStart, onDragEnd }: HeroPuzzleProps) 
         },
       });
     }
-    setMovesLeftOriginal(0);
   }, [fireConfetti, runCheckmateImpact, safeDelay]);
   const onDrop1 = useCallback(
     (sourceSquare: string, targetSquare: string): boolean => {
@@ -1000,12 +1029,10 @@ export default function HeroPuzzle({ onDragStart, onDragEnd }: HeroPuzzleProps) 
         // const displaySan = lastEntry.san.replace('x', '');
         if (phase1 === "idle") {
           if (game.isCheckmate()) {
-            setMovesLeftOriginal(0);
             triggerAnnotation(targetSquare, "!!");
             celebrateOriginal();
             return;
           }
-          setMovesLeftOriginal(1);
           setPhase1("black_responding");
           triggerAnnotation(targetSquare, "!!");
           safeSetTimeout(() => {
@@ -1119,7 +1146,6 @@ export default function HeroPuzzle({ onDragStart, onDragEnd }: HeroPuzzleProps) 
     );
     if (solveAbortRef.current) return;
     heroSoundRef.current.playMove();
-    setMovesLeftOriginal(1);
     triggerAnnotation(step1.to, "!!");
     await safeDelay(900);
     if (solveAbortRef.current) return;
@@ -1150,7 +1176,6 @@ export default function HeroPuzzle({ onDragStart, onDragEnd }: HeroPuzzleProps) 
       },
     );
     if (solveAbortRef.current) return;
-    setMovesLeftOriginal(0);
     await safeDelay(650);
     if (!solveAbortRef.current) {
       celebrateOriginal();
@@ -1182,7 +1207,6 @@ export default function HeroPuzzle({ onDragStart, onDragEnd }: HeroPuzzleProps) 
       // Hold the checkmate text for a brief pause before fading it out
       await safeDelay(900);
       if (abortRef.current) return;
-
       if (playerWon0) {
         // AI checkmated — celebrate!
         heroSoundRef.current.playApplause();
@@ -1191,7 +1215,6 @@ export default function HeroPuzzle({ onDragStart, onDragEnd }: HeroPuzzleProps) 
         // Player checkmated — subtle lose sfx, no confetti
         heroSoundRef.current.playLose();
       }
-
       // Fade checkmate badge overlay out smoothly
       if (checkmateRef.current) {
         gsap.to(checkmateRef.current, {
@@ -1228,7 +1251,6 @@ export default function HeroPuzzle({ onDragStart, onDragEnd }: HeroPuzzleProps) 
 
     if (whiteWon) {
       setPhase2("solved");
-      setIsCheckmateGlow2(true);
       heroSoundRef.current.playCheckmate();
       await runCheckmateImpact(losingKingSq);
       await safeDelay(900);
@@ -1854,53 +1876,31 @@ export default function HeroPuzzle({ onDragStart, onDragEnd }: HeroPuzzleProps) 
     clearAllTimeouts,
     safeSetTimeout,
   ]);
-  // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-  // RENDER SETUP & CAROUSEL CONFIG
-  // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-  const movesLeft =
-    activeIndex === 0
-      ? phase0 === "SUCCESS"
-        ? 0
-        : 4 - puzzleStep0
-      : phase1 === "solved"
-        ? 0
-        : movesLeftOriginal;
+
   // Compute text labels based on phase and active game
-  let topTitle = "THE EVERGREEN GAME";
-  let descTop = "THE EVERGREEN GAME";
   let descBottom = "Anderssen vs Dufresne, 1852";
   if (activeIndex === 0) {
     if (phase0 === "PUZZLE") {
-      descTop = "CAN YOU FINISH THE EVERGREEN GAME?";
       descBottom = "White to move.";
     } else if (phase0 === "SUCCESS") {
-      descTop = "BRILLIANT.";
-      descBottom = "Anderssen vs Dufresne, 1852 â€” The Evergreen Game.";
+      descBottom = "Anderssen vs Dufresne, 1852 â€”.";
     } else if (phase0 === "REPLAY") {
-      descTop = "RESETTING POSITION...";
       descBottom = "Restarting autoplay...";
     }
   } else if (activeIndex === 1) {
-    topTitle = "MATE IN TWO";
     if (phase1 === "solving") {
-      descTop = "SOLVING MATE-IN-TWO...";
       descBottom =
         solveAnnotationOriginal || "White to play and checkmate in two.";
     } else if (phase1 === "solved") {
-      descTop = "BRILLIANT.";
       descBottom = "Checkmate! The rook delivers the final blow.";
     } else {
-      descTop = "MATE IN TWO";
       descBottom = "White to play and checkmate in two.";
     }
   } else if (activeIndex === 2) {
-    topTitle = "WINNING MOVE";
     if (phase2 === "solved") {
-      descTop = "BRILLIANT.";
       descBottom = "Checkmate! The puzzle is solved.";
     } else if (phase2 === "failed") {
       const game = gameRef2.current;
-      descTop = "GAME OVER";
       if (game.isCheckmate()) {
         descBottom = "Checkmate! Black wins.";
       } else if (game.isDraw()) {
@@ -1909,17 +1909,13 @@ export default function HeroPuzzle({ onDragStart, onDragEnd }: HeroPuzzleProps) 
         descBottom = "Game over.";
       }
     } else {
-      descTop = "WINNING MOVE";
       descBottom = "Find the winning move for white.";
     }
   } else {
-    topTitle = "WINNING MOVE";
     if (phase3 === "solved") {
-      descTop = "BRILLIANT.";
       descBottom = "Checkmate! The puzzle is solved.";
     } else if (phase3 === "failed") {
       const game = gameRef3.current;
-      descTop = "GAME OVER";
       if (game.isCheckmate()) {
         descBottom = "Checkmate! Black wins.";
       } else if (game.isDraw()) {
@@ -1927,31 +1923,20 @@ export default function HeroPuzzle({ onDragStart, onDragEnd }: HeroPuzzleProps) 
       } else {
         descBottom = "Game over.";
       }
-    } else {
-      descTop = "WINNING MOVE";
-      descBottom = "Find the winning move for White.";
     }
   }
   // â”€â”€ Carousel definitions â”€â”€
   const CAROUSEL_ITEMS = [
     {
-      title: "THE EVERGREEN GAME",
-      subtitle: "Autoplay and finish\nthe evergreen game.",
       fen: START_FEN,
     },
     {
-      title: "MATE IN TWO",
-      subtitle: "White to play and\ncheckmate in two.",
       fen: PUZZLE_ORIGINAL.fen,
     },
     {
-      title: "WINNING MOVE",
-      subtitle: "Find the winning move\nfor white.",
       fen: "r5k1/6pp/r7/q3N1P1/3Q4/1Pp5/2P5/1K1R3R w - - 0 1",
     },
     {
-      title: "WINNING MOVE",
-      subtitle: "Find the winning move\nfor White.",
       fen: PUZZLE3_FEN,
     },
   ];
@@ -1970,12 +1955,6 @@ export default function HeroPuzzle({ onDragStart, onDragEnd }: HeroPuzzleProps) 
   }, [cleanupGame, initGame]);
   return (
     <div className="flex flex-col gap-0.5">
-      {/* Top Title fixed above the board inside the panel */}
-      <div className="text-center w-full">
-        <h2 className="text-[13px] font-sans font-bold tracking-[0.15em] text-[#D4AF6E] uppercase">
-          {topTitle}
-        </h2>
-      </div>
       {/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
           HORIZONTAL CAROUSEL STAGE
           The outer div clips to show only the active board + peeking previews.
@@ -1985,27 +1964,13 @@ export default function HeroPuzzle({ onDragStart, onDragEnd }: HeroPuzzleProps) 
           â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */}
       {/* Stage: clips the visible area so only the active board + partial previews show */}
       <div
-        ref={glowRef}
-        className="relative w-full board-cursor-glow"
+        className="relative w-full"
         style={{ overflow: "hidden" }}
       >
         {/* Outer glow for checkmate state */}
         <div
           className="absolute inset-0 rounded-xl pointer-events-none z-10"
-          style={{
-            transition: "box-shadow 0.4s ease",
-            boxShadow: (
-              activeIndex === 0
-                ? isCheckmateGlow0
-                : activeIndex === 1
-                  ? isCheckmateGlow1
-                  : activeIndex === 2
-                    ? isCheckmateGlow2
-                    : isCheckmateGlow3
-            )
-              ? "0 0 50px 10px rgba(212, 175, 110, 0.4), 0 0 20px 5px rgba(212, 175, 110, 0.2)"
-              : undefined,
-          }}
+
         />
         {/* CHECKMATE impact overlay â€” GSAP toggles display:flex */}
         <div
@@ -2201,15 +2166,11 @@ export default function HeroPuzzle({ onDragStart, onDragEnd }: HeroPuzzleProps) 
                           lightSquareStyle: { backgroundColor: BOARD_LIGHT },
                           boardStyle: {
                             borderRadius: "0px",
-                            boxShadow: isActive
-                              ? "0 8px 24px rgba(0, 0, 0, 0.6)"
-                              : "none",
                           },
                           showNotation: false,
                           squareStyles: boardSquareStyles,
                           animationDurationInMs: 0,
                           allowDragging: isActive && boardIsInteractive,
-                          dragActivationDistance: 0,
                           squareRenderer: ({ square, piece, children }) => {
                             const isKing =
                               piece?.pieceType === "wK" ||
@@ -2236,61 +2197,79 @@ export default function HeroPuzzle({ onDragStart, onDragEnd }: HeroPuzzleProps) 
                         <MoveAnnotation activeAnnotation={activeAnnotation} />
                       )}
 
-                      {/* Board coordinate letters & numbers */}
-                      {isActive &&
-                        ["a", "b", "c", "d", "e", "f", "g", "h"].map(
-                          (file, fi) => (
+                      {/* ── Board coordinate notation (Chess.com style) ───────────────────
+                           • File letters (a–h): bottom-right corner of each square
+                             in the bottom rank only.
+                           • Rank numbers (8–1): top-left corner of each square
+                             in the leftmost file only.
+                           • Color alternates with the square background:
+                               dark square  → light label  (#e8eec9 / cream)
+                               light square → dark label   (#769656 / green)
+                           • squareSize is available from the outer scope.
+                      ──────────────────────────────────────────────────────────────── */}
+                      {isActive && (() => {
+                        // Board is always White's perspective for these puzzles
+                        // (a=col0, h=col7; rank8=row0, rank1=row7)
+                        const FILES = ["a", "b", "c", "d", "e", "f", "g", "h"];
+                        const RANKS = ["8", "7", "6", "5", "4", "3", "2", "1"];
+
+                        // ── Colors ──────────────────────────────────────────────────────────
+                        const ON_LIGHT = "#5C7D3A"; // deep green on cream square
+                        const ON_DARK = "#FFF8E5"; // warm cream on green square
+
+                        const baseStyle: React.CSSProperties = {
+                          position: "absolute",
+                          fontFamily: "Inter, system-ui, sans-serif",
+                          fontSize: "9.5px",
+                          fontWeight: 700,
+                          lineHeight: 1,
+                          pointerEvents: "none",
+                          userSelect: "none",
+                          zIndex: 25,
+                        };
+
+                        const nodes: React.ReactNode[] = [];
+
+                        FILES.forEach((file, col) => {
+                          const isDark = ((7 + col) % 2) === 1;
+                          nodes.push(
                             <span
                               key={`file-${file}`}
                               aria-hidden="true"
                               style={{
-                                position: "absolute",
+                                ...baseStyle,
                                 bottom: "2px",
-                                left: `calc(${fi * 12.5}% + 2px)`,
-                                fontFamily: "Inter, system-ui, sans-serif",
-                                fontSize: "15px",
-                                fontWeight: 700,
-                                color: fi % 2 === 0 ? "#5e7a44" : "#c8c8a6",
-                                textShadow:
-                                  "0px -1px 1px rgba(0,0,0,0.35), 0px 1px 1px rgba(255,255,255,0.4)",
-                                opacity: 0.92,
-                                pointerEvents: "none",
-                                userSelect: "none",
-                                zIndex: 25,
-                                lineHeight: 1,
+                                right: `calc(${(7 - col) * 12.5}% + 2px)`,
+                                color: isDark ? ON_DARK : ON_LIGHT,
                               }}
                             >
                               {file}
                             </span>
-                          ),
-                        )}
-                      {isActive &&
-                        ["8", "7", "6", "5", "4", "3", "2", "1"].map(
-                          (rank, ri) => (
+                          );
+                        });
+
+                        // ── Rank numbers: top-left of each square on left file ───────────────
+                        // Col 0 = file a: a8=dark(row0), a7=light(row1), a6=dark(row2) …
+                        RANKS.forEach((rank, row) => {
+                          const isDark = (row + 0) % 2 !== 0;
+                          nodes.push(
                             <span
                               key={`rank-${rank}`}
                               aria-hidden="true"
                               style={{
-                                position: "absolute",
-                                top: `calc(${ri * 12.5}% + 2px)`,
+                                ...baseStyle,
+                                top: `calc(${row * 12.5}% + 2px)`,
                                 left: "2px",
-                                fontFamily: "Inter, system-ui, sans-serif",
-                                fontSize: "15px",
-                                fontWeight: 700,
-                                color: ri % 2 === 0 ? "#c8c8a6" : "#5e7a44",
-                                textShadow:
-                                  "0px -1px 1px rgba(0,0,0,0.35), 0px 1px 1px rgba(255,255,255,0.4)",
-                                opacity: 0.92,
-                                pointerEvents: "none",
-                                userSelect: "none",
-                                zIndex: 25,
-                                lineHeight: 1,
+                                color: isDark ? ON_DARK : ON_LIGHT,
                               }}
                             >
                               {rank}
                             </span>
-                          ),
-                        )}
+                          );
+                        });
+
+                        return nodes;
+                      })()}
                     </div>
                   </div>
                 </motion.div>
@@ -2333,39 +2312,30 @@ export default function HeroPuzzle({ onDragStart, onDragEnd }: HeroPuzzleProps) 
             <ChevronRight className="w-4 h-4" />
           </button>
         </div>
+        <button
+          onClick={toggleMute}
+          aria-label={isMuted ? "Unmute sound" : "Mute sound"}
+          className="p-2 rounded-full border text-[#8E8B82]
+             hover:text-white hover:border-[rgba(212,175,110,0.5)] hover:bg-white/5
+             transition-all duration-200"
+        >
+          {isMuted ? (
+            <VolumeX className="w-4 h-4" />
+          ) : (
+            <Volume2 className="w-4 h-4 text-[#D4AF6E]" />
+          )}
+        </button>
       </div>
       {/* Below-board Info Panel */}
       <div className="flex items-center justify-between px-0 mt-1">
         <div>
-          <p className="text-[11px] text-[#8E8B82] font-sans font-medium uppercase tracking-widest mb-1">
-            {descTop}
-          </p>
           <div className="flex flex-col gap-0.5 text-left">
             <span className="text-[15px] font-sans text-white font-bold leading-tight">
               {descBottom}
             </span>
           </div>
         </div>
-        {activeIndex !== 2 && activeIndex !== 3 && movesLeft > 0 && (
-          <div
-            className={`
-              flex flex-col items-center px-4 py-1 rounded-xl border
-              transition-all duration-500
-              ${(activeIndex === 0 && phase0 === "SUCCESS") ||
-                (activeIndex === 1 && phase1 === "solved")
-                ? "border-[rgba(212,175,110,0.5)] text-[#D4AF6E] shadow-lg shadow-[rgba(212,175,110,0.15)]"
-                : "bg-[#0C1020] border-[rgba(212,175,110,0.12)] text-white"
-              }
-            `}
-          >
-            <span className="text-xl font-mono font-bold leading-none">
-              {movesLeft}
-            </span>
-            <span className="text-[9px] font-sans text-[#8E8B82] uppercase tracking-widest mt-0.5">
-              moves left
-            </span>
-          </div>
-        )}
+
       </div>
       {/* Action Buttons */}
       <div className="flex gap-3 mt-1">
@@ -2385,7 +2355,7 @@ export default function HeroPuzzle({ onDragStart, onDragEnd }: HeroPuzzleProps) 
                   btn-glow-container btn-glow-surface
                 "
               >
-                <Play className="w-4 h-4 text-[#D4AF6E] animate-pulse" />
+                <SkipForward size={18} className="w-4 h-4 text-[#D4AF6E] animate-pulse" />
                 Skip Animation
               </button>
             )}
@@ -2417,7 +2387,7 @@ export default function HeroPuzzle({ onDragStart, onDragEnd }: HeroPuzzleProps) 
                   "
                 >
                   <RotateCcw className="w-4 h-4 text-[#D4AF6E]" />
-                  Reset Puzzle
+                  Reset
                 </button>
                 <button
                   onClick={handleReplay0}
@@ -2497,7 +2467,7 @@ export default function HeroPuzzle({ onDragStart, onDragEnd }: HeroPuzzleProps) 
                   "
                   >
                     <RotateCcw className="w-4 h-4 text-[#D4AF6E]" />
-                    Reset Puzzle
+                    Reset
                   </button>
                   <button
                     onClick={handleSolve1}
@@ -2513,7 +2483,7 @@ export default function HeroPuzzle({ onDragStart, onDragEnd }: HeroPuzzleProps) 
                   "
                   >
                     <Play className="w-4 h-4 text-[#D4AF6E]" />
-                    Solve Puzzle
+                    Solve
                   </button>
                 </>
               )}
@@ -2576,7 +2546,7 @@ export default function HeroPuzzle({ onDragStart, onDragEnd }: HeroPuzzleProps) 
                   "
                   >
                     <RotateCcw className="w-4 h-4 text-[#D4AF6E]" />
-                    Reset Puzzle
+                    Reset
                   </button>
                 </>
               )}
@@ -2642,7 +2612,7 @@ export default function HeroPuzzle({ onDragStart, onDragEnd }: HeroPuzzleProps) 
                   "
                   >
                     <RotateCcw className="w-4 h-4 text-[#D4AF6E]" />
-                    Reset Puzzle
+                    Reset
                   </button>
                 </>
               )}

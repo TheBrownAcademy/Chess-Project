@@ -330,7 +330,7 @@ export default function ProfilePage() {
 
             {/* Future Readiness Placeholder Layout Grid */}
             <div className="pt-8">
-              <h3 className="text-lg font-sans font-bold text-white mb-6 tracking-wide flex items-center gap-2">
+              <h3 className="text-lg font-sans font-bold text-white mb-6 tracking-wide flex flex-col sm:flex-row items-center justify-center md:justify-start gap-2 text-center sm:text-left">
                 <span>Chess Profile & Statistics</span>
                 <span className="text-[10px] uppercase font-sans font-semibold bg-brand-accent/15 text-brand-accent px-2 py-0.5 rounded-full tracking-wider">
                   Future Upgrades

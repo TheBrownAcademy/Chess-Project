@@ -1,13 +1,31 @@
 import React, { useState, useEffect, useRef } from "react";
-import { User, LogOut } from "lucide-react";
+import { CircleUserRound, LogOut, CreditCard, Settings, Palette, Volume2, VolumeX } from "lucide-react";
 import { useSession } from "../hooks/useSession";
 import { useNavigate } from "react-router";
+import { soundManager } from "../utils/SoundManager";
+
+const STORAGE_KEY = 'sound-enabled';
 
 export const AvatarDropdown: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
   const { session, signOut } = useSession();
   const dropdownRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
+
+  // ── Sound state (mirrors SoundToggle logic so they stay in sync) ───────────
+  const [soundEnabled, setSoundEnabled] = useState<boolean>(() => {
+    if (typeof window === 'undefined') return true;
+    return localStorage.getItem(STORAGE_KEY) !== 'false';
+  });
+
+  const toggleSound = () => {
+    const next = !soundEnabled;
+    setSoundEnabled(next);
+    soundManager.setMuted(!next);
+    localStorage.setItem(STORAGE_KEY, String(next));
+    if (next) soundManager.playButtonClick();
+    // do NOT close the menu on sound toggle
+  };
 
   // Toggle dropdown visibility
   const toggleDropdown = () => setIsOpen((prev) => !prev);
@@ -94,9 +112,88 @@ export const AvatarDropdown: React.FC = () => {
             className="w-full flex items-center gap-3 px-4 py-2 text-sm font-sans text-brand-secondary hover:text-white hover:bg-white/5 text-left transition-colors duration-150 cursor-pointer"
             role="menuitem"
           >
-            <User className="w-4 h-4 text-brand-accent" />
+            {/* <User className="w-4 h-4 text-brand-accent" /> */}
+            <CircleUserRound
+              className="w-5 h-5 text-[#5EA1FF]"
+              strokeWidth={1.8}
+            />
             Profile
           </button>
+
+          {/* Membership option */}
+          <button
+            onClick={() => {
+              navigate("/pricing");
+              setIsOpen(false);
+            }}
+            className="w-full flex items-center gap-3 px-4 py-2 text-sm font-sans text-brand-secondary hover:text-white hover:bg-white/5 text-left transition-colors duration-150 cursor-pointer"
+            role="menuitem"
+          >
+            <CreditCard className="w-4 h-4 text-brand-accent" />
+            Membership
+          </button>
+
+
+          {/* ── Divider ───────────────────────────────────────────────────── */}
+          <div className="my-1.5 border-t border-brand-border/40" role="separator" />
+
+          {/* ── Settings ──────────────────────────────────────────────────── */}
+          <button
+            id="avatar-menu-settings"
+            role="menuitem"
+            onClick={() => { setIsOpen(false); navigate('/profile'); }}
+            className="w-full flex items-center gap-3 px-4 py-2.5 text-sm font-sans text-brand-secondary hover:text-white hover:bg-white/[0.06] text-left transition-colors duration-150 cursor-pointer group"
+            tabIndex={0}
+          >
+            <Settings className="w-4 h-4 text-brand-accent/70 group-hover:text-brand-accent shrink-0 transition-colors duration-150" />
+            <span className="flex-1">Settings</span>
+          </button>
+
+          {/* ── Theme — disabled / coming soon ───────────────────────────── */}
+          <div
+            id="avatar-menu-theme"
+            role="menuitem"
+            aria-disabled="true"
+            title="Coming Soon"
+            className="w-full flex items-center gap-3 px-4 py-2.5 text-sm font-sans text-brand-secondary/40 text-left cursor-not-allowed select-none opacity-50"
+          >
+            <Palette className="w-4 h-4 text-brand-accent/30 shrink-0" />
+            <span className="flex-1">Theme</span>
+            <span className="text-[10px] font-mono px-1.5 py-0.5 rounded-full border border-brand-border/30 text-brand-secondary/40 bg-white/[0.03]">
+              Soon
+            </span>
+          </div>
+
+          {/* ── Sound — full-row button ────────────────────────────────────── */}
+          <button
+            id="avatar-menu-sound"
+            role="menuitem"
+            onClick={toggleSound}
+            aria-pressed={soundEnabled}
+            aria-label={soundEnabled ? 'Mute sound' : 'Unmute sound'}
+            className="w-full flex items-center gap-3 px-4 py-2.5 text-sm font-sans text-brand-secondary hover:text-white hover:bg-white/[0.06] text-left transition-colors duration-150 cursor-pointer group"
+            tabIndex={0}
+          >
+            {soundEnabled ? (
+              <Volume2 className="w-4 h-4 text-brand-accent/70 group-hover:text-brand-accent shrink-0 transition-colors duration-150" />
+            ) : (
+              <VolumeX className="w-4 h-4 text-brand-secondary/60 group-hover:text-brand-secondary shrink-0 transition-colors duration-150" />
+            )}
+            <span className="flex-1">Sound</span>
+            {/* Pill indicator */}
+            <span
+              className={[
+                'text-[10px] font-mono px-1.5 py-0.5 rounded-full border transition-colors duration-200',
+                soundEnabled
+                  ? 'border-brand-accent/40 text-brand-accent bg-brand-accent/10'
+                  : 'border-brand-border/40 text-brand-secondary/50 bg-white/5',
+              ].join(' ')}
+            >
+              {soundEnabled ? 'ON' : 'OFF'}
+            </span>
+          </button>
+
+          <div className="my-1.5 border-t border-brand-border/40" role="separator" />
 
           {/* Sign Out option */}
           <button
@@ -110,6 +207,7 @@ export const AvatarDropdown: React.FC = () => {
             <LogOut className="w-4 h-4 text-red-400" />
             Sign Out
           </button>
+
         </div>
       )}
     </div>

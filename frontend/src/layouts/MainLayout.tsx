@@ -1,5 +1,4 @@
 import SidebarLayout from '../components/SidebarLayout';
-import Footer from '../components/Footer';
 import { Outlet } from 'react-router';
 
 export default function MainLayout() {
@@ -9,7 +8,6 @@ export default function MainLayout() {
         <div className="flex-1">
           <Outlet />
         </div>
-        <Footer />
       </div>
     </SidebarLayout>
   );

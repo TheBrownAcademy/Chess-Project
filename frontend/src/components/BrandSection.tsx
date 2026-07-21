@@ -177,7 +177,7 @@ export default function BrandSection() {
           >
             <div
               ref={artworkRef}
-              className="luxury-card w-full max-w-[600px] relative scale-[1.1] origin-right p-4 md:p-6 pb-8"
+              className="luxury-card w-full max-w-[600px] relative scale-100 lg:scale-[1.1] origin-center lg:origin-right p-4 md:p-6 pb-8 mt-8 lg:mt-0"
               style={{ transformStyle: 'preserve-3d', willChange: 'transform' }}
             >
               {/* Chess board micropattern */}

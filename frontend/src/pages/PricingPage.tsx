@@ -115,10 +115,9 @@ const PricingCard: React.FC<PlanProps> = ({
       whileHover={{ y: -8, transition: { duration: 0.3, ease: "easeOut" } }}
       transition={{ duration: 0.6 }}
       className={`relative rounded-3xl p-6 sm:p-8 flex flex-col justify-between overflow-hidden transition-all duration-500
-        ${
-          isPopular
-            ? "bg-gradient-to-b from-[#0e1428] to-[#080b14] border border-brand-accent/30 shadow-[0_20px_50px_rgba(212,175,110,0.06)]"
-            : "bg-[#0c1020]/60 backdrop-blur-xl border border-brand-border/40 hover:border-brand-accent/20"
+        ${isPopular
+          ? "bg-gradient-to-b from-[#0e1428] to-[#080b14] border border-brand-accent/30 shadow-[0_20px_50px_rgba(212,175,110,0.06)]"
+          : "bg-[#0c1020]/60 backdrop-blur-xl border border-brand-border/40 hover:border-brand-accent/20"
         }
       `}
     >
@@ -194,10 +193,9 @@ const PricingCard: React.FC<PlanProps> = ({
       <button
         onClick={onCtaClick}
         className={`w-full py-3.5 px-6 rounded-xl font-mono text-xs uppercase tracking-widest font-semibold transition-all duration-300 relative overflow-hidden cursor-pointer
-          ${
-            isPopular
-              ? "btn-premium-cta cta-shine text-brand-accent border-brand-accent/40 shadow-lg hover:scale-[1.01]"
-              : "bg-white/5 border border-white/10 hover:border-brand-accent/40 text-brand-secondary hover:text-white active:scale-[0.99]"
+          ${isPopular
+            ? "btn-premium-cta cta-shine text-brand-accent border-brand-accent/40 shadow-lg hover:scale-[1.01]"
+            : "bg-white/5 border border-white/10 hover:border-brand-accent/40 text-brand-secondary hover:text-white active:scale-[0.99]"
           }
         `}
       >
@@ -458,9 +456,9 @@ export default function PricingPage() {
               Yearly
             </button>
 
-            {/* Save 17% indicator */}
-            <div className="absolute left-[calc(100%+14px)] top-1/2 -translate-y-1/2 whitespace-nowrap bg-brand-accent/15 border border-brand-accent/30 text-brand-accent text-[10px] font-mono tracking-wider uppercase px-2 py-0.5 rounded-md flex items-center gap-1">
-              Save 17%
+            {/* Save 20% indicator */}
+            <div className="absolute z-20 top-0 left-3/4 -translate-x-1/2 -translate-y-1/2 sm:left-[calc(100%+14px)] sm:top-1/2 sm:translate-x-0 whitespace-nowrap bg-brand-accent/15 border border-brand-accent/30 text-brand-accent text-[10px] font-mono tracking-wider uppercase px-2 py-0.5 rounded-md flex items-center gap-1">
+              Save 20%
             </div>
           </div>
         </section>

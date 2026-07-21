@@ -1,0 +1,173 @@
+/**
+ * MoreMenu.tsx
+ *
+ * A three-dot (⋮) dropdown that sits in the top-right header area.
+ *
+ * Menu items:
+ *   Settings  → navigates to /profile (existing page)
+ *   Theme     → disabled, "Coming Soon" tooltip
+ *   ─── divider ───
+ *   Sound     → full-row clickable toggle (reuses SoundManager, no SoundToggle sub-button)
+ *
+ * Accessibility:
+ *   - role="menu" / role="menuitem" throughout
+ *   - aria-expanded / aria-haspopup on trigger
+ *   - Closes on Escape, outside click, and after item selection
+ */
+
+import { useState, useEffect, useRef } from 'react';
+import { MoreVertical, Settings, Palette, Volume2, VolumeX } from 'lucide-react';
+import { useNavigate } from 'react-router';
+import { soundManager } from '../utils/SoundManager';
+
+const STORAGE_KEY = 'sound-enabled';
+
+// ─── Component ────────────────────────────────────────────────────────────────
+
+export const MoreMenu: React.FC = () => {
+  const navigate = useNavigate();
+  const [isOpen, setIsOpen] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  // ── Sound state (mirrors SoundToggle logic so they stay in sync) ───────────
+  const [soundEnabled, setSoundEnabled] = useState<boolean>(() => {
+    if (typeof window === 'undefined') return true;
+    return localStorage.getItem(STORAGE_KEY) !== 'false';
+  });
+
+  const toggleSound = () => {
+    const next = !soundEnabled;
+    setSoundEnabled(next);
+    soundManager.setMuted(!next);
+    localStorage.setItem(STORAGE_KEY, String(next));
+    if (next) soundManager.playButtonClick();
+    // do NOT close the menu on sound toggle
+  };
+
+  // ── Close on outside click ─────────────────────────────────────────────────
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (
+        containerRef.current &&
+        !containerRef.current.contains(e.target as Node)
+      ) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  // ── Close on Escape ────────────────────────────────────────────────────────
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isOpen) {
+        setIsOpen(false);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen]);
+
+  return (
+    <div ref={containerRef} className="relative z-[90]">
+      {/* ── Trigger button ──────────────────────────────────────────────── */}
+      <button
+        id="more-menu-trigger"
+        onClick={() => setIsOpen((prev) => !prev)}
+        aria-label="More options"
+        aria-haspopup="true"
+        aria-expanded={isOpen}
+        aria-controls="more-menu-dropdown"
+        className={[
+          'flex items-center justify-center',
+          'w-9 h-9 rounded-lg',
+          'border transition-all duration-200',
+          'focus:outline-none focus:ring-2 focus:ring-brand-accent/40',
+          'cursor-pointer',
+          isOpen
+            ? 'border-brand-border/60 bg-white/[0.08] text-white'
+            : 'border-transparent text-brand-secondary hover:text-white hover:border-brand-border/40 hover:bg-white/5',
+        ].join(' ')}
+      >
+        <MoreVertical className="w-4 h-4" />
+      </button>
+
+      {/* ── Dropdown panel ──────────────────────────────────────────────── */}
+      {isOpen && (
+        <div
+          id="more-menu-dropdown"
+          role="menu"
+          aria-label="More options menu"
+          aria-orientation="vertical"
+          className="absolute right-0 mt-2 w-52 rounded-xl border border-brand-border py-1.5 shadow-2xl animate-in fade-in slide-in-from-top-2 duration-150"
+          style={{
+            background: '#0A0E1A',
+            boxShadow: '0 8px 32px rgba(0,0,0,0.85), 0 0 0 1px rgba(212,175,110,0.10)',
+          }}
+        >
+          {/* ── Settings ──────────────────────────────────────────────────── */}
+          <button
+            id="more-menu-settings"
+            role="menuitem"
+            onClick={() => { setIsOpen(false); navigate('/profile'); }}
+            className="w-full flex items-center gap-3 px-4 py-2.5 text-sm font-sans text-brand-secondary hover:text-white hover:bg-white/[0.06] text-left transition-colors duration-150 cursor-pointer group"
+            tabIndex={0}
+          >
+            <Settings className="w-4 h-4 text-brand-accent/70 group-hover:text-brand-accent shrink-0 transition-colors duration-150" />
+            <span className="flex-1">Settings</span>
+          </button>
+
+          {/* ── Theme — disabled / coming soon ───────────────────────────── */}
+          <div
+            id="more-menu-theme"
+            role="menuitem"
+            aria-disabled="true"
+            title="Coming Soon"
+            className="w-full flex items-center gap-3 px-4 py-2.5 text-sm font-sans text-brand-secondary/40 text-left cursor-not-allowed select-none opacity-50"
+          >
+            <Palette className="w-4 h-4 text-brand-accent/30 shrink-0" />
+            <span className="flex-1">Theme</span>
+            <span className="text-[10px] font-mono px-1.5 py-0.5 rounded-full border border-brand-border/30 text-brand-secondary/40 bg-white/[0.03]">
+              Soon
+            </span>
+          </div>
+
+          {/* ── Divider ───────────────────────────────────────────────────── */}
+          <div className="my-1.5 border-t border-brand-border/40" role="separator" />
+
+          {/* ── Sound — full-row button ────────────────────────────────────── */}
+          <button
+            id="more-menu-sound"
+            role="menuitem"
+            onClick={toggleSound}
+            aria-pressed={soundEnabled}
+            aria-label={soundEnabled ? 'Mute sound' : 'Unmute sound'}
+            className="w-full flex items-center gap-3 px-4 py-2.5 text-sm font-sans text-brand-secondary hover:text-white hover:bg-white/[0.06] text-left transition-colors duration-150 cursor-pointer group"
+            tabIndex={0}
+          >
+            {soundEnabled ? (
+              <Volume2 className="w-4 h-4 text-brand-accent/70 group-hover:text-brand-accent shrink-0 transition-colors duration-150" />
+            ) : (
+              <VolumeX className="w-4 h-4 text-brand-secondary/60 group-hover:text-brand-secondary shrink-0 transition-colors duration-150" />
+            )}
+            <span className="flex-1">Sound</span>
+            {/* Pill indicator */}
+            <span
+              className={[
+                'text-[10px] font-mono px-1.5 py-0.5 rounded-full border transition-colors duration-200',
+                soundEnabled
+                  ? 'border-brand-accent/40 text-brand-accent bg-brand-accent/10'
+                  : 'border-brand-border/40 text-brand-secondary/50 bg-white/5',
+              ].join(' ')}
+            >
+              {soundEnabled ? 'ON' : 'OFF'}
+            </span>
+          </button>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default MoreMenu;

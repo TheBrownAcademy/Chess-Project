@@ -418,7 +418,7 @@ export default function ProductDemo() {
                     </div>
                     <button
                       ref={playAgainGlowRef}
-                      onClick={() => { soundManager.playButtonClick(); handleReset(); }}
+                      onClick={() => { handleReset(); }}
                       className="flex items-center gap-2 px-5 py-2.5 btn-premium-cta cta-shine rounded-sm text-sm font-medium"
                     >
                       <RotateCcw className="w-4 h-4" />
@@ -486,7 +486,7 @@ export default function ProductDemo() {
 
                   {/* Undo */}
                   <button
-                    onClick={() => { soundManager.playButtonClick(); handleUndo(); }}
+                    onClick={() => { handleUndo(); }}
                     disabled={!canUndo || isThinking || isEditMode}
                     title="Undo last move"
                     className="flex flex-col items-center justify-center gap-1.5 py-3 px-1 rounded-lg border border-[rgba(212,175,110,0.12)] bg-[#080B14] hover:bg-white/5 hover:border-[rgba(212,175,110,0.4)] text-[#8E8B82] hover:text-white transition-all duration-200 disabled:opacity-40 group"
@@ -510,7 +510,7 @@ export default function ProductDemo() {
 
                   {/* Reset */}
                   <button
-                    onClick={() => { soundManager.playButtonClick(); handleReset(); }}
+                    onClick={() => { handleReset(); }}
                     disabled={isEditMode}
                     title="Reset game"
                     className="flex flex-col items-center justify-center gap-1.5 py-3 px-1 rounded-lg border border-[rgba(212,175,110,0.12)] bg-[#080B14] hover:bg-white/5 hover:border-red-500/40 text-[#8E8B82] hover:text-red-400 transition-all duration-200 disabled:opacity-40 group"
