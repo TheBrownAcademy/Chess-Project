@@ -1,8 +1,6 @@
 import { prisma } from "../config/prisma.js";
 import { env } from "../config/env.js";
-import { PaymentGateway } from "./gateways/payment-gateway.interface.js";
-import { StripeGateway } from "./gateways/stripe.gateway.js";
-import { PayPalGateway } from "./gateways/paypal.gateway.js";
+import Stripe from "stripe";
 import {
   handleSubscriptionCreatedOrUpdated,
   handleSubscriptionDeleted,
@@ -23,24 +21,13 @@ import {
   handleChargeDisputeCreated,
 } from "./payment/charge-handler.js";
 
+const stripe = new Stripe(env.STRIPE_SECRET_KEY || "", {
+  apiVersion: "2026-06-24.dahlia" as any,
+});
+
 export class PaymentService {
   /**
-   * Returns the active payment gateway class instance based on configuration.
-   */
-  private static getGateway(): PaymentGateway {
-    const provider = env.PAYMENT_PROVIDER || "stripe";
-    switch (provider) {
-      case "stripe":
-        return new StripeGateway();
-      case "paypal":
-        return new PayPalGateway();
-      default:
-        throw new Error(`Unsupported payment provider configuration: ${provider}`);
-    }
-  }
-
-  /**
-   * Resolves the gateway customer ID. If missing, registers a new profile with the gateway.
+   * Resolves the gateway customer ID. If missing, registers a new profile with Stripe.
    */
   static async getOrCreateCustomer(userId: string): Promise<string> {
     const user = await prisma.user.findUnique({
@@ -56,9 +43,13 @@ export class PaymentService {
       return user.gatewayCustomerId;
     }
 
-    // Delegate creation to the active gateway implementation
-    const gateway = this.getGateway();
-    const gatewayCustomerId = await gateway.createCustomer(user.email, user.name || undefined);
+    console.log(`[Stripe]: Registering customer ${user.email} (${user.name || ""})`);
+    const customer = await stripe.customers.create({
+      email: user.email,
+      name: user.name || undefined,
+    });
+
+    const gatewayCustomerId = customer.id;
 
     // Save ID to database
     await prisma.user.update({
@@ -70,12 +61,12 @@ export class PaymentService {
   }
 
   /**
-   * Initiates a payment checkout session. Resolves price and product details from the DB.
+   * Initiates a Stripe checkout session. Resolves price and product details from the DB.
    */
   static async createCheckoutSession(userId: string, planIdentifier: string): Promise<string> {
     const gatewayCustomerId = await this.getOrCreateCustomer(userId);
 
-    // 1. Fetch the product pricing configuration from the database instead of hardcoded env mappings
+    // Fetch the product pricing configuration from the database
     const product = await prisma.product.findUnique({
       where: { identifier: planIdentifier },
     });
@@ -84,22 +75,26 @@ export class PaymentService {
       throw new Error(`Product plan '${planIdentifier}' is unavailable or inactive.`);
     }
 
-    const gateway = this.getGateway();
+    console.log(`[Stripe]: Creating checkout for customer: ${gatewayCustomerId}, price: ${product.gatewayPriceId}`);
+    const session = await stripe.checkout.sessions.create({
+      customer: gatewayCustomerId,
+      line_items: [{ price: product.gatewayPriceId, quantity: 1 }],
+      mode: "subscription",
+      success_url: env.STRIPE_SUCCESS_URL || `${env.CLIENT_ORIGIN}/payment/success?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: env.STRIPE_CANCEL_URL || `${env.CLIENT_ORIGIN}/pricing`,
+      metadata: { userId, productId: product.id },
+      allow_promotion_codes: true,
+    });
 
-    // 2. Dispatch checkout session creation to the active provider
-    const checkoutUrl = await gateway.createCheckoutSession(
-      gatewayCustomerId,
-      product.gatewayPriceId,
-      env.STRIPE_SUCCESS_URL || `${env.CLIENT_ORIGIN}/payment/success?session_id={CHECKOUT_SESSION_ID}`,
-      env.STRIPE_CANCEL_URL || `${env.CLIENT_ORIGIN}/pricing`,
-      { userId, productId: product.id }
-    );
+    if (!session.url) {
+      throw new Error("Stripe checkout session creation failed to return a redirect URL.");
+    }
 
-    return checkoutUrl;
+    return session.url;
   }
 
   /**
-   * Creates a self-service customer portal session.
+   * Creates a Stripe customer billing portal session.
    */
   static async createBillingPortalSession(userId: string): Promise<string> {
     const user = await prisma.user.findUnique({
@@ -111,29 +106,29 @@ export class PaymentService {
       throw new Error("No billing profile customer ID found for this account.");
     }
 
-    const gateway = this.getGateway();
-    const portalUrl = await gateway.createBillingPortalSession(
-      user.gatewayCustomerId,
-      `${env.CLIENT_ORIGIN}/profile`
-    );
+    console.log(`[Stripe]: Creating billing portal session for customer: ${user.gatewayCustomerId}`);
+    const session = await stripe.billingPortal.sessions.create({
+      customer: user.gatewayCustomerId,
+      return_url: `${env.CLIENT_ORIGIN}/profile`,
+    });
 
-    return portalUrl;
+    return session.url;
   }
 
   /**
    * Safe parses signatures, handles event audits, and manages subscription lifecycle state.
    */
   static async handleWebhookEvent(rawBody: string | Buffer, signature: string): Promise<any> {
-    const provider = env.PAYMENT_PROVIDER || "stripe";
     const webhookSecret = env.STRIPE_WEBHOOK_SECRET || "mock_secret";
 
-    const gateway = this.getGateway();
-    
-    // 1. Verify signatures and extract normalized payloads via the active gateway
-    const verifiedEvent = await gateway.constructWebhookEvent(rawBody, signature, webhookSecret);
-    const { gatewayEventId, eventType, payload } = verifiedEvent;
+    // Verify signatures and extract normalized payloads via Stripe
+    console.log("[Stripe]: Verifying Stripe webhook signature");
+    const event = stripe.webhooks.constructEvent(rawBody, signature, webhookSecret);
+    const gatewayEventId = event.id;
+    const eventType = event.type;
+    const payload = event.data.object;
 
-    // 2. Persistent Idempotency Check: search the WebhookEvent database table
+    // Persistent Idempotency Check: search the WebhookEvent database table
     const existingEvent = await prisma.webhookEvent.findUnique({
       where: { gatewayEventId },
     });
@@ -143,7 +138,7 @@ export class PaymentService {
       return { received: true, eventId: gatewayEventId, status: "duplicate" };
     }
 
-    // 3. Process the action logic using modular event-specific handlers
+    // Process the action logic using modular event-specific handlers
     switch (eventType) {
       case "checkout.session.completed":
         await handleCheckoutSessionCompleted(payload);
@@ -184,11 +179,11 @@ export class PaymentService {
         break;
     }
 
-    // 4. Save WebhookEvent audit record to prevent duplicates in future retry loops
+    // Save WebhookEvent audit record to prevent duplicates in future retry loops
     await prisma.webhookEvent.create({
       data: {
         gatewayEventId,
-        provider,
+        provider: "stripe",
         eventType,
         processed: true,
         payload: payload as any,
@@ -202,8 +197,8 @@ export class PaymentService {
    * Retrieves secure details of a checkout session for verification.
    */
   static async getCheckoutSessionDetails(sessionId: string, userId: string): Promise<any> {
-    const gateway = this.getGateway();
-    const session = await gateway.retrieveCheckoutSession(sessionId);
+    console.log(`[Stripe]: Retrieving checkout session details for session ID: ${sessionId}`);
+    const session = await stripe.checkout.sessions.retrieve(sessionId);
 
     if (!session) {
       throw new Error("Billing session not found.");

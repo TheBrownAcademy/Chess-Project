@@ -4,14 +4,14 @@ export class PaymentService {
   /**
    * Triggers the backend to spawn a Stripe/gateway Checkout Session for a specific tier.
    */
-  static async createCheckoutSession(planId: string): Promise<CheckoutSessionResponse> {
+  static async createCheckoutSession(plan: string): Promise<CheckoutSessionResponse> {
     try {
-      const response = await fetch("/api/payments/checkout", {
+      const response = await fetch("/api/payments/create-session", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ planId }),
+        body: JSON.stringify({ plan }),
       });
 
       if (!response.ok) {

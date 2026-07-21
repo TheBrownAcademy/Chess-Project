@@ -259,7 +259,12 @@ const getKingSquares = (fen: string) => {
   }
   return { losingKingSq, winningKingSq };
 };
-export default function HeroPuzzle() {
+interface HeroPuzzleProps {
+  onDragStart?: () => void;
+  onDragEnd?: () => void;
+}
+
+export default function HeroPuzzle({ onDragStart, onDragEnd }: HeroPuzzleProps) {
   const { getEngineMove } = useStockfish();
   const { fireConfetti } = useConfetti();
   const glowRef = useBoardCursorGlow<HTMLDivElement>();
@@ -2185,8 +2190,13 @@ export default function HeroPuzzle() {
                       <Chessboard
                         options={{
                           position: boardFen,
-                          onPieceDrop: ({ sourceSquare, targetSquare }) =>
-                            onDrop(sourceSquare, targetSquare ?? ""),
+                          onPieceDrag: () => {
+                            onDragStart?.();
+                          },
+                          onPieceDrop: ({ sourceSquare, targetSquare }) => {
+                            onDragEnd?.();
+                            return onDrop(sourceSquare, targetSquare ?? "");
+                          },
                           darkSquareStyle: { backgroundColor: BOARD_DARK },
                           lightSquareStyle: { backgroundColor: BOARD_LIGHT },
                           boardStyle: {
@@ -2199,6 +2209,7 @@ export default function HeroPuzzle() {
                           squareStyles: boardSquareStyles,
                           animationDurationInMs: 0,
                           allowDragging: isActive && boardIsInteractive,
+                          dragActivationDistance: 0,
                           squareRenderer: ({ square, piece, children }) => {
                             const isKing =
                               piece?.pieceType === "wK" ||

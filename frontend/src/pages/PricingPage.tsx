@@ -458,9 +458,9 @@ export default function PricingPage() {
               Yearly
             </button>
 
-            {/* Save 20% indicator */}
+            {/* Save 17% indicator */}
             <div className="absolute left-[calc(100%+14px)] top-1/2 -translate-y-1/2 whitespace-nowrap bg-brand-accent/15 border border-brand-accent/30 text-brand-accent text-[10px] font-mono tracking-wider uppercase px-2 py-0.5 rounded-md flex items-center gap-1">
-              Save 20%
+              Save 17%
             </div>
           </div>
         </section>
@@ -491,10 +491,10 @@ export default function PricingPage() {
           {/* PREMIUM PLAN */}
           <PricingCard
             name="Premium Plan"
-            price={isYearly ? "$119.99" : "$14.99"}
+            price={isYearly ? "$10.00 NZD" : "$1.00 NZD"}
             period={isYearly ? "/ year" : "/ month"}
             yearlySaving={
-              isYearly ? "Save $60 (Equivalent to $9.99/mo)" : undefined
+              isYearly ? "Save $2 NZD (Equivalent to $0.83 NZD/mo)" : undefined
             }
             description="Built for ambitious chess players who want unlimited reviews, deep analysis, and tracking."
             features={[

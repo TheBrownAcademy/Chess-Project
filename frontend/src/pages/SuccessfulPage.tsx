@@ -16,7 +16,6 @@ interface UpgradeDetails {
   username: string;
   email: string;
   currency: string;
-  tax: string;
   discount: string;
 }
 
@@ -51,7 +50,6 @@ export default function SuccessfulPage() {
                 username: session?.user?.name || 'Grandmaster',
                 email: data.session.customerEmail || session?.user?.email || '',
                 currency: data.session.currency.toUpperCase(),
-                tax: '$0.00',
                 discount: '$0.00'
               };
               setDetails(upgradeDetails);
@@ -83,7 +81,6 @@ export default function SuccessfulPage() {
             username: session?.user?.name || 'Member',
             email: session?.user?.email || '',
             currency: 'NZD',
-            tax: '$0.00',
             discount: '$0.00'
           });
           setLoading(false);
@@ -269,10 +266,7 @@ export default function SuccessfulPage() {
               <span className="font-mono text-emerald-400">-{details.discount}</span>
             </div>
 
-            <div className="flex justify-between items-center text-sm">
-              <span className="text-brand-secondary font-sans">Estimated Tax</span>
-              <span className="font-mono text-[#e5dfd5]">{details.tax}</span>
-            </div>
+
 
             <div className="flex justify-between items-center text-sm">
               <span className="text-brand-secondary font-sans">Currency</span>

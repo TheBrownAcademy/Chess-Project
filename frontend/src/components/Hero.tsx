@@ -51,6 +51,24 @@ export default function Hero() {
   const beam1Ref = useRef<HTMLDivElement>(null);
   const beam2Ref = useRef<HTMLDivElement>(null);
 
+  const [isDragging, setIsDragging] = useState(false);
+
+  useEffect(() => {
+    if (isDragging) {
+      const handlePointerUp = () => {
+        setIsDragging(false);
+      };
+      window.addEventListener("pointerup", handlePointerUp);
+      window.addEventListener("mouseup", handlePointerUp);
+      window.addEventListener("touchend", handlePointerUp);
+      return () => {
+        window.removeEventListener("pointerup", handlePointerUp);
+        window.removeEventListener("mouseup", handlePointerUp);
+        window.removeEventListener("touchend", handlePointerUp);
+      };
+    }
+  }, [isDragging]);
+
   // ── Perspective tilt hook (manages its own ref) ────────────────────────────
   const tiltRef = usePerspectiveTilt<HTMLDivElement>({
     maxRotate: 6,
@@ -59,6 +77,7 @@ export default function Hero() {
     quickToEase: 'power2.out',
     floatDistance: 8,
     floatDuration: 3,
+    paused: isDragging,
   });
 
   const primaryGlowRef = useButtonGlow<HTMLAnchorElement>();
@@ -510,7 +529,10 @@ export default function Hero() {
                   className="p-4 board-cursor-glow"
                   style={{ background: 'rgba(8, 11, 20, 0.95)' }}
                 >
-                  <HeroPuzzle />
+                  <HeroPuzzle 
+                    onDragStart={() => setIsDragging(true)}
+                    onDragEnd={() => setIsDragging(false)}
+                  />
                 </div>
               </div>
 
