@@ -4,6 +4,7 @@ import { useLogoAnimation } from "../hooks/useLogoAnimation";
 import { soundManager } from "../utils/SoundManager";
 import { useSession } from "../hooks/useSession";
 import { AvatarDropdown } from "./AvatarDropdown";
+import { AuthModal } from "./AuthModal";
 import { MoreMenu } from "./MoreMenu";
 import { useNavigate, useLocation } from "react-router";
 
@@ -14,9 +15,11 @@ export default function SidebarLayout({
 }) {
   const [isExpanded, setIsExpanded] = useState(true);
   const [isMobileOpen, setIsMobileOpen] = useState(false);
-  const [, setIsModalOpen] = useState(false);
-  const [, setModalMode] = useState<"login" | "register">("login");
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [modalMode, setModalMode] = useState<"login" | "register">("login");
   const { status } = useSession();
+
+  
 
   const navigate = useNavigate();
   const location = useLocation();
@@ -26,6 +29,7 @@ export default function SidebarLayout({
   setIsModalOpen(true);
   setIsMobileOpen(false);
 };
+
 
   const { containerRef, logoRef } = useLogoAnimation();
 
@@ -72,6 +76,7 @@ export default function SidebarLayout({
           >
             <Menu className="w-5 h-5" />
           </button>
+          
 
           <div
             ref={containerRef}
@@ -172,6 +177,12 @@ export default function SidebarLayout({
             })}
           </nav>
         </aside>
+        
+        <AuthModal
+  isOpen={isModalOpen}
+  onClose={() => setIsModalOpen(false)}
+  initialMode={modalMode}
+/>
 
         {/* Mobile Sidebar (Slide-out Overlay Drawer) */}
         {/* Backdrop overlay */}
