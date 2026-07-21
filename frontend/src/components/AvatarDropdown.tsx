@@ -132,18 +132,6 @@ export const AvatarDropdown: React.FC = () => {
             Membership
           </button>
 
-          {/* Sign Out option */}
-          <button
-            onClick={() => {
-              setIsOpen(false);
-              signOut();
-            }}
-            className="w-full flex items-center gap-3 px-4 py-2 text-sm font-sans text-brand-secondary hover:text-red-400 hover:bg-red-500/10 text-left transition-colors duration-150 cursor-pointer"
-            role="menuitem"
-          >
-            <LogOut className="w-4 h-4 text-red-400" />
-            Sign Out
-          </button>
 
           {/* ── Divider ───────────────────────────────────────────────────── */}
           <div className="my-1.5 border-t border-brand-border/40" role="separator" />
@@ -203,6 +191,22 @@ export const AvatarDropdown: React.FC = () => {
               {soundEnabled ? 'ON' : 'OFF'}
             </span>
           </button>
+
+          <div className="my-1.5 border-t border-brand-border/40" role="separator" />
+
+          {/* Sign Out option */}
+          <button
+            onClick={() => {
+              setIsOpen(false);
+              signOut();
+            }}
+            className="w-full flex items-center gap-3 px-4 py-2 text-sm font-sans text-brand-secondary hover:text-red-400 hover:bg-red-500/10 text-left transition-colors duration-150 cursor-pointer"
+            role="menuitem"
+          >
+            <LogOut className="w-4 h-4 text-red-400" />
+            Sign Out
+          </button>
+
         </div>
       )}
     </div>
