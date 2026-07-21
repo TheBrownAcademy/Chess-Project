@@ -1,0 +1,112 @@
+import { prisma } from "../../config/prisma.js";
+import { SubscriptionStatus } from "../../generated/prisma/enums.js";
+
+export function normalizeSubscriptionStatus(status: string): SubscriptionStatus {
+  switch (status) {
+    case "active":
+      return "ACTIVE";
+    case "trialing":
+      return "TRIALING";
+    case "past_due":
+      return "PAST_DUE";
+    case "canceled":
+      return "CANCELED";
+    case "unpaid":
+      return "UNPAID";
+    case "incomplete":
+      return "INCOMPLETE";
+    case "incomplete_expired":
+      return "INCOMPLETE_EXPIRED";
+    default:
+      return "CANCELED";
+  }
+}
+
+export async function handleSubscriptionCreatedOrUpdated(payload: any) {
+  const gatewaySubscriptionId = payload.id;
+  const customerId = payload.customer;
+  const status = normalizeSubscriptionStatus(payload.status);
+  const currentPeriodStart = new Date(payload.current_period_start * 1000);
+  const currentPeriodEnd = new Date(payload.current_period_end * 1000);
+  const cancelAtPeriodEnd = payload.cancel_at_period_end || false;
+  const canceledAt = payload.canceled_at ? new Date(payload.canceled_at * 1000) : null;
+  const endedAt = payload.ended_at ? new Date(payload.ended_at * 1000) : null;
+  const trialStart = payload.trial_start ? new Date(payload.trial_start * 1000) : null;
+  const trialEnd = payload.trial_end ? new Date(payload.trial_end * 1000) : null;
+  
+  // Find user by customer ID
+  const user = await prisma.user.findUnique({
+    where: { gatewayCustomerId: customerId },
+  });
+
+  if (!user) {
+    console.error(`[SubscriptionHandler]: User with gatewayCustomerId ${customerId} not found.`);
+    return;
+  }
+
+  // Find product by gatewayPriceId (Stripe Price ID)
+  const priceId = payload.items?.data[0]?.price?.id;
+  if (!priceId) {
+    console.error("[SubscriptionHandler]: No price ID found in subscription payload.");
+    return;
+  }
+
+  const product = await prisma.product.findUnique({
+    where: { gatewayPriceId: priceId },
+  });
+
+  if (!product) {
+    console.error(`[SubscriptionHandler]: Product with gatewayPriceId ${priceId} not found.`);
+    return;
+  }
+
+  // Upsert subscription
+  await prisma.subscription.upsert({
+    where: { gatewaySubscriptionId },
+    update: {
+      status,
+      currentPeriodStart,
+      currentPeriodEnd,
+      cancelAtPeriodEnd,
+      canceledAt,
+      endedAt,
+      trialStart,
+      trialEnd,
+    },
+    create: {
+      userId: user.id,
+      productId: product.id,
+      gatewaySubscriptionId,
+      status,
+      currentPeriodStart,
+      currentPeriodEnd,
+      cancelAtPeriodEnd,
+      canceledAt,
+      endedAt,
+      trialStart,
+      trialEnd,
+    },
+  });
+
+  console.log(`[SubscriptionHandler]: Subscription ${gatewaySubscriptionId} updated/created for user ${user.id}`);
+}
+
+export async function handleSubscriptionDeleted(payload: any) {
+  const gatewaySubscriptionId = payload.id;
+  const endedAt = payload.ended_at ? new Date(payload.ended_at * 1000) : new Date();
+
+  await prisma.subscription.update({
+    where: { gatewaySubscriptionId },
+    data: {
+      status: "CANCELED",
+      endedAt,
+    },
+  });
+
+  console.log(`[SubscriptionHandler]: Subscription ${gatewaySubscriptionId} marked as CANCELED`);
+}
+
+export async function handleSubscriptionTrialWillEnd(payload: any) {
+  const gatewaySubscriptionId = payload.id;
+  console.log(`[SubscriptionHandler]: Trial will end soon for subscription ${gatewaySubscriptionId}`);
+}
