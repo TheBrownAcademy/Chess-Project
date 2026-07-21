@@ -2467,7 +2467,7 @@ const heroSoundRef = useRef({
                   "
                   >
                     <RotateCcw className="w-4 h-4 text-[#D4AF6E]" />
-                    Reset Puzzle
+                    Reset
                   </button>
                   <button
                     onClick={handleSolve1}
@@ -2546,7 +2546,7 @@ const heroSoundRef = useRef({
                   "
                   >
                     <RotateCcw className="w-4 h-4 text-[#D4AF6E]" />
-                    Reset Puzzle
+                    Reset
                   </button>
                 </>
               )}
@@ -2612,7 +2612,7 @@ const heroSoundRef = useRef({
                   "
                   >
                     <RotateCcw className="w-4 h-4 text-[#D4AF6E]" />
-                    Reset Puzzle
+                    Reset
                   </button>
                 </>
               )}
