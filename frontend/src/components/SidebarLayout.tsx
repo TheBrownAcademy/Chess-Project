@@ -85,7 +85,7 @@ export default function SidebarLayout({
           >
             <img
               ref={logoRef}
-              src="/final%20logo.png"
+              src="/logo-without-text.png"
               alt="XLChess logo"
               className="h-10 w-auto object-contain"
               draggable={false}
@@ -95,6 +95,15 @@ export default function SidebarLayout({
                 transformOrigin: "center center",
               }}
             />
+            <div className="flex flex-col leading-none">
+              <h1 className="text-1xl font-bold tracking-wide">
+                XLCHESS
+              </h1>
+
+              <p className="text-xs">
+                Excel at Chess
+              </p>
+            </div>
           </div>
         </div>
 
