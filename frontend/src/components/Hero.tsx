@@ -24,7 +24,7 @@ export default function Hero() {
     if (searchParams.get("login") === "true") {
       setModalMode("login");
       setIsModalOpen(true);
-      
+
       const newParams = new URLSearchParams(searchParams);
       newParams.delete("login");
       setSearchParams(newParams, { replace: true });
@@ -483,10 +483,7 @@ export default function Hero() {
                   className="p-4 board-cursor-glow"
                   style={{ background: 'rgba(8, 11, 20, 0.95)' }}
                 >
-                  <HeroPuzzle 
-                    onDragStart={() => setIsDragging(true)}
-                    onDragEnd={() => setIsDragging(false)}
-                  />
+                  <HeroPuzzle />
                 </div>
               </div>
 
