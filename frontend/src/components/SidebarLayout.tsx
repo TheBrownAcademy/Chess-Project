@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Menu, X, Home, Puzzle, CreditCard, User, CircleUserRound } from "lucide-react";
+import { Menu, X, Home, Puzzle, CreditCard, User, CircleUserRound, Crown } from "lucide-react";
 import { useLogoAnimation } from "../hooks/useLogoAnimation";
 import { soundManager } from "../utils/SoundManager";
 import { useSession } from "../hooks/useSession";
@@ -33,6 +33,7 @@ export default function SidebarLayout({
     { name: "Home", href: "/", icon: Home },
     { name: "Puzzles", href: "/puzzles", icon: Puzzle },
     { name: "Pricing", href: "/pricing", icon: CreditCard },
+    { name: "Premium", href: "/premium", icon: Crown },
     { name: "Profile", href: "/profile", icon: User },
   ];
 
