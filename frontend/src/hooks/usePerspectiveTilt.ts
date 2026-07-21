@@ -64,6 +64,11 @@ export interface PerspectiveTiltOptions {
    * Higher = more vivid glow on hover. Default: 1
    */
   shadowStrength?: number;
+  /**
+   * When true, freezes the tilt and returns the board to flat identity.
+   * Default: false
+   */
+  paused?: boolean;
 }
 
 /**
@@ -82,6 +87,7 @@ export function usePerspectiveTilt<T extends HTMLElement>(
     floatDuration    = 3,
     disableMobileFloat = false,
     shadowStrength   = 1,
+    paused           = false,
   } = options;
 
   const elRef = useRef<T | null>(null);
@@ -89,6 +95,20 @@ export function usePerspectiveTilt<T extends HTMLElement>(
   useLayoutEffect(() => {
     const el = elRef.current;
     if (!el) return;
+
+    if (paused) {
+      const restAlpha = +(0.15 * shadowStrength).toFixed(3);
+      gsap.to(el, {
+        rotateX: 0,
+        rotateY: 0,
+        scale: 1,
+        filter: `drop-shadow(0 16px 40px rgba(99,102,241,${restAlpha}))`,
+        duration: 0.3,
+        ease: 'power2.out',
+        overwrite: 'auto',
+      });
+      return;
+    }
 
     // ── Accessibility guard ─────────────────────────────────────────────────
     if (prefersReducedMotion()) return;
@@ -175,7 +195,7 @@ export function usePerspectiveTilt<T extends HTMLElement>(
     return () => {
       ctx.revert(); // kills all tweens + calls any returned cleanup fns
     };
-  }, [maxRotate, scalePeak, quickToDuration, quickToEase, floatDistance, floatDuration, disableMobileFloat, shadowStrength]);
+  }, [maxRotate, scalePeak, quickToDuration, quickToEase, floatDistance, floatDuration, disableMobileFloat, shadowStrength, paused]);
 
   return elRef;
 }

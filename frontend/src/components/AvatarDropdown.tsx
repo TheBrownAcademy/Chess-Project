@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { CircleUserRound, LogOut, CreditCard, Settings, Palette, Volume2, VolumeX } from "lucide-react";
 import { useSession } from "../hooks/useSession";
-import { navigate } from "../hooks/useRoute";
+import { useNavigate } from "react-router";
 import { soundManager } from "../utils/SoundManager";
 
 const STORAGE_KEY = 'sound-enabled';
@@ -10,6 +10,7 @@ export const AvatarDropdown: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
   const { session, signOut } = useSession();
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const navigate = useNavigate();
 
   // ── Sound state (mirrors SoundToggle logic so they stay in sync) ───────────
   const [soundEnabled, setSoundEnabled] = useState<boolean>(() => {

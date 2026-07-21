@@ -3,10 +3,9 @@ import { Menu, X, Home, Puzzle, CreditCard, User, CircleUserRound } from "lucide
 import { useLogoAnimation } from "../hooks/useLogoAnimation";
 import { soundManager } from "../utils/SoundManager";
 import { useSession } from "../hooks/useSession";
-import { AuthModal } from "./AuthModal";
 import { AvatarDropdown } from "./AvatarDropdown";
 import { MoreMenu } from "./MoreMenu";
-import { navigate, useRoute } from "../hooks/useRoute";
+import { useNavigate, useLocation } from "react-router";
 
 export default function SidebarLayout({
   children,
@@ -15,15 +14,20 @@ export default function SidebarLayout({
 }) {
   const [isExpanded, setIsExpanded] = useState(true);
   const [isMobileOpen, setIsMobileOpen] = useState(false);
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [modalMode, setModalMode] = useState<"login" | "register">("login");
+  const [, setIsModalOpen] = useState(false);
+  const [, setModalMode] = useState<"login" | "register">("login");
   const { status } = useSession();
-  const path = useRoute();
+
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  const openModal = (mode: "login" | "register") => {
+  setModalMode(mode);
+  setIsModalOpen(true);
+  setIsMobileOpen(false);
+};
 
   const { containerRef, logoRef } = useLogoAnimation();
-
-  // Normalize path to detect active state
-  const normalizedPath = path.replace(/\/+$/, "") || "/";
 
   const menuItems = [
     { name: "Home", href: "/", icon: Home },
@@ -37,17 +41,11 @@ export default function SidebarLayout({
     soundManager.playButtonClick();
     setIsMobileOpen(false);
 
-    if (href === "/" && normalizedPath === "/") {
+    if (href === "/" && location.pathname === "/") {
       window.scrollTo({ top: 0, behavior: "smooth" });
     } else {
       navigate(href);
     }
-  };
-
-  const openModal = (mode: "login" | "register") => {
-    setModalMode(mode);
-    setIsModalOpen(true);
-    setIsMobileOpen(false);
   };
 
   const handleToggle = () => {
@@ -141,7 +139,7 @@ export default function SidebarLayout({
           <nav className="flex-1 space-y-1">
             {menuItems.map((item) => {
               const Icon = item.icon;
-              const isActive = normalizedPath === item.href;
+              const isActive = location.pathname === item.href;
 
               return (
                 <a
@@ -203,7 +201,7 @@ export default function SidebarLayout({
           <nav className="flex-1 mt-4 space-y-1">
             {menuItems.map((item) => {
               const Icon = item.icon;
-              const isActive = normalizedPath === item.href;
+              const isActive = location.pathname === item.href;
 
               return (
                 <a
@@ -235,13 +233,6 @@ export default function SidebarLayout({
           {children}
         </div>
       </div>
-
-      {/* Reusable Auth Modal */}
-      <AuthModal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        initialMode={modalMode}
-      />
     </div>
   );
 }

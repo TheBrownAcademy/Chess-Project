@@ -12,7 +12,7 @@ import {
   Info,
   AlertCircle,
 } from "lucide-react";
-import { navigate } from "../hooks/useRoute";
+import { useNavigate, useLocation } from "react-router";
 
 // Custom SVG Chess Pieces for premium decorative background
 const PieceSvg: React.FC<{
@@ -206,11 +206,13 @@ const PricingCard: React.FC<PlanProps> = ({
 };
 
 export default function PricingPage() {
+  const navigate = useNavigate();
+  const location = useLocation();
   const [isYearly, setIsYearly] = useState(false);
   const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(null);
 
   const [showSessionError, setShowSessionError] = useState(() => {
-    const params = new URLSearchParams(window.location.search);
+    const params = new URLSearchParams(location.search);
     return params.get("error") === "payment_expired";
   });
 
@@ -370,9 +372,7 @@ export default function PricingPage() {
             <button
               onClick={() => {
                 setShowSessionError(false);
-                try {
-                  window.history.replaceState({}, "", window.location.pathname);
-                } catch (e) { }
+                navigate(location.pathname, { replace: true });
               }}
               className="text-amber-400 hover:text-white font-mono text-xs uppercase font-bold cursor-pointer flex-shrink-0"
             >
@@ -489,10 +489,10 @@ export default function PricingPage() {
           {/* PREMIUM PLAN */}
           <PricingCard
             name="Premium Plan"
-            price={isYearly ? "$119.99" : "$14.99"}
+            price={isYearly ? "$10.00 NZD" : "$1.00 NZD"}
             period={isYearly ? "/ year" : "/ month"}
             yearlySaving={
-              isYearly ? "Save $60 (Equivalent to $9.99/mo)" : undefined
+              isYearly ? "Save $2 NZD (Equivalent to $0.83 NZD/mo)" : undefined
             }
             description="Built for ambitious chess players who want unlimited reviews, deep analysis, and tracking."
             features={[

@@ -17,7 +17,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { MoreVertical, Settings, Palette, Volume2, VolumeX } from 'lucide-react';
-import { navigate } from '../hooks/useRoute';
+import { useNavigate } from 'react-router';
 import { soundManager } from '../utils/SoundManager';
 
 const STORAGE_KEY = 'sound-enabled';
@@ -25,6 +25,7 @@ const STORAGE_KEY = 'sound-enabled';
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export const MoreMenu: React.FC = () => {
+  const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
