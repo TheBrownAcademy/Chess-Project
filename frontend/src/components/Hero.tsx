@@ -320,36 +320,6 @@ export default function Hero() {
           {/* ── Text Column ────────────────────────────────────────────────── */}
           <div className="lg:col-span-6 space-y-8 md:space-y-10 text-left">
 
-            {/* Logo above heading */}
-            <div
-              ref={heroLogoContainerRef}
-              className="flex items-center select-none"
-            >
-              <img
-                ref={heroLogoRef}
-                src="/final%20logo.png"
-                alt="XLChess logo"
-                className="object-contain"
-                style={{
-                  height: '150px',
-                  width: 'auto',
-                  maxWidth: 'none',
-                  willChange: 'transform, filter',
-                  transformOrigin: 'center left',
-                }}
-                draggable={false}
-              />
-            </div>
-
-            {/* Section eyebrow */}
-            <div
-              ref={eyebrowRef}
-              className="section-eyebrow"
-              style={{ opacity: 0 }}
-              aria-hidden="true"
-            >
-              Chess Platform
-            </div>
 
             {/* Editorial headline */}
             <h1
@@ -386,13 +356,6 @@ export default function Hero() {
               className="space-y-4 max-w-xl"
               style={{ opacity: 0 }}
             >
-              <p
-                ref={subPara1Ref}
-                className="font-sans text-xl sm:text-2xl font-light text-white leading-relaxed"
-                style={{ letterSpacing: '0.01em' }}
-              >
-                Making the decisive move toward the top.
-              </p>
               <p
                 ref={subPara2Ref}
                 className="font-sans text-base sm:text-[17px] leading-relaxed"
@@ -459,14 +422,6 @@ export default function Hero() {
                 </span>
               </a>
 
-              {/* Secondary link */}
-              <a
-                href="#contact-us"
-                className="nav-link font-sans text-sm font-light text-[#8E8B82] hover:text-[#F5F0E8] transition-colors duration-300 sm:pl-2"
-                style={{ letterSpacing: '0.04em' }}
-              >
-                Partner with us →
-              </a>
             </div>
           </div>
 

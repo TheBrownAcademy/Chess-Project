@@ -19,7 +19,6 @@ import Hero from './components/Hero';
 import BrandSection from './components/BrandSection';
 import ProductDemo from './components/ProductDemo';
 import PartnerCTA from './components/PartnerCTA';
-import Footer from './components/Footer';
 import GlobalBackground from './components/GlobalBackground';
 import SidebarLayout from './components/SidebarLayout';
 import PremiumLoader from './components/PremiumLoader';
@@ -69,7 +68,7 @@ function App() {
       try {
         sessionStorage.removeItem('xlchess_payment_completed');
         sessionStorage.removeItem('xlchess_upgrade_success_data');
-      } catch (e) {}
+      } catch (e) { }
       (window as any).xlchess_payment_completed = false;
     }
   }, [normalizedPath]);
@@ -120,8 +119,6 @@ function App() {
 
                 </main>
 
-                {/* Footer Summary */}
-                <Footer />
               </div>
             )}
           </SidebarLayout>
