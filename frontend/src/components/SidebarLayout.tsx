@@ -102,7 +102,7 @@ export default function SidebarLayout({
         {/* Right: More Menu & Auth Controls */}
         <div className="flex items-center gap-2 sm:gap-3">
           {/* Three-dot More menu (contains sound toggle + settings) */}
-          <MoreMenu />
+          {status !== "authenticated" && <MoreMenu />}
 
           {status === "loading" ? (
             <div className="w-6 h-6 rounded-full border-2 border-brand-accent/30 border-t-brand-accent animate-spin" />
