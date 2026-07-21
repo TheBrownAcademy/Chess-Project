@@ -30,7 +30,6 @@ export default function Hero() {
 
   // ── Animation refs ────────────────────────────────────────────────────────
   const heroRef = useRef<HTMLElement>(null);
-  const heroLogoContainerRef = useRef<HTMLDivElement>(null);
   const heroLogoRef = useRef<HTMLImageElement>(null);
   const playIconRef = useRef<HTMLImageElement>(null);
   const playTextRef = useRef<HTMLSpanElement>(null);

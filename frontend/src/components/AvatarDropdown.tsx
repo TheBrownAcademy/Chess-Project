@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { User, CircleUserRound, LogOut, CreditCard, Settings, Palette, Volume2, VolumeX } from "lucide-react";
+import { CircleUserRound, LogOut, CreditCard, Settings, Palette, Volume2, VolumeX } from "lucide-react";
 import { useSession } from "../hooks/useSession";
 import { navigate } from "../hooks/useRoute";
 import { soundManager } from "../utils/SoundManager";

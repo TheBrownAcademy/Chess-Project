@@ -314,7 +314,7 @@ export default function HeroPuzzle() {
       img.src = src;
     });
   }, []);
-  const [puzzleStep0, setPuzzleStep0] = useState<number>(0);
+  const [, setPuzzleStep0] = useState<number>(0);
   const [lastMove0, setLastMove0] = useState<{
     from: string;
     to: string;
@@ -322,7 +322,7 @@ export default function HeroPuzzle() {
   const [checkedKingSquare0, setCheckedKingSquare0] = useState<string | null>(
     null,
   );
-  const [isCheckmateGlow0, setIsCheckmateGlow0] = useState<boolean>(false);
+  const [, setIsCheckmateGlow0] = useState<boolean>(false);
   const [isStockfishThinking0, setIsStockfishThinking0] =
     useState<boolean>(false);
   const [playMode0, setPlayMode0] = useState<"SCRIPTED" | "STOCKFISH">(
@@ -348,7 +348,7 @@ export default function HeroPuzzle() {
   const [checkedKingSquare1, setCheckedKingSquare1] = useState<string | null>(
     null,
   );
-  const [isCheckmateGlow1, setIsCheckmateGlow1] = useState<boolean>(false);
+  const [, setIsCheckmateGlow1] = useState<boolean>(false);
 
   const hasCelebratedOriginalRef = useRef<boolean>(false);
   // â”€â”€ State variables for Puzzle 2 (New Stockfish Puzzle) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -368,7 +368,6 @@ export default function HeroPuzzle() {
   const [checkedKingSquare2, setCheckedKingSquare2] = useState<string | null>(
     null,
   );
-  const [isCheckmateGlow2, setIsCheckmateGlow2] = useState<boolean>(false);
 
   const hasCelebrated2Ref = useRef<boolean>(false);
   const solveAbortRef = useRef<boolean>(false);
@@ -386,7 +385,7 @@ export default function HeroPuzzle() {
   const [checkedKingSquare3, setCheckedKingSquare3] = useState<string | null>(
     null,
   );
-  const [isCheckmateGlow3, setIsCheckmateGlow3] = useState<boolean>(false);
+  const [, setIsCheckmateGlow3] = useState<boolean>(false);
 
   const hasCelebrated3Ref = useRef<boolean>(false);
   // â”€â”€ Safe Timers Ref â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -823,7 +822,6 @@ export default function HeroPuzzle() {
       } else if (index === 2) {
         setLastMove2(null);
         setCheckedKingSquare2(null);
-        setIsCheckmateGlow2(false);
         gameRef2.current = new Chess(
           "r5k1/6pp/r7/q3N1P1/3Q4/1Pp5/2P5/1K1R3R w - - 0 1",
         );
@@ -1171,7 +1169,6 @@ export default function HeroPuzzle() {
 
     if (whiteWon) {
       setPhase2("solved");
-      setIsCheckmateGlow2(true);
       soundManager.playCheckmate();
       await runCheckmateImpact(losingKingSq);
       await safeDelay(900);
