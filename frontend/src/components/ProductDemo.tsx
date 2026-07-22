@@ -25,9 +25,6 @@ import { useButtonGlow } from '../hooks/useButtonGlow';
 const BOARD_DARK  = '#769656';   // Tournament green
 const BOARD_LIGHT = '#EEEED2';   // Off-white / cream
 
-// Set false to hide coordinates; toggle easily here.
-const SHOW_COORDINATES = false;
-
 // ── Sound helper ─────────────────────────────────────────────────────────────────
 // Plays the correct sound for a chess.js move result and current game state.
 function playMoveSound(game: Chess, moveFlags: string, captured: boolean): void {
@@ -402,7 +399,7 @@ export default function ProductDemo() {
               <EvaluationBar evaluation={displayEval} isDesktop={isDesktop} boardHeight={boardHeight} />
             </div>
 
-            {/* â”€â”€ Col 2: Chessboard â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
+            {/* ── Col 2: Chessboard ────────────────────────────────────────── */}
             <div className="lg:col-span-7 flex flex-col lg:justify-start justify-center">
               <div ref={boardContainerRef} className="aspect-square w-full shadow-xl border border-[rgba(212,175,110,0.12)] relative overflow-hidden" style={{ borderRadius: '4px' }}>
 
@@ -438,9 +435,67 @@ export default function ProductDemo() {
                     darkSquareStyle:  { backgroundColor: BOARD_DARK },
                     lightSquareStyle: { backgroundColor: BOARD_LIGHT },
                     boardStyle: { borderRadius: '0px' },
-                    showNotation: SHOW_COORDINATES,
+                    showNotation: false,
                   }}
                 />
+
+                {/* Board coordinate notation — Chess.com / HeroPuzzle style */}
+                {(() => {
+                  const FILES = boardOrientation === 'white'
+                    ? ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h']
+                    : ['h', 'g', 'f', 'e', 'd', 'c', 'b', 'a'];
+                  const RANKS = boardOrientation === 'white'
+                    ? ['8', '7', '6', '5', '4', '3', '2', '1']
+                    : ['1', '2', '3', '4', '5', '6', '7', '8'];
+                  const ON_LIGHT = '#5C7D3A';
+                  const ON_DARK  = '#FFF8E5';
+                  const baseStyle: React.CSSProperties = {
+                    position: 'absolute',
+                    fontFamily: 'Inter, system-ui, sans-serif',
+                    fontSize: '9.5px',
+                    fontWeight: 700,
+                    lineHeight: 1,
+                    pointerEvents: 'none',
+                    userSelect: 'none',
+                    zIndex: 25,
+                  };
+                  const nodes: React.ReactNode[] = [];
+                  FILES.forEach((file, col) => {
+                    const isDark = ((7 + col) % 2) === 1;
+                    nodes.push(
+                      <span
+                        key={`file-${file}`}
+                        aria-hidden="true"
+                        style={{
+                          ...baseStyle,
+                          bottom: '2px',
+                          right: `calc(${(7 - col) * 12.5}% + 2px)`,
+                          color: isDark ? ON_DARK : ON_LIGHT,
+                        }}
+                      >
+                        {file}
+                      </span>
+                    );
+                  });
+                  RANKS.forEach((rank, row) => {
+                    const isDark = (row + 0) % 2 !== 0;
+                    nodes.push(
+                      <span
+                        key={`rank-${rank}`}
+                        aria-hidden="true"
+                        style={{
+                          ...baseStyle,
+                          top: `calc(${row * 12.5}% + 2px)`,
+                          left: '2px',
+                          color: isDark ? ON_DARK : ON_LIGHT,
+                        }}
+                      >
+                        {rank}
+                      </span>
+                    );
+                  });
+                  return nodes;
+                })()}
               </div>
 
               {/* Turn indicator */}
