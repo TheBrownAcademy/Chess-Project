@@ -279,7 +279,6 @@ export default function HeroPuzzle({ onDragStart, onDragEnd }: HeroPuzzleProps) 
   const boardCardRef = useRef<HTMLDivElement>(null);
   const boardInnerRef = useRef<HTMLDivElement>(null);
   const checkmateRef = useRef<HTMLDivElement>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
 
   const isHeroVisibleRef = useRef(true);
 
@@ -561,7 +560,7 @@ const heroSoundRef = useRef({
 
 
   useEffect(() => {
-  const el = containerRef.current;
+  const el = boardCardRef.current;
   if (!el) return;
 
   const observer = new IntersectionObserver(
@@ -1955,7 +1954,7 @@ const heroSoundRef = useRef({
     initGame(1);
   }, [cleanupGame, initGame]);
   return (
-    <div ref={containerRef} className="flex flex-col gap-0.5">
+    <div className="flex flex-col gap-0.5">
       {/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
           HORIZONTAL CAROUSEL STAGE
           The outer div clips to show only the active board + peeking previews.
