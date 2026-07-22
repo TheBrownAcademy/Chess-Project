@@ -141,7 +141,7 @@ export const AvatarDropdown: React.FC = () => {
           <button
             id="avatar-menu-settings"
             role="menuitem"
-            onClick={() => { setIsOpen(false); navigate('/profile'); }}
+            onClick={() => { setIsOpen(false); navigate('/settings'); }}
             className="w-full flex items-center gap-3 px-4 py-2.5 text-sm font-sans text-brand-secondary hover:text-white hover:bg-white/[0.06] text-left transition-colors duration-150 cursor-pointer group"
             tabIndex={0}
           >

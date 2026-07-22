@@ -6,9 +6,7 @@ import { validateMove } from "../utils/PuzzleValidator";
 import { useConfetti } from "../hooks/useConfetti";
 import { HelpCircle, RotateCcw, ArrowRight, Play, Check } from "lucide-react";
 import { soundManager } from "../utils/SoundManager";
-
-const BOARD_DARK = "#769656";
-const BOARD_LIGHT = "#EEEED2";
+import { useBoardSettings } from "../hooks/useBoardSettings";
 
 export interface PuzzleBoardProps {
   puzzle: ChessPuzzle;
@@ -41,6 +39,7 @@ export function PuzzleBoard({
   const [hintSquare, setHintSquare] = useState<string | null>(null);
 
   const { fireConfetti } = useConfetti();
+  const { boardTheme, pieceSet } = useBoardSettings();
 
   // Reset board and status when the puzzle prop changes
   useEffect(() => {
@@ -219,8 +218,9 @@ export function PuzzleBoard({
               onDrop(sourceSquare, targetSquare ?? ""),
             boardOrientation: boardOrientation,
             squareStyles: customSquareStyles,
-            darkSquareStyle: { backgroundColor: BOARD_DARK },
-            lightSquareStyle: { backgroundColor: BOARD_LIGHT },
+            darkSquareStyle: { backgroundColor: boardTheme.dark },
+            lightSquareStyle: { backgroundColor: boardTheme.light },
+            pieces: pieceSet.pieces,
             boardStyle: { borderRadius: "0px" },
             showNotation: true,
             allowDragging: puzzleStatus === "solving",
