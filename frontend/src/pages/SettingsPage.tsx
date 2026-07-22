@@ -25,6 +25,8 @@ import {
   Monitor,
   Bell,
   UserCog,
+  CircleUserRound,
+  CreditCard,
   Check,
 } from "lucide-react";
 import { useBoardSettings } from "../hooks/useBoardSettings";
@@ -53,10 +55,15 @@ interface SettingsCategory {
   name: string;
   icon: typeof Grid3x3;
   available: boolean;
+  /** Route this category navigates to. Omitted for categories that render
+   *  their content inline within this page (currently just Board & Pieces). */
+  path?: string;
 }
 
 const CATEGORIES: SettingsCategory[] = [
   { id: "board-pieces", name: "Board & Pieces", icon: Grid3x3, available: true },
+  { id: "profile", name: "Profile", icon: CircleUserRound, available: true, path: "/profile" },
+  { id: "membership", name: "Membership", icon: CreditCard, available: true, path: "/pricing" },
   { id: "gameplay", name: "Gameplay", icon: Gamepad2, available: false },
   { id: "interface", name: "Interface", icon: Monitor, available: false },
   { id: "notifications", name: "Notifications", icon: Bell, available: false },
@@ -165,6 +172,11 @@ export default function SettingsPage() {
                     key={cat.id}
                     type="button"
                     aria-current={isActive ? "page" : undefined}
+                    onClick={() => {
+                      if (!cat.path) return; // already showing this section inline
+                      soundManager.playButtonClick();
+                      navigate(cat.path);
+                    }}
                     className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-left transition-colors duration-150 cursor-pointer ${
                       isActive
                         ? "bg-brand-accent/10 text-brand-accent font-medium ring-1 ring-brand-accent/30"

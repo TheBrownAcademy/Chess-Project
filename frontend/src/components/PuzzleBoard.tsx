@@ -1,12 +1,11 @@
 import { useState, useRef, useCallback, useEffect } from "react";
-import { Chessboard } from "react-chessboard";
+import { ThemedChessboard } from "./ThemedChessboard";
 import { Chess } from "chess.js";
 import type { ChessPuzzle } from "../utils/PuzzleLoader";
 import { validateMove } from "../utils/PuzzleValidator";
 import { useConfetti } from "../hooks/useConfetti";
 import { HelpCircle, RotateCcw, ArrowRight, Play, Check } from "lucide-react";
 import { soundManager } from "../utils/SoundManager";
-import { useBoardSettings } from "../hooks/useBoardSettings";
 
 export interface PuzzleBoardProps {
   puzzle: ChessPuzzle;
@@ -39,7 +38,6 @@ export function PuzzleBoard({
   const [hintSquare, setHintSquare] = useState<string | null>(null);
 
   const { fireConfetti } = useConfetti();
-  const { boardTheme, pieceSet } = useBoardSettings();
 
   // Reset board and status when the puzzle prop changes
   useEffect(() => {
@@ -211,16 +209,13 @@ export function PuzzleBoard({
             : "border-brand-border/80"
           }`}
       >
-        <Chessboard
+        <ThemedChessboard
           options={{
             position: gameFen,
             onPieceDrop: ({ sourceSquare, targetSquare }) =>
               onDrop(sourceSquare, targetSquare ?? ""),
             boardOrientation: boardOrientation,
             squareStyles: customSquareStyles,
-            darkSquareStyle: { backgroundColor: boardTheme.dark },
-            lightSquareStyle: { backgroundColor: boardTheme.light },
-            pieces: pieceSet.pieces,
             boardStyle: { borderRadius: "0px" },
             showNotation: true,
             allowDragging: puzzleStatus === "solving",

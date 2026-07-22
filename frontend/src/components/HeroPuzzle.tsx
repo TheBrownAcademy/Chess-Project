@@ -39,7 +39,7 @@ import {
   useEffect,
   useLayoutEffect,
 } from "react";
-import { Chessboard } from "react-chessboard";
+import { ThemedChessboard } from "./ThemedChessboard";
 import { Chess } from "chess.js";
 import { parseUciMove } from "../utils/chessHelpers";
 import { useStockfish } from "../hooks/useStockfish";
@@ -122,8 +122,8 @@ const TIMING = {
   REPLAY_DELAY: 100, // Pause/delay before replay autoplay loop begins in milliseconds (default: 100ms)
 };
 // â”€â”€ Board theme â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-const BOARD_DARK = "#769656";
-const BOARD_LIGHT = "#EEEED2";
+// Board colors + piece set now come from Settings -> Board & Pieces
+// (see useBoardSettings below) instead of being hardcoded here.
 const PGN_MOVES = [
   "e4",
   "e5",
@@ -2152,7 +2152,7 @@ const heroSoundRef = useRef({
                       )}
 
                       {/* The Chessboard - ALWAYS mounted! */}
-                      <Chessboard
+                      <ThemedChessboard
                         options={{
                           position: boardFen,
                           onPieceDrag: () => {
@@ -2162,8 +2162,6 @@ const heroSoundRef = useRef({
                             onDragEnd?.();
                             return onDrop(sourceSquare, targetSquare ?? "");
                           },
-                          darkSquareStyle: { backgroundColor: BOARD_DARK },
-                          lightSquareStyle: { backgroundColor: BOARD_LIGHT },
                           boardStyle: {
                             borderRadius: "0px",
                           },
