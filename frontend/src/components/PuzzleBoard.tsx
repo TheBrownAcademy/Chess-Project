@@ -5,6 +5,7 @@ import type { ChessPuzzle } from "../utils/PuzzleLoader";
 import { validateMove } from "../utils/PuzzleValidator";
 import { HelpCircle, RotateCcw, ArrowRight, Play, Check } from "lucide-react";
 import { soundManager } from "../utils/SoundManager";
+import { BoardCoordinates } from "./BoardCoordinates";
 
 const BOARD_DARK = "#769656";
 const BOARD_LIGHT = "#EEEED2";
@@ -222,64 +223,8 @@ export function PuzzleBoard({
           }}
         />
 
-        {/* Board coordinate notation — Chess.com / HeroPuzzle style */}
-        {(() => {
-          const FILES = boardOrientation === "white"
-            ? ["a", "b", "c", "d", "e", "f", "g", "h"]
-            : ["h", "g", "f", "e", "d", "c", "b", "a"];
-          const RANKS = boardOrientation === "white"
-            ? ["8", "7", "6", "5", "4", "3", "2", "1"]
-            : ["1", "2", "3", "4", "5", "6", "7", "8"];
-          const ON_LIGHT = "#5C7D3A"; // deep green on cream square
-          const ON_DARK = "#FFF8E5"; // warm cream on green square
-          const baseStyle: React.CSSProperties = {
-            position: "absolute",
-            fontFamily: "Inter, system-ui, sans-serif",
-            fontSize: "9.5px",
-            fontWeight: 700,
-            lineHeight: 1,
-            pointerEvents: "none",
-            userSelect: "none",
-            zIndex: 25,
-          };
-          const nodes: React.ReactNode[] = [];
-          FILES.forEach((file, col) => {
-            const isDark = ((7 + col) % 2) === 1;
-            nodes.push(
-              <span
-                key={`file-${file}`}
-                aria-hidden="true"
-                style={{
-                  ...baseStyle,
-                  bottom: "2px",
-                  right: `calc(${(7 - col) * 12.5}% + 2px)`,
-                  color: isDark ? ON_DARK : ON_LIGHT,
-                }}
-              >
-                {file}
-              </span>
-            );
-          });
-          RANKS.forEach((rank, row) => {
-            const isDark = (row + 0) % 2 !== 0;
-            nodes.push(
-              <span
-                key={`rank-${rank}`}
-                aria-hidden="true"
-                style={{
-                  ...baseStyle,
-                  top: `calc(${row * 12.5}% + 2px)`,
-                  left: "2px",
-                  color: isDark ? ON_DARK : ON_LIGHT,
-                }}
-              >
-                {rank}
-              </span>
-            );
-          });
-          return nodes;
-        })()}
-      </div>
+        <BoardCoordinates boardOrientation={boardOrientation} />
+                </div>
 
       {/* Below the board: Status indicator */}
       <div className="h-8 flex items-center justify-center z-10">

@@ -53,6 +53,7 @@ import { MoveAnnotation } from "./MoveAnnotation";
 import ChessAnimationLayer from "./ChessAnimationLayer";
 import { motion } from "framer-motion";
 import { SoundManager } from "../utils/SoundManager";
+import { BoardCoordinates } from "./BoardCoordinates";
 interface ActiveMove {
   startX: number;
   startY: number;
@@ -2198,79 +2199,7 @@ const heroSoundRef = useRef({
                         <MoveAnnotation activeAnnotation={activeAnnotation} />
                       )}
 
-                      {/* ── Board coordinate notation (Chess.com style) ───────────────────
-                           • File letters (a–h): bottom-right corner of each square
-                             in the bottom rank only.
-                           • Rank numbers (8–1): top-left corner of each square
-                             in the leftmost file only.
-                           • Color alternates with the square background:
-                               dark square  → light label  (#e8eec9 / cream)
-                               light square → dark label   (#769656 / green)
-                           • squareSize is available from the outer scope.
-                      ──────────────────────────────────────────────────────────────── */}
-                      {isActive && (() => {
-                        // Board is always White's perspective for these puzzles
-                        // (a=col0, h=col7; rank8=row0, rank1=row7)
-                        const FILES = ["a", "b", "c", "d", "e", "f", "g", "h"];
-                        const RANKS = ["8", "7", "6", "5", "4", "3", "2", "1"];
-
-                        // ── Colors ──────────────────────────────────────────────────────────
-                        const ON_LIGHT = "#5C7D3A"; // deep green on cream square
-                        const ON_DARK = "#FFF8E5"; // warm cream on green square
-
-                        const baseStyle: React.CSSProperties = {
-                          position: "absolute",
-                          fontFamily: "Inter, system-ui, sans-serif",
-                          fontSize: "9.5px",
-                          fontWeight: 700,
-                          lineHeight: 1,
-                          pointerEvents: "none",
-                          userSelect: "none",
-                          zIndex: 25,
-                        };
-
-                        const nodes: React.ReactNode[] = [];
-
-                        FILES.forEach((file, col) => {
-                          const isDark = ((7 + col) % 2) === 1;
-                          nodes.push(
-                            <span
-                              key={`file-${file}`}
-                              aria-hidden="true"
-                              style={{
-                                ...baseStyle,
-                                bottom: "2px",
-                                right: `calc(${(7 - col) * 12.5}% + 2px)`,
-                                color: isDark ? ON_DARK : ON_LIGHT,
-                              }}
-                            >
-                              {file}
-                            </span>
-                          );
-                        });
-
-                        // ── Rank numbers: top-left of each square on left file ───────────────
-                        // Col 0 = file a: a8=dark(row0), a7=light(row1), a6=dark(row2) …
-                        RANKS.forEach((rank, row) => {
-                          const isDark = (row + 0) % 2 !== 0;
-                          nodes.push(
-                            <span
-                              key={`rank-${rank}`}
-                              aria-hidden="true"
-                              style={{
-                                ...baseStyle,
-                                top: `calc(${row * 12.5}% + 2px)`,
-                                left: "2px",
-                                color: isDark ? ON_DARK : ON_LIGHT,
-                              }}
-                            >
-                              {rank}
-                            </span>
-                          );
-                        });
-
-                        return nodes;
-                      })()}
+                      {isActive && <BoardCoordinates boardOrientation="white" />}
                     </div>
                   </div>
                 </motion.div>

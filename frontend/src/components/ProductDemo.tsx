@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import { useScrollReveal } from '../hooks/useScrollReveal';
 import { useButtonGlow } from '../hooks/useButtonGlow';
+import { BoardCoordinates } from './BoardCoordinates';
 
 // ── Board colours ───────────────────────────────────────────────────────────────
 const BOARD_DARK  = '#769656';   // Tournament green
@@ -439,64 +440,8 @@ export default function ProductDemo() {
                   }}
                 />
 
-                {/* Board coordinate notation — Chess.com / HeroPuzzle style */}
-                {(() => {
-                  const FILES = boardOrientation === 'white'
-                    ? ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h']
-                    : ['h', 'g', 'f', 'e', 'd', 'c', 'b', 'a'];
-                  const RANKS = boardOrientation === 'white'
-                    ? ['8', '7', '6', '5', '4', '3', '2', '1']
-                    : ['1', '2', '3', '4', '5', '6', '7', '8'];
-                  const ON_LIGHT = '#5C7D3A';
-                  const ON_DARK  = '#FFF8E5';
-                  const baseStyle: React.CSSProperties = {
-                    position: 'absolute',
-                    fontFamily: 'Inter, system-ui, sans-serif',
-                    fontSize: '9.5px',
-                    fontWeight: 700,
-                    lineHeight: 1,
-                    pointerEvents: 'none',
-                    userSelect: 'none',
-                    zIndex: 25,
-                  };
-                  const nodes: React.ReactNode[] = [];
-                  FILES.forEach((file, col) => {
-                    const isDark = ((7 + col) % 2) === 1;
-                    nodes.push(
-                      <span
-                        key={`file-${file}`}
-                        aria-hidden="true"
-                        style={{
-                          ...baseStyle,
-                          bottom: '2px',
-                          right: `calc(${(7 - col) * 12.5}% + 2px)`,
-                          color: isDark ? ON_DARK : ON_LIGHT,
-                        }}
-                      >
-                        {file}
-                      </span>
-                    );
-                  });
-                  RANKS.forEach((rank, row) => {
-                    const isDark = (row + 0) % 2 !== 0;
-                    nodes.push(
-                      <span
-                        key={`rank-${rank}`}
-                        aria-hidden="true"
-                        style={{
-                          ...baseStyle,
-                          top: `calc(${row * 12.5}% + 2px)`,
-                          left: '2px',
-                          color: isDark ? ON_DARK : ON_LIGHT,
-                        }}
-                      >
-                        {rank}
-                      </span>
-                    );
-                  });
-                  return nodes;
-                })()}
-              </div>
+                <BoardCoordinates boardOrientation={boardOrientation} />
+                </div>
 
               {/* Turn indicator */}
               <div className="mt-3 flex items-center gap-2 text-xs text-[#8E8B82] px-1">
