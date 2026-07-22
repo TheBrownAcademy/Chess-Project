@@ -3,7 +3,6 @@ import { Chessboard } from "react-chessboard";
 import { Chess } from "chess.js";
 import type { ChessPuzzle } from "../utils/PuzzleLoader";
 import { validateMove } from "../utils/PuzzleValidator";
-import { useConfetti } from "../hooks/useConfetti";
 import { HelpCircle, RotateCcw, ArrowRight, Play, Check } from "lucide-react";
 import { soundManager } from "../utils/SoundManager";
 
@@ -39,8 +38,6 @@ export function PuzzleBoard({
     to: string;
   } | null>(null);
   const [hintSquare, setHintSquare] = useState<string | null>(null);
-
-  const { fireConfetti } = useConfetti();
 
   // Reset board and status when the puzzle prop changes
   useEffect(() => {
@@ -108,7 +105,6 @@ export function PuzzleBoard({
             }
             soundManager.playApplause();
 
-            fireConfetti();
             onSolved?.();
             return true;
           } else {
@@ -140,7 +136,7 @@ export function PuzzleBoard({
 
       return false;
     },
-    [puzzle, puzzleStatus, playerColor, onSolved, onFailed, fireConfetti],
+    [puzzle, puzzleStatus, playerColor, onSolved, onFailed],
   );
 
   const handleHint = useCallback(() => {
