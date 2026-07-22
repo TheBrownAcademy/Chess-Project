@@ -50,7 +50,6 @@ export interface BillingProfileDTO {
 export interface CheckoutSessionResponse {
   status: "success" | "fail";
   checkoutUrl?: string;
-  sessionId?: string;
   message?: string;
 }
 
