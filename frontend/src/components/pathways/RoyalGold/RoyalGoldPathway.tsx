@@ -9,7 +9,7 @@ import './RoyalGoldPathway.css';
 export const ROYAL_GOLD_NODES: PathNode[] = [
   { id: 'placeholder_004', levelNumber: 1, x: 48, y: 92, fen: 'rnbqkn1r/ppppp2p/5p2/6p1/4P3/3P4/PPP2PPP/RNBQKBNR w KQkq - 0 3', solution: 'Qh5#', rating: 500, title: "Fool's Quick Mate" },
   { id: 'placeholder_008', levelNumber: 2, x: 65, y: 80, fen: 'rnbqk1nr/ppp2ppp/3p4/2b1p3/2B1P3/5Q2/PPPP1PPP/RNB1K1NR w KQkq - 0 4', solution: 'Qxf7#', rating: 580, title: "Scholar's Strike" },
-  { id: 'placeholder_002', levelNumber: 3, x: 45, y: 72, fen: 'r1bqkb1r/pppp1ppp/2n2n2/4p3/2B1P3/5Q2/PPPP1PPP/RNB1K1NR w KQkq - 4 4', solution: 'Qxf7#', rating: 600, title: 'Italian Blitz' },
+  { id: 'placeholder_002', levelNumber: 3, x: 45, y: 72, fen: '1q3r1k/5p1p/5p2/n7/3B3P/P7/2P2P2/K5R1 w - - 0 1', solution: 'Bxf6#', rating: 1000, title: 'Smothered Finish' },
   { id: 'placeholder_009', levelNumber: 4, x: 60, y: 62, fen: 'r1bqk2r/ppp2ppp/2np4/2b1p3/2B1P1n1/2NP1Q2/PPP2PPP/R1B1K1NR w KQkq - 2 6', solution: 'Qxf7#', rating: 620, title: 'Tactical Breach' },
   { id: 'placeholder_003', levelNumber: 5, x: 39, y: 54, fen: '7k/5Qpp/8/8/8/8/8/6K1 w - - 0 1', solution: 'Qf8#', rating: 650, title: 'Cornered King' },
   { id: 'placeholder_006', levelNumber: 6, x: 56, y: 42, fen: '6k1/5ppp/8/8/8/2Q5/5PPP/6K1 w - - 0 1', solution: 'Qc8#', rating: 700, title: 'Queen Back Rank' },
@@ -88,6 +88,10 @@ export const RoyalGoldPathway: React.FC<PathwayComponentProps> = ({
           const midX = (x1 + x2) / 2;
           const midY = (y1 + y2) / 2;
 
+          const bridgeHeight = dimensions.width > 0 && dimensions.width < 500
+            ? `${Math.max(24, Math.round((dimensions.width / 440) * 42))}px`
+            : '42px';
+
           return (
             <div
               key={`rg-bridge-${node.id}-${nextNode.id}`}
@@ -96,7 +100,7 @@ export const RoyalGoldPathway: React.FC<PathwayComponentProps> = ({
                 left: `${midX}px`,
                 top: `${midY}px`,
                 width: `${distance}px`,
-                height: '42px',
+                height: bridgeHeight,
                 transform: `translate(-50%, -50%) rotate(${angleDeg}deg)`,
               }}
             >
