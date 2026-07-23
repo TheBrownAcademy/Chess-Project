@@ -10,8 +10,10 @@
  * any <Chessboard /> in the app via `options.pieces = pieceSet.pieces`.
  *
  * "Classic" reuses react-chessboard's own bundled piece artwork so we're not
- * shipping/duplicating any third-party artwork ourselves. "Alpha" is a
- * lightweight original style built from the standard Unicode chess symbols.
+ * shipping/duplicating any third-party artwork ourselves. "Maestro" is a
+ * user-supplied SVG asset set — static SVG files under
+ * `frontend/public/pieces/maestro/` (one per piece code), rendered via
+ * plain <img> tags rather than any inline/hand-drawn markup.
  *
  * Only two sets for now — more can be added here later without touching
  * any component that consumes `useBoardSettings()`.
@@ -25,47 +27,32 @@ export interface PieceSetDef {
   pieces: PieceRenderObject;
 }
 
-const GLYPHS: Record<string, string> = {
-  wK: "♔",
-  wQ: "♕",
-  wR: "♖",
-  wB: "♗",
-  wN: "♘",
-  wP: "♙",
-  bK: "♚",
-  bQ: "♛",
-  bR: "♜",
-  bB: "♝",
-  bN: "♞",
-  bP: "♟",
-};
+const PIECE_CODES = ["K", "Q", "R", "B", "N", "P"] as const;
+const COLORS = ["w", "b"] as const;
 
-function buildAlphaPieces(): PieceRenderObject {
+function buildMaestroPieces(): PieceRenderObject {
   const pieces: PieceRenderObject = {};
 
-  (Object.keys(GLYPHS) as Array<keyof typeof GLYPHS>).forEach((code) => {
-    const isWhite = code.startsWith("w");
+  COLORS.forEach((color) => {
+    PIECE_CODES.forEach((type) => {
+      const code = `${color}${type}`;
 
-    pieces[code] = (props) => (
-      <div
-        style={{
-          width: "100%",
-          height: "100%",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          fontSize: "80%",
-          lineHeight: 1,
-          color: isWhite ? "#F7F4EE" : "#1A1A1A",
-          WebkitTextStroke: isWhite ? "1.5px #1A1A1A" : "1px #F7F4EE",
-          textShadow: "0 2px 3px rgba(0,0,0,0.35)",
-          userSelect: "none",
-          ...props?.svgStyle,
-        }}
-      >
-        {GLYPHS[code]}
-      </div>
-    );
+      pieces[code] = (props) => (
+        <img
+          src={`/pieces/maestro/${code}.svg`}
+          alt={code}
+          draggable={false}
+          style={{
+            width: "100%",
+            height: "100%",
+            display: "block",
+            pointerEvents: "none",
+            userSelect: "none",
+            ...props?.svgStyle,
+          }}
+        />
+      );
+    });
   });
 
   return pieces;
@@ -73,7 +60,7 @@ function buildAlphaPieces(): PieceRenderObject {
 
 export const PIECE_SETS: PieceSetDef[] = [
   { id: "classic", name: "Classic", pieces: defaultPieces },
-  { id: "alpha", name: "Alpha", pieces: buildAlphaPieces() },
+  { id: "maestro", name: "Maestro", pieces: buildMaestroPieces() },
 ];
 
 export const DEFAULT_PIECE_SET_ID = PIECE_SETS[0].id;
