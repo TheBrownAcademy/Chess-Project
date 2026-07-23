@@ -142,7 +142,7 @@ export default function SuccessfulPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-brand-bg text-brand-text flex flex-col relative overflow-hidden select-none pb-16">
+    <div className="min-h-screen bg-brand-bg text-brand-text flex flex-col relative overflow-x-hidden select-none pb-16">
       {/* Confetti celebration effect */}
       <Confetti />
 
@@ -153,7 +153,7 @@ export default function SuccessfulPage() {
       {/* SidebarLayout handles header globally */}
 
       {/* Main content wrapper */}
-      <main className="relative z-10 flex-1 flex flex-col items-center justify-center max-w-2xl mx-auto px-4 py-12 w-full text-center">
+      <main className="relative z-10 flex-1 flex flex-col items-center justify-center max-w-2xl mx-auto px-4 sm:px-6 py-12 w-full min-w-0 text-center">
         
         {/* Success Icon Block */}
         <div className="relative mb-6">
@@ -229,58 +229,67 @@ export default function SuccessfulPage() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.45 }}
-          className="w-full bg-[#0c1020]/60 backdrop-blur-xl border border-brand-border rounded-2xl p-5 sm:p-6 mb-8 text-left shadow-2xl"
+          className="w-full min-w-0 bg-[#0c1020]/60 backdrop-blur-xl border border-brand-border rounded-2xl p-4 sm:p-6 mb-8 text-left shadow-2xl overflow-hidden"
         >
           <h3 className="text-sm font-mono tracking-wider text-brand-secondary uppercase border-b border-brand-border/40 pb-3 mb-4">
             Membership Details
           </h3>
           
           <div className="space-y-3">
-            <div className="flex justify-between items-center text-sm">
-              <span className="text-brand-secondary font-sans">Active Plan</span>
-              <span className="font-display font-medium text-white text-gold-gradient">{details.selectedPlan}</span>
+            {/* Active Plan */}
+            <div className="flex justify-between items-center gap-3 text-sm min-w-0">
+              <span className="text-brand-secondary font-sans flex-shrink-0">Active Plan</span>
+              <span className="font-display font-medium text-white text-gold-gradient text-right truncate">{details.selectedPlan}</span>
             </div>
-            
-            <div className="flex justify-between items-center text-sm">
-              <span className="text-brand-secondary font-sans">Billing Cycle</span>
+
+            {/* Billing Cycle */}
+            <div className="flex justify-between items-center gap-3 text-sm min-w-0">
+              <span className="text-brand-secondary font-sans flex-shrink-0">Billing Cycle</span>
               <span className="font-mono text-[#e5dfd5]">{details.billingCycle}</span>
             </div>
 
-            <div className="flex justify-between items-center text-sm gap-2 sm:gap-4">
-              <span className="text-brand-secondary font-sans shrink-0">Transaction ID</span>
-              <span className="font-mono text-xs text-brand-accent text-right break-all [overflow-wrap:anywhere] min-w-0">{details.txnId}</span>
+            {/* Transaction ID — stacks vertically on mobile to prevent overflow */}
+            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-1 sm:gap-3 text-sm min-w-0 pt-0.5">
+              <span className="text-brand-secondary font-sans flex-shrink-0">Transaction ID</span>
+              <span className="font-mono text-[10px] sm:text-xs text-brand-accent sm:text-right break-all leading-relaxed sm:max-w-[60%]">
+                {details.txnId}
+              </span>
             </div>
 
-            <div className="flex justify-between items-center text-sm">
-              <span className="text-brand-secondary font-sans">Purchase Date</span>
-              <span className="font-sans text-[#e5dfd5]">{details.purchaseDate}</span>
+            {/* Purchase Date */}
+            <div className="flex justify-between items-center gap-3 text-sm min-w-0">
+              <span className="text-brand-secondary font-sans flex-shrink-0">Purchase Date</span>
+              <span className="font-sans text-[#e5dfd5] text-right">{details.purchaseDate}</span>
             </div>
 
-            <div className="flex justify-between items-center text-sm">
-              <span className="text-brand-secondary font-sans">Next Renewal Date</span>
-              <span className="font-sans text-[#e5dfd5]">{details.renewalDate}</span>
+            {/* Next Renewal Date */}
+            <div className="flex justify-between items-center gap-3 text-sm min-w-0">
+              <span className="text-brand-secondary font-sans flex-shrink-0">Next Renewal Date</span>
+              <span className="font-sans text-[#e5dfd5] text-right">{details.renewalDate}</span>
             </div>
 
-            <div className="flex justify-between items-center text-sm">
-              <span className="text-brand-secondary font-sans">Discount</span>
+            {/* Discount */}
+            <div className="flex justify-between items-center gap-3 text-sm min-w-0">
+              <span className="text-brand-secondary font-sans flex-shrink-0">Discount</span>
               <span className="font-mono text-emerald-400">-{details.discount}</span>
             </div>
 
-
-
-            <div className="flex justify-between items-center text-sm">
-              <span className="text-brand-secondary font-sans">Currency</span>
+            {/* Currency */}
+            <div className="flex justify-between items-center gap-3 text-sm min-w-0">
+              <span className="text-brand-secondary font-sans flex-shrink-0">Currency</span>
               <span className="font-sans text-[#e5dfd5]">{details.currency}</span>
             </div>
 
-            <div className="flex justify-between items-center text-sm border-t border-brand-border/30 pt-2">
-              <span className="text-brand-secondary font-sans font-semibold">Total Paid</span>
+            {/* Total Paid */}
+            <div className="flex justify-between items-center gap-3 text-sm border-t border-brand-border/30 pt-3 min-w-0">
+              <span className="text-brand-secondary font-sans font-semibold flex-shrink-0">Total Paid</span>
               <span className="font-display font-bold text-white text-gold-gradient text-base">{details.totalPaid}</span>
             </div>
 
-            <div className="flex justify-between items-center text-sm">
-              <span className="text-brand-secondary font-sans">Username</span>
-              <span className="font-sans text-[#e5dfd5] font-semibold">{details.username}</span>
+            {/* Username */}
+            <div className="flex justify-between items-center gap-3 text-sm min-w-0">
+              <span className="text-brand-secondary font-sans flex-shrink-0">Username</span>
+              <span className="font-sans text-[#e5dfd5] font-semibold truncate text-right">{details.username}</span>
             </div>
           </div>
         </motion.div>

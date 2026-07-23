@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Menu, X, Home, Puzzle, CreditCard, User, CircleUserRound, Crown } from "lucide-react";
+import { Menu, X, Home, Puzzle, CreditCard, User, CircleUserRound, Crown, GraduationCap, BookOpen, ChevronDown } from "lucide-react";
 import { useLogoAnimation } from "../hooks/useLogoAnimation";
 import { soundManager } from "../utils/SoundManager";
 import { useSession } from "../hooks/useSession";
@@ -17,24 +17,32 @@ export default function SidebarLayout({
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalMode, setModalMode] = useState<"login" | "register">("login");
+  const [isLearnExpanded, setIsLearnExpanded] = useState(true);
   const { status } = useSession();
-
-  
 
   const navigate = useNavigate();
   const location = useLocation();
 
   const openModal = (mode: "login" | "register") => {
-  setModalMode(mode);
-  setIsModalOpen(true);
-  setIsMobileOpen(false);
-};
-
+    setModalMode(mode);
+    setIsModalOpen(true);
+    setIsMobileOpen(false);
+  };
 
   const { containerRef, logoRef } = useLogoAnimation();
 
   const menuItems = [
     { name: "Home", href: "/", icon: Home },
+    {
+      name: "Learn",
+      href: "/lessons",
+      icon: GraduationCap,
+      subItems: [
+        { name: "Lessons", href: "/lessons" },
+        { name: "Play Coach", href: "/play-coach" },
+        { name: "Openings", href: "/openings" },
+      ],
+    },
     { name: "Puzzles", href: "/puzzles", icon: Puzzle },
     { name: "Pricing", href: "/pricing", icon: CreditCard },
     { name: "Premium", href: "/premium", icon: Crown },
@@ -142,33 +150,113 @@ export default function SidebarLayout({
           className={`fixed top-16 left-0 bottom-0 z-30 bg-[#080B14]/90 backdrop-blur-md border-r border-brand-border flex flex-col py-4 transition-all duration-300 hidden md:flex ${isExpanded ? "w-64" : "w-20"
             }`}
         >
-          <nav className="flex-1 space-y-1">
+          <nav className="flex-1 space-y-1 overflow-y-auto no-scrollbar">
             {menuItems.map((item) => {
               const Icon = item.icon;
-              const isActive = location.pathname === item.href;
+              const hasSubItems = 'subItems' in item && item.subItems && item.subItems.length > 0;
+              const isChildActive = hasSubItems && item.subItems.some((s) => location.pathname === s.href);
+              const isActive = location.pathname === item.href || isChildActive;
+
+              if (hasSubItems) {
+                return (
+                  <div key={item.name} className="space-y-1">
+                    <button
+                      onClick={(e) => {
+                        handleLinkClick(item.href, e);
+                        setIsLearnExpanded(!isLearnExpanded);
+                      }}
+                      className={`w-full group relative flex items-center transition-all duration-200 cursor-pointer ${
+                        isExpanded
+                          ? `justify-between px-4 py-3 mx-3 rounded-xl ${
+                              isActive
+                                ? "text-brand-accent bg-brand-accent/10 font-medium"
+                                : "text-brand-secondary hover:text-white hover:bg-white/5"
+                            }`
+                          : `flex-col items-center justify-center py-2.5 mx-2 rounded-lg text-center ${
+                              isActive
+                                ? "text-brand-accent bg-brand-accent/10 border-brand-accent font-medium"
+                                : "text-brand-secondary hover:text-white hover:bg-white/5"
+                            }`
+                      }`}
+                      style={{ width: isExpanded ? "calc(100% - 1.5rem)" : "auto" }}
+                    >
+                      <div className={`flex items-center ${isExpanded ? "gap-4" : "flex-col"}`}>
+                        <Icon
+                          className={`w-5 h-5 transition-transform duration-200 group-hover:scale-105 ${
+                            isActive ? "text-brand-accent" : "text-brand-secondary group-hover:text-white"
+                          }`}
+                        />
+                        <span
+                          className={`font-sans tracking-wide transition-all ${
+                            isExpanded ? "text-sm" : "text-[10px] mt-1"
+                          }`}
+                        >
+                          {item.name}
+                        </span>
+                      </div>
+                      {isExpanded && (
+                        <ChevronDown
+                          className={`w-4 h-4 text-brand-secondary transition-transform duration-200 ${
+                            isLearnExpanded ? "rotate-180 text-brand-accent" : ""
+                          }`}
+                        />
+                      )}
+                    </button>
+
+                    {/* Submenu links when sidebar is expanded */}
+                    {isExpanded && isLearnExpanded && (
+                      <div className="pl-12 pr-4 space-y-1">
+                        {item.subItems.map((sub) => {
+                          const isSubActive = location.pathname === sub.href;
+                          return (
+                            <a
+                              key={sub.name}
+                              href={sub.href}
+                              onClick={(e) => handleLinkClick(sub.href, e)}
+                              className={`block px-3 py-1.5 rounded-lg text-xs font-sans transition-all cursor-pointer ${
+                                isSubActive
+                                  ? "text-brand-accent bg-brand-accent/15 font-semibold"
+                                  : "text-brand-secondary hover:text-white hover:bg-white/5"
+                              }`}
+                            >
+                              {sub.name}
+                            </a>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                );
+              }
 
               return (
                 <a
                   key={item.name}
                   href={item.href}
                   onClick={(e) => handleLinkClick(item.href, e)}
-                  className={`b1 group relative flex transition-all duration-200 cursor-pointer ${isExpanded
-                    ? `items-center gap-4 px-4 py-3 mx-3 rounded-xl ${isActive
-                      ? "text-brand-accent bg-brand-accent/10 font-medium shadow-[inset_1px_0_0_rgba(212,175,110,0.1)]"
-                      : "text-brand-secondary hover:text-white hover:bg-white/5"
-                    }`
-                    : `flex-col items-center justify-center py-2.5 mx-2 rounded-lg text-center ${isActive
-                      ? "text-brand-accent bg-brand-accent/10 border-brand-accent font-medium"
-                      : "text-brand-secondary hover:text-white hover:bg-white/5"
-                    }`
-                    }`}
+                  className={`b1 group relative flex transition-all duration-200 cursor-pointer ${
+                    isExpanded
+                      ? `items-center gap-4 px-4 py-3 mx-3 rounded-xl ${
+                          isActive
+                            ? "text-brand-accent bg-brand-accent/10 font-medium shadow-[inset_1px_0_0_rgba(212,175,110,0.1)]"
+                            : "text-brand-secondary hover:text-white hover:bg-white/5"
+                        }`
+                      : `flex-col items-center justify-center py-2.5 mx-2 rounded-lg text-center ${
+                          isActive
+                            ? "text-brand-accent bg-brand-accent/10 border-brand-accent font-medium"
+                            : "text-brand-secondary hover:text-white hover:bg-white/5"
+                        }`
+                  }`}
                 >
                   <Icon
-                    className={`w-5 h-5 transition-transform duration-200 group-hover:scale-105 ${isActive ? "text-brand-accent" : "text-brand-secondary group-hover:text-white"}`}
+                    className={`w-5 h-5 transition-transform duration-200 group-hover:scale-105 ${
+                      isActive ? "text-brand-accent" : "text-brand-secondary group-hover:text-white"
+                    }`}
                   />
                   <span
-                    className={`font-sans tracking-wide transition-all ${isExpanded ? "text-sm" : "text-[10px] mt-1"
-                      }`}
+                    className={`font-sans tracking-wide transition-all ${
+                      isExpanded ? "text-sm" : "text-[10px] mt-1"
+                    }`}
                   >
                     {item.name}
                   </span>
@@ -179,10 +267,10 @@ export default function SidebarLayout({
         </aside>
         
         <AuthModal
-  isOpen={isModalOpen}
-  onClose={() => setIsModalOpen(false)}
-  initialMode={modalMode}
-/>
+          isOpen={isModalOpen}
+          onClose={() => setIsModalOpen(false)}
+          initialMode={modalMode}
+        />
 
         {/* Mobile Sidebar (Slide-out Overlay Drawer) */}
         {/* Backdrop overlay */}
@@ -210,27 +298,74 @@ export default function SidebarLayout({
             </button>
           </div>
 
-          <nav className="flex-1 mt-4 space-y-1">
+          <nav className="flex-1 mt-4 space-y-1 overflow-y-auto no-scrollbar">
             {menuItems.map((item) => {
               const Icon = item.icon;
-              const isActive = location.pathname === item.href;
+              const hasSubItems = 'subItems' in item && item.subItems && item.subItems.length > 0;
+              const isChildActive = hasSubItems && item.subItems.some((s) => location.pathname === s.href);
+              const isActive = location.pathname === item.href || isChildActive;
+
+              if (hasSubItems) {
+                return (
+                  <div key={item.name} className="space-y-1">
+                    <div
+                      onClick={(e) => handleLinkClick(item.href, e)}
+                      className={`group flex items-center justify-between px-4 py-3 mx-3 rounded-xl transition-all duration-200 cursor-pointer ${
+                        isActive
+                          ? "text-brand-accent bg-brand-accent/10 font-medium"
+                          : "text-brand-secondary hover:text-white hover:bg-white/5"
+                      }`}
+                    >
+                      <div className="flex items-center gap-4">
+                        <Icon
+                          className={`w-5 h-5 ${
+                            isActive ? "text-brand-accent" : "text-brand-secondary group-hover:text-white"
+                          }`}
+                        />
+                        <span className="font-sans text-sm tracking-wide">{item.name}</span>
+                      </div>
+                    </div>
+
+                    <div className="pl-12 pr-4 space-y-1">
+                      {item.subItems.map((sub) => {
+                        const isSubActive = location.pathname === sub.href;
+                        return (
+                          <a
+                            key={sub.name}
+                            href={sub.href}
+                            onClick={(e) => handleLinkClick(sub.href, e)}
+                            className={`block px-3 py-2 rounded-xl text-xs font-sans transition-all cursor-pointer ${
+                              isSubActive
+                                ? "text-brand-accent bg-brand-accent/15 font-semibold"
+                                : "text-brand-secondary hover:text-white hover:bg-white/5"
+                            }`}
+                          >
+                            {sub.name}
+                          </a>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              }
 
               return (
                 <a
                   key={item.name}
                   href={item.href}
                   onClick={(e) => handleLinkClick(item.href, e)}
-                  className={`group flex items-center gap-4 px-4 py-3 mx-3 rounded-xl transition-all duration-200 cursor-pointer ${isActive
-                    ? "text-brand-accent bg-brand-accent/10 font-medium"
-                    : "text-brand-secondary hover:text-white hover:bg-white/5"
-                    }`}
+                  className={`group flex items-center gap-4 px-4 py-3 mx-3 rounded-xl transition-all duration-200 cursor-pointer ${
+                    isActive
+                      ? "text-brand-accent bg-brand-accent/10 font-medium"
+                      : "text-brand-secondary hover:text-white hover:bg-white/5"
+                  }`}
                 >
                   <Icon
-                    className={`w-5 h-5 ${isActive ? "text-brand-accent" : "text-brand-secondary group-hover:text-white"}`}
+                    className={`w-5 h-5 ${
+                      isActive ? "text-brand-accent" : "text-brand-secondary group-hover:text-white"
+                    }`}
                   />
-                  <span className="font-sans text-sm tracking-wide">
-                    {item.name}
-                  </span>
+                  <span className="font-sans text-sm tracking-wide">{item.name}</span>
                 </a>
               );
             })}

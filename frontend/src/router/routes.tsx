@@ -1,5 +1,8 @@
 import HomePage from '../pages/HomePage';
 import PuzzlePage from '../pages/PuzzlePage';
+import LessonsPage from '../pages/LessonsPage';
+import PlayCoachPage from '../pages/PlayCoachPage';
+import OpeningsPage from '../pages/OpeningsPage';
 import ProfilePage from '../pages/ProfilePage';
 import PricingPage from '../pages/PricingPage';
 import CheckoutPage from '../pages/CheckoutPage';
@@ -17,6 +20,9 @@ export interface RouteConfig {
 export const mainRoutes: RouteConfig[] = [
   { path: '/', element: <HomePage /> },
   { path: '/puzzles', element: <PuzzlePage /> },
+  { path: '/lessons', element: <LessonsPage /> },
+  { path: '/play-coach', element: <PlayCoachPage /> },
+  { path: '/openings', element: <OpeningsPage /> },
   { path: '/profile', element: <ProtectedRoute><ProfilePage /></ProtectedRoute> },
   { path: '/premium', element: <ProtectedRoute><PremiumPage /></ProtectedRoute> },
   { path: '/pricing', element: <PricingPage /> },
