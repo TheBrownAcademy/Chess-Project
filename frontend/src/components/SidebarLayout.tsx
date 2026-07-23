@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Menu, X, Home, Puzzle, CreditCard, User, CircleUserRound, Crown, GraduationCap, BookOpen, Bot, BookMarked } from "lucide-react";
+import { Menu, X, Home, Puzzle, CreditCard, User, CircleUserRound, Crown, GraduationCap, BookOpen, Bot, BookMarked, ChevronDown } from "lucide-react";
 import { useLogoAnimation } from "../hooks/useLogoAnimation";
 import { soundManager } from "../utils/SoundManager";
 import { useSession } from "../hooks/useSession";
@@ -17,6 +17,7 @@ export default function SidebarLayout({
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalMode, setModalMode] = useState<"login" | "register">("login");
+  const [mobileOpenItem, setMobileOpenItem] = useState<string | null>(null);
   const { status } = useSession();
 
 
@@ -149,7 +150,7 @@ export default function SidebarLayout({
       <div className="flex flex-1 pt-16">
         {/* Desktop Sidebar (Fixed) */}
         <aside
-          className={`fixed top-16 left-0 bottom-0 z-30 bg-[#080B14]/90 backdrop-blur-md border-r border-brand-border flex flex-col py-4 transition-all duration-300  md:flex ${isExpanded ? "w-64" : "w-20"
+          className={`fixed top-16 left-0 bottom-0 z-30 bg-[#080B14]/90 backdrop-blur-md border-r border-brand-border flex flex-col py-4 transition-all duration-300 hidden md:flex ${isExpanded ? "w-64" : "w-20"
             }`}
         >
           <nav className="flex-1 space-y-1">
@@ -259,27 +260,41 @@ export default function SidebarLayout({
             {menuItems.map((item) => {
               const Icon = item.icon;
               const isActive = location.pathname === item.href || (item.subItems?.some(sub => location.pathname === sub.href));
+              const isSubOpen = mobileOpenItem === item.name;
 
               return (
                 <div key={item.name} className="flex flex-col">
-                  <a
-                    href={item.href}
-                    onClick={(e) => handleLinkClick(item.href, e)}
-                    className={`group flex items-center gap-4 px-4 py-3 mx-3 rounded-xl transition-all duration-200 cursor-pointer ${isActive
+                  <button
+                    onClick={(e) => {
+                      if (item.subItems) {
+                        // Toggle nested list; don't navigate
+                        setMobileOpenItem(isSubOpen ? null : item.name);
+                      } else {
+                        handleLinkClick(item.href, e as unknown as React.MouseEvent);
+                      }
+                    }}
+                    className={`group w-full flex items-center gap-4 px-4 py-3 mx-3 rounded-xl transition-all duration-200 cursor-pointer text-left ${isActive
                       ? "text-brand-accent bg-brand-accent/10 font-medium"
                       : "text-brand-secondary hover:text-white hover:bg-white/5"
                       }`}
+                    style={{ width: 'calc(100% - 1.5rem)' }}
                   >
                     <Icon
-                      className={`w-5 h-5 ${isActive ? "text-brand-accent" : "text-brand-secondary group-hover:text-white"}`}
+                      className={`w-5 h-5 shrink-0 ${isActive ? "text-brand-accent" : "text-brand-secondary group-hover:text-white"}`}
                     />
-                    <span className="font-sans text-sm tracking-wide">
+                    <span className="font-sans text-sm tracking-wide flex-1">
                       {item.name}
                     </span>
-                  </a>
+                    {item.subItems && (
+                      <ChevronDown
+                        className={`w-4 h-4 shrink-0 transition-transform duration-200 ${isSubOpen ? "rotate-180 text-brand-accent" : "text-brand-secondary/60"
+                          }`}
+                      />
+                    )}
+                  </button>
 
-                  {item.subItems && (
-                    <div className="flex flex-col ml-12 mr-3 mt-1 space-y-1">
+                  {item.subItems && isSubOpen && (
+                    <div className="flex flex-col ml-12 mr-3 mt-1 mb-1 space-y-1">
                       {item.subItems.map((subItem) => {
                         const SubIcon = subItem.icon;
                         const isSubActive = location.pathname === subItem.href;
