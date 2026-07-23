@@ -1,31 +1,36 @@
 import { useState, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router';
-import { PATHWAYS, PATHWAY_LIST, PATHWAY_NODES } from '../components/pathways';
+import { RoyalGoldPathway, ROYAL_GOLD_NODES } from '../components/pathways/RoyalGold/RoyalGoldPathway';
+import { PATHWAY_NODES } from '../components/pathways';
 import type { PathNode, PlayerProgress } from '../types/PuzzlePath';
 import { PuzzleBoard } from '../components/PuzzleBoard';
 import type { ChessPuzzle } from '../utils/PuzzleLoader';
 import {
-  Trophy,
-  Zap,
-  CheckCircle2,
+  // Trophy,
+  // Zap,
+  // CheckCircle2,
   ArrowLeft,
-  CircleDot,
-  HelpCircle,
-  Compass,
+  // CircleDot,
+  // HelpCircle,
   ArrowRight,
 } from 'lucide-react';
-import { Chess } from 'chess.js';
+// import { Chess } from 'chess.js';
 import { Confetti } from '../components/Confetti';
+
+// Multi-pathway selector map retained for future restoration:
+// import { PATHWAYS, PATHWAY_LIST } from '../components/pathways';
 
 export default function PuzzlePage() {
   const navigate = useNavigate();
-  const [selectedPathwayId, setSelectedPathwayId] = useState<string>('RoyalGold');
-  const SelectedPathwayComponent = PATHWAYS[selectedPathwayId] || PATHWAYS['RoyalGold'];
-  // const activePathwayMeta = PATHWAY_LIST.find(p => p.id === selectedPathwayId) || PATHWAY_LIST[0];
+
+  // Multi-pathway selection state disabled for single-pathway (Royal Gold) focus.
+  // To restore multi-pathway selection, uncomment below:
+  // const [selectedPathwayId, setSelectedPathwayId] = useState<string>('RoyalGold');
+  // const SelectedPathwayComponent = PATHWAYS[selectedPathwayId] || RoyalGoldPathway;
 
   const activePathwayNodes = useMemo(() => {
-    return PATHWAY_NODES[selectedPathwayId] || PATHWAY_NODES['RoyalGold'];
-  }, [selectedPathwayId]);
+    return ROYAL_GOLD_NODES || PATHWAY_NODES['RoyalGold'];
+  }, []);
 
   // Player progress stored in localStorage
   const [completedIds, setCompletedIds] = useState<string[]>(() => {
@@ -138,8 +143,8 @@ export default function PuzzlePage() {
     navigate('/');
   }, [navigate]);
 
-  const turn = new Chess(currentChessPuzzle.fen).turn();
-  const sideToMoveText = turn === 'w' ? 'White to move' : 'Black to move';
+  // const turn = new Chess(currentChessPuzzle.fen).turn();
+  // const sideToMoveText = turn === 'w' ? 'White to move' : 'Black to move';
 
   return (
     <div className="min-h-screen bg-brand-bg text-brand-text flex flex-col relative select-none pb-16 pt-20 sm:pt-8">
@@ -165,7 +170,7 @@ export default function PuzzlePage() {
         </div>
 
         {/* PERMANENT TWO-PANEL SPLIT GRID */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start w-full">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch w-full">
 
           {/* LEFT PANEL (lg:col-span-7) — PERMANENT CHESS PUZZLE BOARD (UNTOUCHED) */}
           <div className="lg:col-span-7 flex flex-col items-center w-full space-y-6">
@@ -207,10 +212,10 @@ export default function PuzzlePage() {
               />
             </div>
 
-            {/* Side to Move & Stats Dashboard Bar */}
+            {/* Side to Move & Stats Dashboard Bar (Commented out for focused puzzle experience) */}
+            {/*
             <div className="w-full grid grid-cols-1 sm:grid-cols-2 gap-4">
               
-              {/* Turn Banner */}
               <div className="bg-brand-surface/40 border border-brand-border rounded-xl p-4 flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <CircleDot className={`w-4 h-4 animate-pulse ${turn === 'w' ? 'text-white' : 'text-brand-secondary'}`} />
@@ -224,7 +229,6 @@ export default function PuzzlePage() {
                 </span>
               </div>
 
-              {/* Stats Summary */}
               <div className="grid grid-cols-3 gap-2">
                 <div className="bg-[#080b14]/60 border border-brand-border/80 rounded-xl p-2.5 text-center">
                   <span className="text-[9px] font-mono text-brand-secondary uppercase tracking-wider block">Solved</span>
@@ -252,8 +256,10 @@ export default function PuzzlePage() {
               </div>
 
             </div>
+            */}
 
-            {/* Advice Hint */}
+            {/* Advice Hint (Commented out for cleaner focused view) */}
+            {/*
             <div className="w-full bg-[#0c1020]/30 backdrop-blur-sm border border-brand-border/60 rounded-2xl p-4 text-left flex items-start gap-3">
               <div className="w-7 h-7 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-400 flex items-center justify-center flex-shrink-0 mt-0.5">
                 <HelpCircle className="w-4 h-4" />
@@ -267,16 +273,20 @@ export default function PuzzlePage() {
                 </p>
               </div>
             </div>
+            */}
 
           </div>
 
 
-          {/* RIGHT PANEL (lg:col-span-5) — INDEPENDENT PATHWAY COMPONENT CONTAINER */}
-          <div className="lg:col-span-5 flex flex-col space-y-4 w-full">
+          {/* RIGHT PANEL (lg:col-span-5) — ROYAL GOLD PATHWAY COMPONENT */}
+          <div className="lg:col-span-5 flex flex-col w-full h-full">
 
-            {/* Pathway Selector Header Card */}
-            <div className="bg-[#0c1020]/80 backdrop-blur-xl border border-brand-border rounded-2xl p-4 text-left shadow-2xl">
-              
+            {/* 
+              Pathway Selector UI temporarily commented out to focus on Royal Gold single-pathway experience.
+              To re-enable multi-pathway selection, uncomment the block below:
+            */}
+            {/*
+            <div className="bg-[#0c1020]/80 backdrop-blur-xl border border-brand-border rounded-2xl p-4 text-left shadow-2xl mb-4">
               <div className="flex items-center justify-between mb-3 border-b border-brand-border/40 pb-3">
                 <div className="flex items-center gap-2">
                   <Compass className="w-4 h-4 text-amber-400" />
@@ -284,38 +294,22 @@ export default function PuzzlePage() {
                     Select Pathway
                   </h3>
                 </div>
+                <span className="text-[10px] font-mono uppercase tracking-wider font-semibold text-emerald-400 bg-emerald-500/10 border border-emerald-500/30 px-2 py-0.5 rounded-full">
+                  Independent UI
+                </span>
               </div>
-
-              {/* Independent Pathway Component Selector Buttons */}
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5 bg-[#080b14]/80 p-1.5 rounded-xl border border-brand-border/80">
-                {PATHWAY_LIST.map(p => {
-                  const isActive = selectedPathwayId === p.id;
-                  return (
-                    <button
-                      key={p.id}
-                      onClick={() => {
-                        setSelectedPathwayId(p.id);
-                        const nodes = PATHWAY_NODES[p.id];
-                        if (nodes && nodes.length > 0) {
-                          setSelectedNode(nodes[0]);
-                        }
-                      }}
-                      className={`px-2 py-2 rounded-lg text-[10px] font-mono uppercase tracking-wider font-semibold transition-all duration-300 text-center truncate cursor-pointer ${
-                        isActive
-                          ? 'bg-amber-500 text-slate-950 font-bold shadow-md scale-105'
-                          : 'text-brand-secondary hover:text-white hover:bg-white/5'
-                      }`}
-                      title={p.name}
-                    >
-                      {p.name}
-                    </button>
-                  );
-                })}
+                {PATHWAY_LIST.map(p => (
+                  <button key={p.id} onClick={() => setSelectedPathwayId(p.id)} ...>
+                    {p.name}
+                  </button>
+                ))}
               </div>
             </div>
+            */}
 
-            {/* RENDER THE SELECTED INDEPENDENT PATHWAY COMPONENT */}
-            <SelectedPathwayComponent
+            {/* RENDER ROYAL GOLD PATHWAY DIRECTLY */}
+            <RoyalGoldPathway
               playerProgress={playerProgress}
               onSelectPuzzle={handleSelectNode}
             />
