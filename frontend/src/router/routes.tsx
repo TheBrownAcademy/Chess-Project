@@ -6,6 +6,7 @@ import CheckoutPage from '../pages/CheckoutPage';
 import SuccessfulPage from '../pages/SuccessfulPage';
 import FailedPage from '../pages/FailedPage';
 import PremiumPage from '../pages/PremiumPage';
+import OpeningsPage from '../pages/OpeningsPage';
 import { ProtectedRoute } from '../components/ProtectedRoute';
 
 export interface RouteConfig {
@@ -17,6 +18,7 @@ export interface RouteConfig {
 export const mainRoutes: RouteConfig[] = [
   { path: '/', element: <HomePage /> },
   { path: '/puzzles', element: <PuzzlePage /> },
+  { path: '/openings', element: <OpeningsPage /> },
   { path: '/profile', element: <ProtectedRoute><ProfilePage /></ProtectedRoute> },
   { path: '/premium', element: <ProtectedRoute><PremiumPage /></ProtectedRoute> },
   { path: '/pricing', element: <PricingPage /> },
