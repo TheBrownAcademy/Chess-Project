@@ -4,7 +4,7 @@
  * A three-dot (⋮) dropdown that sits in the top-right header area.
  *
  * Menu items:
- *   Settings  → navigates to /profile (existing page)
+ *   Settings  → navigates to /settings (Board & Pieces, etc.)
  *   Theme     → disabled, "Coming Soon" tooltip
  *   ─── divider ───
  *   Sound     → full-row clickable toggle (reuses SoundManager, no SoundToggle sub-button)
@@ -110,7 +110,7 @@ export const MoreMenu: React.FC = () => {
           <button
             id="more-menu-settings"
             role="menuitem"
-            onClick={() => { setIsOpen(false); navigate('/profile'); }}
+            onClick={() => { setIsOpen(false); navigate('/settings'); }}
             className="w-full flex items-center gap-3 px-4 py-2.5 text-sm font-sans text-brand-secondary hover:text-white hover:bg-white/[0.06] text-left transition-colors duration-150 cursor-pointer group"
             tabIndex={0}
           >

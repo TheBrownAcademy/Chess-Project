@@ -557,7 +557,7 @@ export default function ProfilePage() {
                 </button>
                 <span className="text-brand-border/40 text-xs hidden sm:inline">|</span>
                 <button
-                  onClick={() => alert("Settings panel coming in next release!")}
+                  onClick={() => navigate("/settings")}
                   className="font-sans text-xs text-brand-secondary hover:text-white transition-colors duration-150 inline-flex items-center gap-1 cursor-pointer"
                 >
                   Configure site preferences <ChevronRight className="w-3.5 h-3.5" />

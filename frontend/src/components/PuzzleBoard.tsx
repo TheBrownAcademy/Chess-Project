@@ -1,14 +1,11 @@
 import { useState, useRef, useCallback, useEffect } from "react";
-import { Chessboard } from "react-chessboard";
+import { ThemedChessboard } from "./ThemedChessboard";
 import { Chess } from "chess.js";
 import type { ChessPuzzle } from "../utils/PuzzleLoader";
 import { validateMove } from "../utils/PuzzleValidator";
 import { useConfetti } from "../hooks/useConfetti";
 import { HelpCircle, RotateCcw, ArrowRight, Play, Check } from "lucide-react";
 import { soundManager } from "../utils/SoundManager";
-
-const BOARD_DARK = "#769656";
-const BOARD_LIGHT = "#EEEED2";
 
 export interface PuzzleBoardProps {
   puzzle: ChessPuzzle;
@@ -212,15 +209,13 @@ export function PuzzleBoard({
             : "border-brand-border/80"
           }`}
       >
-        <Chessboard
+        <ThemedChessboard
           options={{
             position: gameFen,
             onPieceDrop: ({ sourceSquare, targetSquare }) =>
               onDrop(sourceSquare, targetSquare ?? ""),
             boardOrientation: boardOrientation,
             squareStyles: customSquareStyles,
-            darkSquareStyle: { backgroundColor: BOARD_DARK },
-            lightSquareStyle: { backgroundColor: BOARD_LIGHT },
             boardStyle: { borderRadius: "0px" },
             showNotation: true,
             allowDragging: puzzleStatus === "solving",

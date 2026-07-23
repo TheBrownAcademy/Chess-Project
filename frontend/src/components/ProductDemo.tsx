@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { Chessboard } from 'react-chessboard';
+import { ThemedChessboard } from './ThemedChessboard';
 import { Chess } from 'chess.js';
 import { useStockfish } from '../hooks/useStockfish';
 import { parseUciMove, getGameOverReason } from '../utils/chessHelpers';
@@ -21,9 +21,8 @@ import {
 import { useScrollReveal } from '../hooks/useScrollReveal';
 import { useButtonGlow } from '../hooks/useButtonGlow';
 
-// ── Board colours ───────────────────────────────────────────────────────────────
-const BOARD_DARK  = '#769656';   // Tournament green
-const BOARD_LIGHT = '#EEEED2';   // Off-white / cream
+// Board colors + piece set now come from Settings -> Board & Pieces
+// (see useBoardSettings inside the component) instead of being hardcoded here.
 
 // Set false to hide coordinates; toggle easily here.
 const SHOW_COORDINATES = false;
@@ -427,16 +426,14 @@ export default function ProductDemo() {
                   </div>
                 )}
 
-                {/* react-chessboard â€” green/cream theme, stays mounted, never remounts */}
-                <Chessboard
+                {/* Uses the shared ThemedChessboard wrapper — stays mounted, never remounts */}
+                <ThemedChessboard
                   options={{
                     position: gameFen,
                     onPieceDrop: ({ sourceSquare, targetSquare }) =>
                       onDrop(sourceSquare, targetSquare),
                     boardOrientation: boardOrientation,
                     squareStyles: customSquareStyles,
-                    darkSquareStyle:  { backgroundColor: BOARD_DARK },
-                    lightSquareStyle: { backgroundColor: BOARD_LIGHT },
                     boardStyle: { borderRadius: '0px' },
                     showNotation: SHOW_COORDINATES,
                   }}
