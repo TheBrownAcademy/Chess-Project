@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Menu, X, Home, Puzzle, CreditCard, User, CircleUserRound, Crown } from "lucide-react";
+import {Menu, X, Home, Puzzle, CircleUserRound, Crown, CreditCard}from "lucide-react";
 import { useLogoAnimation } from "../hooks/useLogoAnimation";
 import { soundManager } from "../utils/SoundManager";
 import { useSession } from "../hooks/useSession";
@@ -34,12 +34,12 @@ export default function SidebarLayout({
   const { containerRef, logoRef } = useLogoAnimation();
 
   const menuItems = [
-    { name: "Home", href: "/", icon: Home },
-    { name: "Puzzles", href: "/puzzles", icon: Puzzle },
-    { name: "Pricing", href: "/pricing", icon: CreditCard },
-    { name: "Premium", href: "/premium", icon: Crown },
-    { name: "Profile", href: "/profile", icon: User },
-  ];
+  { name: "Home", href: "/", icon: Home },
+  { name: "Puzzles", href: "/puzzles", icon: Puzzle },
+  { name: "Pricing", href: "/pricing", icon: CreditCard },
+  { name: "Premium", href: "/premium", icon: Crown },
+  { name: "Profile", href: "/profile", icon: CircleUserRound },
+];
 
   const handleLinkClick = (href: string, e: React.MouseEvent) => {
     e.preventDefault();
@@ -139,7 +139,7 @@ export default function SidebarLayout({
       <div className="flex flex-1 pt-16">
         {/* Desktop Sidebar (Fixed) */}
         <aside
-          className={`fixed top-16 left-0 bottom-0 z-30 bg-[#080B14]/90 backdrop-blur-md border-r border-brand-border flex flex-col py-4 transition-all duration-300 hidden md:flex ${isExpanded ? "w-64" : "w-20"
+          className={`fixed top-16 left-0 bottom-0 z-30 bg-[#080B14]/90 backdrop-blur-md border-r border-brand-border flex flex-col py-4 transition-all duration-300  md:flex ${isExpanded ? "w-64" : "w-20"
             }`}
         >
           <nav className="flex-1 space-y-1">
