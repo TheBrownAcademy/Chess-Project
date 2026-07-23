@@ -103,8 +103,7 @@ export const AvatarDropdown: React.FC = () => {
             </p>
           </div>
 
-          {/* ── Divider ───────────────────────────────────────────────────── */}
-          <div className="my-1.5 border-t border-brand-border/40" role="separator" />
+          
 
           {/* ── Settings ──────────────────────────────────────────────────── */}
           <button
@@ -162,7 +161,7 @@ export const AvatarDropdown: React.FC = () => {
             </span>
           </button>
 
-          <div className="my-1.5 border-t border-brand-border/40" role="separator" />
+          /<div className="my-1.5 border-t border-brand-border/40" role="separator" />
 
           {/* Sign Out option */}
           <button
