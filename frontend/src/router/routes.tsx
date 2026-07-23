@@ -7,6 +7,7 @@ import CheckoutPage from '../pages/CheckoutPage';
 import SuccessfulPage from '../pages/SuccessfulPage';
 import FailedPage from '../pages/FailedPage';
 import PremiumPage from '../pages/PremiumPage';
+import OpeningsPage from '../pages/OpeningsPage';
 import { ProtectedRoute } from '../components/ProtectedRoute';
 
 export interface RouteConfig {
@@ -18,6 +19,7 @@ export interface RouteConfig {
 export const mainRoutes: RouteConfig[] = [
   { path: '/', element: <HomePage /> },
   { path: '/puzzles', element: <PuzzlePage /> },
+  { path: '/openings', element: <OpeningsPage /> },
   { path: '/profile', element: <ProtectedRoute><ProfilePage /></ProtectedRoute> },
   // Not behind ProtectedRoute: board/piece preferences are stored in
   // localStorage (like the Sound toggle) so guests can use them too.
