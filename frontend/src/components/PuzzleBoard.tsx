@@ -1,14 +1,11 @@
 import { useState, useRef, useCallback, useEffect } from "react";
-import { Chessboard } from "react-chessboard";
+import { ThemedChessboard } from "./ThemedChessboard";
 import { Chess } from "chess.js";
 import type { ChessPuzzle } from "../utils/PuzzleLoader";
 import { validateMove } from "../utils/PuzzleValidator";
-import { useConfetti } from "../hooks/useConfetti";
 import { HelpCircle, RotateCcw, ArrowRight, Play, Check } from "lucide-react";
 import { soundManager } from "../utils/SoundManager";
-
-const BOARD_DARK = "#769656";
-const BOARD_LIGHT = "#EEEED2";
+import { BoardCoordinates } from "./BoardCoordinates";
 
 export interface PuzzleBoardProps {
   puzzle: ChessPuzzle;
@@ -39,8 +36,6 @@ export function PuzzleBoard({
     to: string;
   } | null>(null);
   const [hintSquare, setHintSquare] = useState<string | null>(null);
-
-  const { fireConfetti } = useConfetti();
 
   // Reset board and status when the puzzle prop changes
   useEffect(() => {
@@ -108,7 +103,6 @@ export function PuzzleBoard({
             }
             soundManager.playApplause();
 
-            fireConfetti();
             onSolved?.();
             return true;
           } else {
@@ -140,7 +134,7 @@ export function PuzzleBoard({
 
       return false;
     },
-    [puzzle, puzzleStatus, playerColor, onSolved, onFailed, fireConfetti],
+    [puzzle, puzzleStatus, playerColor, onSolved, onFailed],
   );
 
   const handleHint = useCallback(() => {
@@ -203,7 +197,6 @@ export function PuzzleBoard({
         )}
       </div>
 
-      {/* Chessboard Container */}
       <div
         className={`relative w-full max-w-[500px] sm:max-w-[540px] aspect-square shadow-[0_20px_50px_rgba(212,175,110,0.03)] border overflow-hidden bg-brand-surface transition-all duration-300 z-10 ${isShaking
           ? "border-rose-500 ring-4 ring-rose-500/25"
@@ -212,21 +205,21 @@ export function PuzzleBoard({
             : "border-brand-border/80"
           }`}
       >
-        <Chessboard
+        <ThemedChessboard
           options={{
             position: gameFen,
             onPieceDrop: ({ sourceSquare, targetSquare }) =>
               onDrop(sourceSquare, targetSquare ?? ""),
             boardOrientation: boardOrientation,
             squareStyles: customSquareStyles,
-            darkSquareStyle: { backgroundColor: BOARD_DARK },
-            lightSquareStyle: { backgroundColor: BOARD_LIGHT },
             boardStyle: { borderRadius: "0px" },
-            showNotation: true,
+            showNotation: false,
             allowDragging: puzzleStatus === "solving",
           }}
         />
-      </div>
+
+        <BoardCoordinates boardOrientation={boardOrientation} />
+                </div>
 
       {/* Below the board: Status indicator */}
       <div className="h-8 flex items-center justify-center z-10">

@@ -1,6 +1,7 @@
 import HomePage from '../pages/HomePage';
 import PuzzlePage from '../pages/PuzzlePage';
 import ProfilePage from '../pages/ProfilePage';
+import SettingsPage from '../pages/SettingsPage';
 import PricingPage from '../pages/PricingPage';
 import CheckoutPage from '../pages/CheckoutPage';
 import SuccessfulPage from '../pages/SuccessfulPage';
@@ -20,6 +21,9 @@ export const mainRoutes: RouteConfig[] = [
   { path: '/puzzles', element: <PuzzlePage /> },
   { path: '/openings', element: <OpeningsPage /> },
   { path: '/profile', element: <ProtectedRoute><ProfilePage /></ProtectedRoute> },
+  // Not behind ProtectedRoute: board/piece preferences are stored in
+  // localStorage (like the Sound toggle) so guests can use them too.
+  { path: '/settings', element: <SettingsPage /> },
   { path: '/premium', element: <ProtectedRoute><PremiumPage /></ProtectedRoute> },
   { path: '/pricing', element: <PricingPage /> },
 ];
