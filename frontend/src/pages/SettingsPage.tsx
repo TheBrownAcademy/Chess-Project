@@ -34,6 +34,7 @@ import { BOARD_THEMES } from "../data/boardThemes";
 import { PIECE_SETS } from "../data/pieceSets";
 import BoardPreview from "../components/BoardPreview";
 import { soundManager } from "../utils/SoundManager";
+import { useNavigationStack } from "../hooks/useNavigationStack";
 
 type TabId = "boards" | "pieces" | "background" | "presets";
 
@@ -72,6 +73,7 @@ const CATEGORIES: SettingsCategory[] = [
 
 export default function SettingsPage() {
   const navigate = useNavigate();
+  const { push } = useNavigationStack();
   const { boardTheme, pieceSet, setBoardThemeId, setPieceSetId } = useBoardSettings();
 
   const [searchQuery, setSearchQuery] = useState("");
@@ -175,7 +177,14 @@ export default function SettingsPage() {
                     onClick={() => {
                       if (!cat.path) return; // already showing this section inline
                       soundManager.playButtonClick();
-                      navigate(cat.path);
+                      if (cat.path === "/pricing") {
+                       push({
+                             label: "Settings",
+                             path: "/settings",
+                                 });
+                               }
+
+                             navigate(cat.path);
                     }}
                     className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-left transition-colors duration-150 cursor-pointer ${
                       isActive
